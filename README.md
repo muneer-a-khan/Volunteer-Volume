@@ -1,5 +1,5 @@
 # Volunteer-Volume
-ENGR 1020 - Volunteer Volume Group 10
+ENGR 1020 - Volunteer Volume Group 10. Client is Lindsay Jones at the Virginia Discovery Museum.
 
 ## Problem Definition
 We have a wonderful roster of volunteers at the museum. All sign up through our
