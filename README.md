@@ -17,7 +17,7 @@ Volunteer Volume is a web-based volunteer management system that allows voluntee
 ## 🛠 Tech Stack
 | Technology | Purpose |
 |------------|---------|
-| **React.js (Next.js)** | Frontend framework |
+| **React.js** | Frontend framework |
 | **TailwindCSS** | Styling framework |
 | **Next.js API Routes (AWS Lambda)** | Backend logic |
 | **AWS DynamoDB / AWS RDS (MySQL)** | Database |
