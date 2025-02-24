@@ -20,7 +20,7 @@ Volunteer Volume is a web-based volunteer management system that allows voluntee
 | **React.js** | Frontend framework |
 | **TailwindCSS** | Styling framework |
 | **Next.js API Routes (AWS Lambda)** | Backend logic |
-| **AWS DynamoDB / AWS RDS (MySQL)** | Database |
+| **AWS RDS (MySQL)** | Database |
 | **AWS Cognito** | Authentication |
 | **AWS SNS** | Notifications |
 | **AWS S3** | File storage (volunteer logs, documents) |
