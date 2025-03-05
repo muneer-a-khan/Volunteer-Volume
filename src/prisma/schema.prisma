@@ -1,0 +1,35 @@
+// This is the Prisma schema file
+datasource db {
+  provider = "mysql"   // Use "mysql" for AWS RDS or "postgresql" for PostgreSQL
+  url      = env("DATABASE_URL") // This will use the database URL from the .env file
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Define the "User" model
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  role      String   // Example: 'volunteer', 'admin'
+  shifts    Shift[]  // A user can have many shifts
+}
+
+// Define the "Shift" model
+model Shift {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  startTime   DateTime
+  endTime     DateTime
+  location    String
+  volunteer   User?    @relation(fields: [volunteerId], references: [id])
+  volunteerId Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
