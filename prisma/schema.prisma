@@ -1,0 +1,192 @@
+// Add the Volunteer Application model
+model VolunteerApplication {
+  id                  String      @id @default(uuid())
+  name                String
+  email               String
+  phone               String
+  address             String
+  city                String
+  state               String
+  zipCode             String
+  birthdate           DateTime
+  volunteerType       String      // e.g., "High School Student", "College Student", "Employed", "Retired"
+  covidVaccinated     Boolean
+  criminalRecord      Boolean
+  criminalExplanation String?     @db.Text
+  referralSource      String?
+  volunteerExperience String?     @db.Text
+  employmentExperience String?    @db.Text
+  reference           String
+  interests           String?     @db.Text
+  reasonForVolunteering String    @db.Text
+  volunteerPosition   String      // e.g., "Front Desk Volunteer", "Gallery Volunteer"
+  availability        String      // e.g., "Regular shift(s) during the week", "Regular weekend shift(s)"
+  availableDays       String[]    // e.g., ["Monday", "Wednesday", "Friday"]
+  status              String      @default("PENDING") // "PENDING", "APPROVED", "REJECTED"
+  applicationDate     DateTime    @default(now())
+  approvedBy          String?
+  approvedAt          DateTime?
+  rejectedBy          String?
+  rejectedAt          DateTime?
+  rejectionReason     String?     @db.Text
+  // Relationship to user if approved
+  userId              String?
+  user                User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  VOLUNTEER
+  GROUP_ADMIN
+}
+
+model User {
+  id                String       @id @default(uuid())
+  email             String       @unique
+  name              String
+  phone             String?
+  cognitoId         String       @unique
+  role              UserRole     @default(VOLUNTEER)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  profile           Profile?
+  shifts            Shift[]
+  checkIns          CheckIn[]
+  volunteerLogs     VolunteerLog[]
+  // Group relationships
+  memberGroups      UserGroup[]
+  managedGroups     Group[]      @relation("GroupAdmin")
+}
+
+model Profile {
+  id                String       @id @default(uuid())
+  userId            String       @unique
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  address           String?
+  city              String?
+  state             String?
+  zipCode           String?
+  emergencyContact  String?
+  emergencyPhone    String?
+  birthdate         DateTime?
+  interests         String?
+  skills            String?
+  photoUrl          String?
+  documentUrl       String?
+  notes             String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+}
+
+enum ShiftStatus {
+  OPEN
+  FILLED
+  CANCELLED
+  COMPLETED
+}
+
+model Shift {
+  id                  String      @id @default(uuid())
+  title               String
+  description         String?     @db.Text
+  startTime           DateTime
+  endTime             DateTime
+  location            String
+  capacity            Int         @default(1)
+  status              ShiftStatus @default(OPEN)
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  googleCalendarEventId String?
+  volunteers          User[]
+  checkIns            CheckIn[]
+  // Group assignment
+  groupId             String?
+  group               Group?      @relation(fields: [groupId], references: [id], onDelete: SetNull)
+}
+
+model CheckIn {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shiftId   String
+  shift     Shift    @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  checkInTime  DateTime @default(now())
+  checkOutTime DateTime?
+  duration     Int?      // Duration in minutes
+  notes        String?   @db.Text
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model VolunteerLog {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hours       Int
+  minutes     Int      @default(0)
+  description String?  @db.Text
+  date        DateTime
+  approved    Boolean  @default(false)
+  approvedBy  String?
+  approvedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  // Group attribution
+  groupId     String?
+  group       Group?   @relation(fields: [groupId], references: [id], onDelete: SetNull)
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  title       String
+  message     String   @db.Text
+  recipientId String?
+  read        Boolean  @default(false)
+  type        String   @default("INFO") // INFO, SUCCESS, WARNING, ERROR
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Group/Organization models
+model Group {
+  id            String        @id @default(uuid())
+  name          String
+  description   String?       @db.Text
+  logoUrl       String?
+  website       String?
+  email         String?
+  phone         String?
+  address       String?
+  active        Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  // Relationships
+  members       UserGroup[]
+  admins        User[]        @relation("GroupAdmin")
+  shifts        Shift[]
+  volunteerLogs VolunteerLog[]
+}
+
+model UserGroup {
+  id            String        @id @default(uuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  groupId       String
+  group         Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  joinedAt      DateTime      @default(now())
+  status        String        @default("ACTIVE") // ACTIVE, INACTIVE, PENDING
+  role          String        @default("MEMBER") // MEMBER, COORDINATOR
+  
+  @@unique([userId, groupId])
+}
