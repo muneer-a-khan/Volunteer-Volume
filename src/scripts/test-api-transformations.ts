@@ -7,8 +7,9 @@
  * Run with: ts-node test-api-transformations.ts
  */
 
-import { testApiEndpoints, deepTestCasing } from '../utils/api-test-util';
-import { apiGet } from '../lib/api-client';
+// Using CommonJS require syntax instead of ES modules for ts-node compatibility
+const { testApiEndpoints, deepTestCasing } = require('../utils/api-test-util');
+const { apiGet } = require('../lib/api-client');
 
 // Update this with your actual development server URL
 const API_BASE_URL = 'http://localhost:3000';
@@ -85,7 +86,7 @@ async function testSingleEndpoint(endpoint: string) {
     const data = await apiGet(endpoint);
     
     // Check if the data uses camelCase - using type assertion to fix the linter error
-    const invalidProps = deepTestCasing(data as Record<string, any>, 'camel');
+    const invalidProps = deepTestCasing(data, 'camel');
     
     if (Object.keys(invalidProps).length === 0) {
       console.log('✅ All properties use camelCase correctly');
