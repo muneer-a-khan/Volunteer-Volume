@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
+import { mapVolunteerActivity } from '@/lib/data-mappers';
 
 interface VolunteerStats {
   totalHours: number;
@@ -16,6 +17,8 @@ interface RecentActivity {
   type: 'CHECK_IN' | 'LOG';
   date: Date;
   details: string;
+  id: string;
+  [key: string]: any; // Allow additional properties
 }
 
 interface VolunteerResponse {
@@ -115,9 +118,9 @@ async function getVolunteer(req: NextApiRequest, res: NextApiResponse, currentUs
     
     const shifts = await prisma.shifts.count({
       where: {
-        volunteers: {
+        shift_volunteers: {
           some: {
-            id: id as string
+            user_id: id as string
           }
         }
       }
@@ -142,10 +145,11 @@ async function getVolunteer(req: NextApiRequest, res: NextApiResponse, currentUs
     // If admin, get recent activity
     let recentActivity: RecentActivity[] = [];
     if (isAdmin) {
+      // Fetch check-in activity
       const checkInActivity = await prisma.check_ins.findMany({
         where: { user_id: id as string },
         include: {
-          shift: true
+          shifts: true
         },
         orderBy: {
           created_at: 'desc'
@@ -153,6 +157,7 @@ async function getVolunteer(req: NextApiRequest, res: NextApiResponse, currentUs
         take: 5
       });
       
+      // Fetch volunteer logs
       const logActivity = await prisma.volunteer_logs.findMany({
         where: { user_id: id as string },
         orderBy: {
@@ -161,19 +166,8 @@ async function getVolunteer(req: NextApiRequest, res: NextApiResponse, currentUs
         take: 5
       });
       
-      // Combine and sort by date
-      recentActivity = [
-        ...checkInActivity.map((c: { checkInTime: Date; shift: { title: string } }) => ({
-          type: 'CHECK_IN' as const,
-          date: c.checkInTime,
-          details: c.shift.title
-        })),
-        ...logActivity.map((l: { date: Date; hours: number; minutes: number }) => ({
-          type: 'LOG' as const,
-          date: l.date,
-          details: `${l.hours} hours ${l.minutes > 0 ? `${l.minutes} minutes` : ''}`
-        }))
-      ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
+      // Use the specialized mapper for complex nested data
+      recentActivity = mapVolunteerActivity(checkInActivity, logActivity).slice(0, 5);
     }
     
     const response: VolunteerResponse = {
