@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { prisma } from '@/lib/prisma';
+import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
 import { sendEmail, emailTemplates } from '@/lib/email';
 
 interface ResponseData {
@@ -35,7 +36,7 @@ export default async function handler(
     }
 
     // Get the shift and check availability
-    const shift = await prisma.shift.findUnique({
+    const shift = await prisma.shifts.findUnique({
       where: { id },
       include: {
         volunteers: true
@@ -57,7 +58,7 @@ export default async function handler(
     }
 
     // Add volunteer to shift
-    await prisma.shift.update({
+    await prisma.shifts.update({
       where: { id },
       data: {
         volunteers: {

@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
+import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 
@@ -13,6 +14,21 @@ interface ShiftResponse {
   maxVolunteers: number;
   currentVolunteers: number;
   status: string;
+}
+
+// Define types for the shift object from database
+interface DBShift {
+  id: string;
+  title: string;
+  description: string | null;
+  start_time: Date;
+  end_time: Date;
+  location: string;
+  capacity: number | null;
+  status: string | null;
+  _count: {
+    volunteers: number;
+  };
 }
 
 export default async function handler(
@@ -30,10 +46,10 @@ export default async function handler(
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const shifts = await prisma.shift.findMany({
+    const shifts = await prisma.shifts.findMany({
       where: {
         status: 'ACTIVE',
-        startTime: {
+        start_time: {
           gte: new Date()
         }
       },
@@ -43,20 +59,21 @@ export default async function handler(
         }
       },
       orderBy: {
-        startTime: 'asc'
+        start_time: 'asc'
       }
     });
 
-    const formattedShifts = shifts.map(shift => ({
+    // Map snake_case fields to camelCase
+    const formattedShifts = shifts.map((shift: DBShift) => ({
       id: shift.id,
       title: shift.title,
-      description: shift.description,
-      startTime: shift.startTime.toISOString(),
-      endTime: shift.endTime.toISOString(),
+      description: shift.description || '',
+      startTime: shift.start_time.toISOString(),
+      endTime: shift.end_time.toISOString(),
       location: shift.location,
-      maxVolunteers: shift.maxVolunteers,
+      maxVolunteers: shift.capacity || 1,
       currentVolunteers: shift._count.volunteers,
-      status: shift.status
+      status: shift.status || 'UNKNOWN'
     }));
 
     return res.status(200).json(formattedShifts);

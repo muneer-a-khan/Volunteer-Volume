@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
+import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 
@@ -40,7 +41,7 @@ export default async function handler(
         }
       },
       orderBy: {
-        createdAt: 'desc'
+        created_at: 'desc'
       }
     });
 
@@ -55,7 +56,7 @@ export default async function handler(
       updatedAt: app.updatedAt.toISOString()
     }));
 
-    return res.status(200).json(formattedApplications);
+    return res.status(200).json(mapSnakeToCamel(formattedApplications));
   } catch (error) {
     console.error('Error fetching applications:', error);
     return res.status(500).json({ message: 'Internal server error' });

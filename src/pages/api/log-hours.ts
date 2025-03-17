@@ -1,7 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
+import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]';
+import { authOptions } from '@/pages/api/auth/[...nextauth]';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Only allow POST requests
@@ -24,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Get user from our database
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: {
         id: session.user.id
       }
@@ -36,11 +37,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // If groupId is provided, verify the user is a member of that group
     if (groupId) {
-      const membership = await prisma.userGroup.findUnique({
+      const membership = await prisma.usersGroup.findUnique({
         where: {
-          userId_groupId: {
-            userId: user.id,
-            groupId
+          user_id_group_id: {
+            user_id: user.id,
+            group_id
           }
         }
       });
@@ -51,15 +52,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Create volunteer log entry
-    const volunteerLog = await prisma.volunteerLog.create({
+    const volunteerLog = await prisma.volunteer_logs.create({
       data: {
-        userId: user.id,
+        user_id: user.id,
         hours: parseInt(hours),
         minutes: minutes ? parseInt(minutes) : 0,
         description: description || 'Manually logged hours',
         date: new Date(date),
         approved: false,
-        groupId: groupId || null
+        group_id: group_id || null
       }
     });
 

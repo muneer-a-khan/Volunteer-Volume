@@ -1,7 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
+import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]';
+import { authOptions } from '@/pages/api/auth/[...nextauth]';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Only allow POST requests
@@ -24,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Get user from our database
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: {
         id: session.user.id
       }
@@ -35,12 +36,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Verify the shift exists
-    const shift = await prisma.shift.findUnique({
+    const shift = await prisma.shifts.findUnique({
       where: {
         id: shiftId
       },
       include: {
-        volunteers: true
+        shift_volunteers: {
+          select: { user_id: true }
+        }
       }
     });
 
@@ -49,17 +52,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Verify the user is signed up for this shift
-    const isVolunteerAssigned = shift.volunteers.some(vol => vol.id === user.id);
+    const isVolunteerAssigned = shift.shift_volunteers.some((vol: { user_id: string }) => vol.user_id === user.id);
     if (!isVolunteerAssigned) {
       return res.status(403).json({ message: 'You are not signed up for this shift' });
     }
 
     // Check if user already checked in for this shift
-    const existingCheckIn = await prisma.checkIn.findFirst({
+    const existingCheckIn = await prisma.check_ins.findFirst({
       where: {
-        userId: user.id,
-        shiftId: shiftId,
-        checkOutTime: null
+        user_id: user.id,
+        shift_id: shiftId,
+        check_out_time: null
       }
     });
 
@@ -71,19 +74,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Create check-in record
-    const checkIn = await prisma.checkIn.create({
+    const checkIn = await prisma.check_ins.create({
       data: {
-        userId: user.id,
-        shiftId: shiftId,
+        user_id: user.id,
+        shift_id: shiftId,
         notes: notes || '',
-        checkInTime: new Date()
+        check_in_time: new Date()
       }
     });
 
-    return res.status(201).json({
+    return res.status(201).json(mapSnakeToCamel({
       message: 'Check-in successful',
       checkIn: checkIn
-    });
+    }));
   } catch (error) {
     console.error('Check-in error:', error);
     return res.status(500).json({ message: 'Internal server error' });

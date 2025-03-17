@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import bcrypt from 'bcrypt';
 import { prisma } from '@/lib/prisma';
+import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
 import { z } from 'zod';
 
 // Define validation schema
@@ -28,7 +29,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { name, email, password } = validatedData;
 
     // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await prisma.userss.findUnique({
       where: { email },
     });
 
@@ -40,7 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create the user
-    const user = await prisma.user.create({
+    const user = await prisma.userss.create({
       data: {
         name,
         email,

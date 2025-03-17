@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { prisma } from '@/lib/prisma';
+import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
 import { sendEmail, emailTemplates } from '@/lib/email';
 
 interface ResponseData {
@@ -35,7 +36,7 @@ export default async function handler(
     }
 
     // Get the application
-    const application = await prisma.application.findUnique({
+    const application = await prisma.applications.findUnique({
       where: { id },
       include: { user: true }
     });
@@ -45,12 +46,12 @@ export default async function handler(
     }
 
     // Update application status
-    await prisma.application.update({
+    await prisma.applications.update({
       where: { id },
       data: { 
         status: 'REJECTED',
-        rejectedBy: session.user.id,
-        rejectedAt: new Date(),
+        rejected_by: session.user.id,
+        rejected_at: new Date(),
         rejectionReason: reason
       }
     });

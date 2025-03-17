@@ -3,7 +3,8 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { compare } from "bcrypt";
-import { prisma } from "@/lib/prisma";
+import { prisma } from '@/lib/prisma';
+import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils'; from "@/lib/prisma";
 import { syncUserWithSupabase } from "@/lib/auth-utils";
 
 export const authOptions: NextAuthOptions = {
@@ -33,7 +34,7 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Email and password required");
         }
 
-        const user = await prisma.user.findUnique({
+        const user = await prisma.userss.findUnique({
           where: { email: credentials.email },
         });
 

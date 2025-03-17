@@ -1,7 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
+import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]';
+import { authOptions } from '@/pages/api/auth/[...nextauth]';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Only allow POST requests
@@ -24,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Get user from our database
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: {
         id: session.user.id
       }
@@ -35,7 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Find the check-in record
-    const checkIn = await prisma.checkIn.findUnique({
+    const checkIn = await prisma.check_ins.findUnique({
       where: {
         id: checkInId
       },
@@ -64,12 +65,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const durationMinutes = Math.floor(durationMs / 60000);
 
     // Update check-in record with check-out time and duration
-    const updatedCheckIn = await prisma.checkIn.update({
+    const updatedCheckIn = await prisma.check_ins.update({
       where: {
         id: checkInId
       },
       data: {
-        checkOutTime: checkOutTime,
+        check_out_time: check_out_time,
         duration: durationMinutes,
         notes: notes ? `${checkIn.notes || ''}\n\nCheck-out notes: ${notes}` : checkIn.notes
       }
@@ -78,17 +79,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // If this was the last volunteer to check out and shift is over, update shift status
     const now = new Date();
     if (now > new Date(checkIn.shift.endTime)) {
-      const otherActiveCheckIns = await prisma.checkIn.count({
+      const otherActiveCheckIns = await prisma.check_ins.count({
         where: {
-          shiftId: checkIn.shiftId,
-          checkOutTime: null
+          shift_id: checkIn.shift_id,
+          check_out_time: null
         }
       });
 
       if (otherActiveCheckIns === 0) {
-        await prisma.shift.update({
+        await prisma.shifts.update({
           where: {
-            id: checkIn.shiftId
+            id: checkIn.shift_id
           },
           data: {
             status: 'COMPLETED'
@@ -101,9 +102,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const hours = Math.floor(durationMinutes / 60);
     const minutes = durationMinutes % 60;
 
-    const volunteerLog = await prisma.volunteerLog.create({
+    const volunteerLog = await prisma.volunteer_logs.create({
       data: {
-        userId: user.id,
+        user_id: user.id,
         hours: hours,
         minutes: minutes,
         description: `Shift: ${checkIn.shift.title} at ${checkIn.shift.location}`,

@@ -1,7 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
+import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]';
+import { authOptions } from '@/pages/api/auth/[...nextauth]';
 
 interface VolunteerStats {
   totalHours: number;
@@ -34,7 +35,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     // Get user from our database
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: {
         id: session.user.id
       }
@@ -90,7 +91,7 @@ async function getVolunteers(req: NextApiRequest, res: NextApiResponse) {
   }
   
   try {
-    const volunteers = await prisma.user.findMany({
+    const volunteers = await prisma.users.findMany({
       where,
       include: {
         profile: true,
@@ -111,9 +112,9 @@ async function getVolunteers(req: NextApiRequest, res: NextApiResponse) {
     const volunteersWithStats = await Promise.all(
       volunteers.map(async (volunteer: { id: string; _count: { shifts: number; checkIns: number; volunteerLogs: number } }) => {
         // Get total hours from volunteer logs
-        const logs = await prisma.volunteerLog.aggregate({
+        const logs = await prisma.volunteer_logs.aggregate({
           where: {
-            userId: volunteer.id
+            user_id: volunteer.id
           },
           _sum: {
             hours: true,
@@ -144,7 +145,7 @@ async function getVolunteers(req: NextApiRequest, res: NextApiResponse) {
       })
     );
     
-    return res.status(200).json(volunteersWithStats);
+    return res.status(200).json(mapSnakeToCamel(volunteersWithStats));
   } catch (error) {
     console.error('Error fetching volunteers:', error);
     return res.status(500).json({ 

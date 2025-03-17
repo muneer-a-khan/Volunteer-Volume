@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
+import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 
@@ -42,9 +43,9 @@ export default async function handler(
     }
 
     // Get all members of the group
-    const members = await prisma.groupMember.findMany({
+    const members = await prisma.groupsMember.findMany({
       where: {
-        groupId: id
+        group_id: id
       },
       include: {
         user: true
@@ -54,19 +55,19 @@ export default async function handler(
     // Get hours for each member
     const hoursReports = await Promise.all(
       members.map(async (member) => {
-        const shifts = await prisma.shift.findMany({
+        const shifts = await prisma.shifts.findMany({
           where: {
             volunteers: {
               some: {
-                userId: member.userId
+                user_id: member.user_id
               }
             }
           },
           select: {
             id: true,
             title: true,
-            startTime: true,
-            endTime: true
+            start_time: true,
+            end_time: true
           }
         });
 

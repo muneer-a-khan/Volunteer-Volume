@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
+import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 
@@ -29,10 +30,10 @@ export default async function handler(
     }
 
     // Check if user is a member of the group
-    const member = await prisma.groupMember.findFirst({
+    const member = await prisma.groupsMember.findFirst({
       where: {
-        groupId: id,
-        userId: session.user.id
+        group_id: id,
+        user_id: session.user.id
       }
     });
 
@@ -44,7 +45,7 @@ export default async function handler(
     }
 
     // Remove user from group
-    await prisma.groupMember.delete({
+    await prisma.groupsMember.delete({
       where: {
         id: member.id
       }

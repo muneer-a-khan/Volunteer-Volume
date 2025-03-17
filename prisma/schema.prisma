@@ -1,236 +1,324 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL") // Used for direct connection to the database
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+  schemas   = ["auth", "public"]
 }
 
-enum UserRole {
-  ADMIN
-  VOLUNTEER
-  GROUP_ADMIN
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model group_admins {
+  group_id String @db.Uuid
+  user_id  String @db.Uuid
+  groups   groups @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  users    users  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@id([group_id, user_id])
+  @@schema("public")
 }
 
-model User {
-  id                String       @id @default(uuid())
-  email             String       @unique
-  name              String
-  phone             String?
-  role              UserRole     @default(VOLUNTEER)
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
-  profile           Profile?
-  shifts            Shift[]
-  checkIns          CheckIn[]
-  volunteerLogs     VolunteerLog[]
-  // Group relationships
-  memberGroups      UserGroup[]
-  managedGroups     Group[]      @relation("GroupAdmin")
-  // Add Auth.js fields
-  password          String?      // Hashed password, nullable for OAuth
-  emailVerified     DateTime?
-  image             String?      // Profile image URL
-  accounts          Account[]
-  sessions          Session[]
-  applications      Application[] // Relation to volunteer applications
-}
-
-// Auth.js models
-model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?  @db.Text
-  access_token       String?  @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?  @db.Text
-  session_state      String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-}
-
-model Profile {
-  id                String       @id @default(uuid())
-  userId            String       @unique
-  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  address           String?
-  city              String?
-  state             String?
-  zipCode           String?
-  emergencyContact  String?
-  emergencyPhone    String?
-  birthdate         DateTime?
-  interests         String?
-  skills            String?
-  photoUrl          String?
-  documentUrl       String?
-  notes             String?      @db.Text
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
-}
-
-enum ShiftStatus {
-  OPEN
-  FILLED
-  CANCELLED
-  COMPLETED
-}
-
-model Shift {
-  id                  String      @id @default(uuid())
-  title               String
-  description         String?     @db.Text
-  startTime           DateTime
-  endTime             DateTime
-  location            String
-  capacity            Int         @default(1)
-  status              ShiftStatus @default(OPEN)
-  createdAt           DateTime    @default(now())
-  updatedAt           DateTime    @updatedAt
-  googleCalendarEventId String?
-  volunteers          User[]
-  checkIns            CheckIn[]
-  // Group assignment
-  groupId             String?
-  group               Group?      @relation(fields: [groupId], references: [id], onDelete: SetNull)
-}
-
-model CheckIn {
-  id           String   @id @default(uuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  shiftId      String
-  shift        Shift    @relation(fields: [shiftId], references: [id], onDelete: Cascade)
-  checkInTime  DateTime @default(now())
-  checkOutTime DateTime?
-  duration     Int?     // Duration in minutes
-  notes        String?  @db.Text
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-}
-
-model VolunteerLog {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  hours       Int
-  minutes     Int      @default(0)
-  description String?  @db.Text
-  date        DateTime
-  approved    Boolean  @default(false)
-  approvedBy  String?
-  approvedAt  DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  // Group attribution
-  groupId     String?
-  group       Group?   @relation(fields: [groupId], references: [id], onDelete: SetNull)
-}
-
-model Notification {
-  id          String   @id @default(uuid())
-  title       String
-  message     String   @db.Text
-  recipientId String?
-  read        Boolean  @default(false)
-  type        String   @default("INFO") // INFO, SUCCESS, WARNING, ERROR
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-// Group/Organization models
-model Group {
-  id            String        @id @default(uuid())
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model groups {
+  id            String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   name          String
-  description   String?       @db.Text
-  logoUrl       String?
+  description   String?
+  logo_url      String?
   website       String?
   email         String?
   phone         String?
   address       String?
-  active        Boolean       @default(true)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  // Relationships
-  members       UserGroup[]
-  admins        User[]        @relation("GroupAdmin")
-  shifts        Shift[]
-  volunteerLogs VolunteerLog[]
+  active        Boolean?       @default(true)
+  created_at    DateTime?      @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime?      @default(now()) @db.Timestamptz(6)
+  group_admins  group_admins[]
+  shifts        shifts[]
+  user_groups   user_groups[]
+  volunteer_logs volunteer_logs[]
+
+  @@schema("public")
 }
 
-model UserGroup {
-  id            String        @id @default(uuid())
-  userId        String
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  groupId       String
-  group         Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  joinedAt      DateTime      @default(now())
-  status        String        @default("ACTIVE") // ACTIVE, INACTIVE, PENDING
-  role          String        @default("MEMBER") // MEMBER, COORDINATOR
-  
-  @@unique([userId, groupId])
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model notifications {
+  id           String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  title        String
+  message      String
+  recipient_id String?
+  read         Boolean?  @default(false)
+  type         String?   @default("INFO")
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@schema("public")
 }
 
-// Add after UserGroup model
-model Application {
-  id                  String      @id @default(uuid())
-  name                String
-  email               String
-  phone               String
-  address             String
-  city                String
-  state               String
-  zipCode             String
-  birthdate           DateTime
-  volunteerType       String      // e.g., "High School Student", "College Student", "Employed", "Retired"
-  covidVaccinated     Boolean
-  criminalRecord      Boolean
-  criminalExplanation String?     @db.Text
-  referralSource      String?
-  volunteerExperience String?     @db.Text
-  employmentExperience String?    @db.Text
-  reference           String
-  interests           String?     @db.Text
-  reasonForVolunteering String    @db.Text
-  volunteerPosition   String      // e.g., "Front Desk Volunteer", "Gallery Volunteer"
-  availability        String      // e.g., "Regular shift(s) during the week", "Regular weekend shift(s)"
-  availableDays       String[]    // e.g., ["Monday", "Wednesday", "Friday"]
-  status              String      @default("PENDING") // "PENDING", "APPROVED", "REJECTED"
-  applicationDate     DateTime    @default(now())
-  approvedBy          String?
-  approvedAt          DateTime?
-  rejectedBy          String?
-  rejectedAt          DateTime?
-  rejectionReason     String?     @db.Text
-  // Relationship to user if approved
-  userId              String?
-  user                User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model profiles {
+  id                String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  user_id           String    @unique @db.Uuid
+  address           String?
+  city              String?
+  state             String?
+  zip_code          String?
+  emergency_contact String?
+  emergency_phone   String?
+  birthdate         DateTime? @db.Date
+  interests         String?
+  skills            String?
+  photo_url         String?
+  document_url      String?
+  notes             String?
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime? @default(now()) @db.Timestamptz(6)
+  users             users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@schema("public")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model sessions {
+  id            String   @id
+  session_token String   @unique
+  user_id       String   @db.Uuid
+  expires       DateTime @db.Timestamptz(6)
+  users         users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@schema("public")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model shift_volunteers {
+  shift_id String @db.Uuid
+  user_id  String @db.Uuid
+  shifts   shifts @relation(fields: [shift_id], references: [id], onDelete: Cascade)
+  users    users  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@id([shift_id, user_id])
+  @@schema("public")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model shifts {
+  id                       String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  title                    String
+  description              String?
+  start_time               DateTime          @db.Timestamptz(6)
+  end_time                 DateTime          @db.Timestamptz(6)
+  location                 String
+  capacity                 Int?              @default(1)
+  status                   shift_status?     @default(OPEN)
+  google_calendar_event_id String?
+  created_at               DateTime?         @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime?         @default(now()) @db.Timestamptz(6)
+  group_id                 String?           @db.Uuid
+  groups                   groups?           @relation(fields: [group_id], references: [id], onDelete: SetNull)
+  shift_volunteers         shift_volunteers[]
+  check_ins                check_ins[]
+
+  @@schema("public")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user_groups {
+  id        String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  user_id   String    @db.Uuid
+  group_id  String    @db.Uuid
+  joined_at DateTime? @default(now()) @db.Timestamptz(6)
+  status    String?   @default("ACTIVE")
+  role      String?   @default("MEMBER")
+  users     users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  groups    groups    @relation(fields: [group_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, group_id])
+  @@schema("public")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model users {
+  id                String             @id @db.Uuid
+  email             String             @unique
+  name              String
+  phone             String?
+  role              user_role?         @default(VOLUNTEER)
+  created_at        DateTime?          @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime?          @default(now()) @db.Timestamptz(6)
+  password          String?
+  email_verified    DateTime?          @db.Timestamptz(6)
+  image             String?
+  profiles          profiles?
+  sessions          sessions[]
+  shift_volunteers  shift_volunteers[]
+  group_admins      group_admins[]
+  user_groups       user_groups[]
+  volunteer_logs    volunteer_logs[]
+  accounts          accounts[]
+  check_ins         check_ins[]
+  applications      applications[]
+
+  @@schema("public")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model verification_tokens {
+  identifier String
+  token      String   @unique
+  expires    DateTime @db.Timestamptz(6)
+
+  @@unique([identifier, token])
+  @@schema("public")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model volunteer_logs {
+  id          String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  user_id     String    @db.Uuid
+  hours       Int
+  minutes     Int?      @default(0)
+  description String?
+  date        DateTime  @db.Timestamptz(6)
+  approved    Boolean?  @default(false)
+  approved_by String?
+  approved_at DateTime? @db.Timestamptz(6)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @default(now()) @db.Timestamptz(6)
+  group_id    String?   @db.Uuid
+  users       users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  groups      groups?   @relation(fields: [group_id], references: [id], onDelete: SetNull)
+
+  @@schema("public")
+}
+
+// Add missing models that weren't introspected but are in our application
+model accounts {
+  id                 String  @id @default(cuid())
+  userId             String  @map("user_id") @db.Uuid
+  type               String
+  provider           String
+  providerAccountId  String  @map("provider_account_id")
+  refresh_token      String? @db.Text
+  access_token       String? @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String? @db.Text
+  session_state      String?
+  users              users   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@schema("public")
+}
+
+model check_ins {
+  id            String    @id @default(uuid()) @db.Uuid
+  user_id       String    @db.Uuid
+  shift_id      String    @db.Uuid
+  check_in_time DateTime  @default(now()) @db.Timestamptz(6)
+  check_out_time DateTime? @db.Timestamptz(6)
+  duration      Int?      // Duration in minutes
+  notes         String?
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime  @default(now()) @db.Timestamptz(6)
+  users         users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  shifts        shifts    @relation(fields: [shift_id], references: [id], onDelete: Cascade)
+
+  @@schema("public")
+}
+
+model applications {
+  id                     String    @id @default(uuid()) @db.Uuid
+  name                   String
+  email                  String
+  phone                  String
+  address                String
+  city                   String
+  state                  String
+  zip_code               String    @map("zip_code")
+  birthdate              DateTime  @db.Date
+  volunteer_type         String    @map("volunteer_type")
+  covid_vaccinated       Boolean   @map("covid_vaccinated")
+  criminal_record        Boolean   @map("criminal_record")
+  criminal_explanation   String?   @map("criminal_explanation")
+  referral_source        String?   @map("referral_source")
+  volunteer_experience   String?   @map("volunteer_experience")
+  employment_experience  String?   @map("employment_experience")
+  reference              String
+  interests              String?
+  reason_for_volunteering String   @map("reason_for_volunteering")
+  volunteer_position     String    @map("volunteer_position")
+  availability           String
+  available_days         String[]  @map("available_days")
+  status                 String    @default("PENDING")
+  application_date       DateTime  @default(now()) @db.Timestamptz(6) @map("application_date")
+  approved_by            String?   @map("approved_by")
+  approved_at            DateTime? @db.Timestamptz(6) @map("approved_at")
+  rejected_by            String?   @map("rejected_by")
+  rejected_at            DateTime? @db.Timestamptz(6) @map("rejected_at")
+  rejection_reason       String?   @map("rejection_reason")
+  user_id                String?   @db.Uuid @map("user_id")
+  users                  users?    @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@schema("public")
+}
+
+enum shift_status {
+  OPEN
+  FILLED
+  CANCELLED
+  COMPLETED
+
+  @@schema("public")
+}
+
+enum user_role {
+  ADMIN
+  VOLUNTEER
+  GROUP_ADMIN
+
+  @@schema("public")
+}
+
+// Include auth enums to match the database
+enum aal_level {
+  aal1
+  aal2
+  aal3
+
+  @@schema("auth")
+}
+
+enum code_challenge_method {
+  s256
+  plain
+
+  @@schema("auth")
+}
+
+enum factor_status {
+  unverified
+  verified
+
+  @@schema("auth")
+}
+
+enum factor_type {
+  totp
+  webauthn
+  phone
+
+  @@schema("auth")
+}
+
+enum one_time_token_type {
+  confirmation_token
+  reauthentication_token
+  recovery_token
+  email_change_token_new
+  email_change_token_current
+  phone_change_token
+
+  @@schema("auth")
 }

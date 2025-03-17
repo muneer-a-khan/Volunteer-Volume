@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
+import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 
@@ -29,10 +30,10 @@ export default async function handler(
     }
 
     // Check if user is already in the group
-    const existingMember = await prisma.groupMember.findFirst({
+    const existingMember = await prisma.groupsMember.findFirst({
       where: {
-        groupId: id,
-        userId: session.user.id
+        group_id: id,
+        user_id: session.user.id
       }
     });
 
@@ -44,10 +45,10 @@ export default async function handler(
     }
 
     // Add user to group
-    await prisma.groupMember.create({
+    await prisma.groupsMember.create({
       data: {
-        groupId: id,
-        userId: session.user.id,
+        group_id: id,
+        user_id: session.user.id,
         role: 'MEMBER'
       }
     });

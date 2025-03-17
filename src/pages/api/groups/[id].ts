@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
+import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 
@@ -41,7 +42,7 @@ export default async function handler(
 
     switch (req.method) {
       case 'GET': {
-        const group = await prisma.group.findUnique({
+        const group = await prisma.groups.findUnique({
           where: { id },
           include: {
             members: {
@@ -88,7 +89,7 @@ export default async function handler(
 
         const { name, description } = req.body;
 
-        const updatedGroup = await prisma.group.update({
+        const updatedGroup = await prisma.groups.update({
           where: { id },
           data: {
             name,
@@ -103,8 +104,8 @@ export default async function handler(
             name: updatedGroup.name,
             description: updatedGroup.description,
             members: [], // This would need to be fetched separately
-            createdAt: updatedGroup.createdAt.toISOString(),
-            updatedAt: updatedGroup.updatedAt.toISOString()
+            created_at: updatedGroup.created_at.toISOString(),
+            updated_at: updatedGroup.updated_at.toISOString()
           }
         });
       }
@@ -117,7 +118,7 @@ export default async function handler(
           });
         }
 
-        await prisma.group.delete({
+        await prisma.groups.delete({
           where: { id }
         });
 

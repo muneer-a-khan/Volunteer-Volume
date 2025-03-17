@@ -1,7 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
+import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]';
+import { authOptions } from '@/pages/api/auth/[...nextauth]';
 
 interface VolunteerStats {
   totalHours: number;
@@ -38,7 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     // Get user from our database
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: {
         id: session.user.id
       }
@@ -79,10 +80,10 @@ async function getVolunteer(req: NextApiRequest, res: NextApiResponse, currentUs
   
   try {
     // Get volunteer with profile
-    const volunteer = await prisma.user.findUnique({
+    const volunteer = await prisma.users.findUnique({
       where: { id: id as string },
       include: {
-        profile: true
+        profiles: true
       }
     });
     
@@ -99,9 +100,9 @@ async function getVolunteer(req: NextApiRequest, res: NextApiResponse, currentUs
       logsCount: 0
     };
     
-    const logs = await prisma.volunteerLog.aggregate({
+    const logs = await prisma.volunteer_logs.aggregate({
       where: {
-        userId: id as string
+        user_id: id as string
       },
       _sum: {
         hours: true,
@@ -112,7 +113,7 @@ async function getVolunteer(req: NextApiRequest, res: NextApiResponse, currentUs
       }
     });
     
-    const shifts = await prisma.shift.count({
+    const shifts = await prisma.shifts.count({
       where: {
         volunteers: {
           some: {
@@ -122,9 +123,9 @@ async function getVolunteer(req: NextApiRequest, res: NextApiResponse, currentUs
       }
     });
     
-    const checkIns = await prisma.checkIn.count({
+    const checkIns = await prisma.check_ins.count({
       where: {
-        userId: id as string
+        user_id: id as string
       }
     });
     
@@ -141,21 +142,21 @@ async function getVolunteer(req: NextApiRequest, res: NextApiResponse, currentUs
     // If admin, get recent activity
     let recentActivity: RecentActivity[] = [];
     if (isAdmin) {
-      const checkInActivity = await prisma.checkIn.findMany({
-        where: { userId: id as string },
+      const checkInActivity = await prisma.check_ins.findMany({
+        where: { user_id: id as string },
         include: {
           shift: true
         },
         orderBy: {
-          createdAt: 'desc'
+          created_at: 'desc'
         },
         take: 5
       });
       
-      const logActivity = await prisma.volunteerLog.findMany({
-        where: { userId: id as string },
+      const logActivity = await prisma.volunteer_logs.findMany({
+        where: { user_id: id as string },
         orderBy: {
-          createdAt: 'desc'
+          created_at: 'desc'
         },
         take: 5
       });
@@ -181,7 +182,7 @@ async function getVolunteer(req: NextApiRequest, res: NextApiResponse, currentUs
       recentActivity: isAdmin ? recentActivity : []
     };
     
-    return res.status(200).json(response);
+    return res.status(200).json(mapSnakeToCamel(response));
   } catch (error) {
     console.error('Error fetching volunteer:', error);
     return res.status(500).json({ message: 'Failed to fetch volunteer', error: error instanceof Error ? error.message : 'Unknown error' });
@@ -221,7 +222,7 @@ async function updateVolunteer(req: NextApiRequest, res: NextApiResponse, curren
   
   try {
     // Check if volunteer exists
-    const volunteer = await prisma.user.findUnique({
+    const volunteer = await prisma.users.findUnique({
       where: { id: id as string },
       include: {
         profile: true
@@ -233,7 +234,7 @@ async function updateVolunteer(req: NextApiRequest, res: NextApiResponse, curren
     }
     
     // Update user basic info
-    const updatedUser = await prisma.user.update({
+    const updatedUser = await prisma.users.update({
       where: { id: id as string },
       data: {
         name: name || volunteer.name,
@@ -257,15 +258,15 @@ async function updateVolunteer(req: NextApiRequest, res: NextApiResponse, curren
     
     let updatedProfile;
     if (volunteer.profile) {
-      updatedProfile = await prisma.profile.update({
-        where: { userId: id as string },
+      updatedProfile = await prisma.profiles.update({
+        where: { user_id: id as string },
         data: profileData
       });
     } else {
-      updatedProfile = await prisma.profile.create({
+      updatedProfile = await prisma.profiles.create({
         data: {
           ...profileData,
-          userId: id as string
+          user_id: id as string
         }
       });
     }
@@ -291,7 +292,7 @@ async function deleteVolunteer(req: NextApiRequest, res: NextApiResponse, curren
   
   try {
     // Check if volunteer exists
-    const volunteer = await prisma.user.findUnique({
+    const volunteer = await prisma.users.findUnique({
       where: { id: id as string }
     });
     
@@ -300,7 +301,7 @@ async function deleteVolunteer(req: NextApiRequest, res: NextApiResponse, curren
     }
     
     // Delete volunteer and related records
-    await prisma.user.delete({
+    await prisma.users.delete({
       where: { id: id as string }
     });
     

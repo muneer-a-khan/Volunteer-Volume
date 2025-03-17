@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
+import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
 import { sendEmail, emailTemplates } from '@/lib/email';
 
 interface ResponseData {
@@ -57,7 +58,7 @@ export default async function handler(
 
     console.log(`Looking for shifts between: ${fiveMinutesBefore.toISOString()} and ${fiveMinutesAfter.toISOString()}`);
 
-    const upcomingShifts = await prisma.shift.findMany({
+    const upcomingShifts = await prisma.shifts.findMany({
       where: {
         start_time: {
           gte: fiveMinutesBefore,

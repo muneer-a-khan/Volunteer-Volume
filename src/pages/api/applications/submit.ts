@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
-import { prisma } from '../../../lib/prisma';
+import { prisma } from '@/lib/prisma';
+import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils'; from '../../../lib/prisma';
 import { sendEmail, emailTemplates } from '@/lib/email';
 
 // Define the validation schema for application data
@@ -39,12 +40,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const validatedData = applicationSchema.parse(req.body);
 
     // Check if user with email already exists
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await prisma.users.findUnique({
       where: { email: validatedData.email },
     });
 
     // Create application record
-    const application = await prisma.application.create({
+    const application = await prisma.applications.create({
       data: {
         name: validatedData.name,
         email: validatedData.email,
@@ -52,7 +53,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         address: validatedData.address,
         city: validatedData.city,
         state: validatedData.state,
-        zipCode: validatedData.zipCode,
+        zip_code: validatedData.zip_code,
         birthdate: new Date(validatedData.birthdate),
         volunteerType: validatedData.volunteerType,
         covidVaccinated: validatedData.covidVaccinated,
@@ -68,7 +69,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         availability: validatedData.availability,
         availableDays: validatedData.availableDays,
         status: 'PENDING',
-        userId: existingUser?.id || null,
+        user_id: existingUser?.id || null,
       },
     });
 

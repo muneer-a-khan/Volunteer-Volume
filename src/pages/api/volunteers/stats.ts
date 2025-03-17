@@ -1,7 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
+import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]';
+import { authOptions } from '@/pages/api/auth/[...nextauth]';
 
 interface VolunteerStats {
   totalHours: number;
@@ -24,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     // Get user from our database
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: {
         id: session.user.id
       }
@@ -35,9 +36,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Calculate volunteer statistics for the authenticated user
-    const logs = await prisma.volunteerLog.aggregate({
+    const logs = await prisma.volunteer_logs.aggregate({
       where: {
-        userId: user.id
+        user_id: user.id
       },
       _sum: {
         hours: true,
@@ -46,10 +47,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     // Get completed shifts count
-    const shiftsCompleted = await prisma.checkIn.count({
+    const shiftsCompleted = await prisma.check_ins.count({
       where: {
-        userId: user.id,
-        checkOutTime: {
+        user_id: user.id,
+        check_out_time: {
           not: null
         }
       }
@@ -57,7 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Get upcoming shifts count
     const now = new Date();
-    const upcomingShifts = await prisma.shift.count({
+    const upcomingShifts = await prisma.shifts.count({
       where: {
         volunteers: {
           some: {
@@ -88,7 +89,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       upcomingShifts
     };
 
-    return res.status(200).json(stats);
+    return res.status(200).json(mapSnakeToCamel(stats));
   } catch (error) {
     console.error('Error fetching volunteer stats:', error);
     return res.status(500).json({ 
