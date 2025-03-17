@@ -1,0 +1,20 @@
+name: Send Shift Reminders
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'  # Runs every 5 minutes
+  workflow_dispatch:  # Allows manual triggering
+
+jobs:
+  send-reminders:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Trigger Shift Reminders
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.ACTIONS_TOKEN }}" \
+            ${{ secrets.APP_URL }}/api/shifts/reminders
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          ACTIONS_TOKEN: ${{ secrets.ACTIONS_TOKEN }} 
