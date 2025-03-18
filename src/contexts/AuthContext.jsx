@@ -1,5 +1,7 @@
+'use client';
+
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
@@ -60,25 +62,18 @@ export const AuthProvider = ({ children }) => {
         email,
         password
       });
-
+      
       if (result?.error) {
         toast.error(result.error);
         return false;
       }
       
       toast.success('Login successful!');
-      
-      // Redirect based on role
-      if (session?.user?.role === 'ADMIN') {
-        router.push('/admin');
-      } else {
-        router.push('/dashboard');
-      }
-      
+      router.push('/dashboard');
       return true;
     } catch (error) {
       console.error('Login error:', error);
-      toast.error('Login failed. Please check your credentials.');
+      toast.error('Failed to login. Please try again.');
       return false;
     }
   };
@@ -87,33 +82,35 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await signOut({ redirect: false });
-      router.push('/login');
+      setDbUser(null);
       toast.success('Logged out successfully');
-    } catch (error) {
-      console.error('Logout error:', error);
-      toast.error('Failed to log out. Please try again.');
-    }
-  };
-
-  // Reset password request
-  const forgotPassword = async (email) => {
-    try {
-      await axios.post('/api/auth/forgot-password', { email });
-      toast.success('Password reset link sent to your email');
+      router.push('/login');
       return true;
     } catch (error) {
-      console.error('Forgot password error:', error);
-      toast.error(error.response?.data?.message || 'Failed to send reset link. Please try again.');
+      console.error('Logout error:', error);
+      toast.error('Failed to logout. Please try again.');
       return false;
     }
   };
 
-  // Update user profile
+  // Forgot password
+  const forgotPassword = async (email) => {
+    try {
+      await axios.post('/api/auth/forgot-password', { email });
+      toast.success('Password reset email sent. Please check your inbox.');
+      return true;
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      toast.error(error.response?.data?.message || 'Failed to send reset email. Please try again.');
+      return false;
+    }
+  };
+
+  // Update profile
   const updateProfile = async (userData) => {
     try {
       const response = await axios.put('/api/profile', userData);
-      setDbUser(prev => ({ ...prev, ...response.data }));
-      
+      setDbUser(response.data);
       toast.success('Profile updated successfully');
       return true;
     } catch (error) {
@@ -123,13 +120,13 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Value object to be provided to consumers
+  // Auth context value
   const value = {
     user: session?.user,
     dbUser,
-    loading,
     isAuthenticated: !!session?.user,
-    isAdmin: session?.user?.role === 'ADMIN',
+    isAdmin: dbUser?.role === 'ADMIN' || dbUser?.role === 'GROUP_ADMIN',
+    loading,
     register,
     login,
     logout,
@@ -140,10 +137,9 @@ export const AuthProvider = ({ children }) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-// Custom hook to use the auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

@@ -1,31 +1,50 @@
-import React, { useState, useEffect } from 'react';
+'use client';
+
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-import { useGroups } from '../../contexts/GroupContext';
+import { CalendarIcon, Clock } from 'lucide-react';
+import { format } from 'date-fns';
+
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { useGroups } from '@/contexts/GroupContext';
 
 export default function LogHoursForm() {
-  const { register, handleSubmit, formState: { errors }, reset } = useForm();
   const [loading, setLoading] = useState(false);
   const { myGroups, fetchMyGroups } = useGroups();
   const router = useRouter();
+
+  // Initialize form
+  const form = useForm({
+    defaultValues: {
+      date: format(new Date(), 'yyyy-MM-dd'),
+      hours: '',
+      minutes: 0,
+      groupId: '',
+      description: ''
+    }
+  });
 
   // Fetch user's groups on mount
   useEffect(() => {
     fetchMyGroups();
   }, [fetchMyGroups]);
-
-  // Set default date to today
-  useEffect(() => {
-    reset({
-      date: new Date().toISOString().split('T')[0],
-      hours: '',
-      minutes: 0,
-      groupId: '',
-      description: ''
-    });
-  }, [reset]);
 
   const onSubmit = async (data) => {
     setLoading(true);
@@ -39,8 +58,8 @@ export default function LogHoursForm() {
       });
 
       toast.success('Hours logged successfully');
-      reset({
-        date: new Date().toISOString().split('T')[0],
+      form.reset({
+        date: format(new Date(), 'yyyy-MM-dd'),
         hours: '',
         minutes: 0,
         groupId: '',
@@ -51,132 +70,145 @@ export default function LogHoursForm() {
       router.push('/dashboard');
     } catch (error) {
       console.error('Error logging hours:', error);
-      toast.error(error.response?.data?.message || 'Failed to log hours. Please try again.');
+      toast.error(error.response?.data?.message || 'Failed to log hours');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="bg-white shadow rounded-lg overflow-hidden">
-      <div className="px-6 py-5 border-b border-gray-200">
-        <h3 className="text-lg font-medium leading-6 text-gray-900">Log Volunteer Hours</h3>
-        <p className="mt-1 text-sm text-gray-500">
-          Use this form to manually log volunteer hours for activities not tracked through shifts.
-        </p>
-      </div>
-      <form onSubmit={handleSubmit(onSubmit)} className="px-6 py-5 space-y-6">
-        {/* Date */}
-        <div>
-          <label htmlFor="date" className="block text-sm font-medium text-gray-700">
-            Date
-          </label>
-          <input
-            type="date"
-            id="date"
-            {...register('date', { required: 'Date is required' })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-vadm-blue focus:ring-vadm-blue sm:text-sm"
-          />
-          {errors.date && (
-            <p className="mt-1 text-sm text-red-600">{errors.date.message}</p>
-          )}
-        </div>
+    <Card>
+      <CardContent className="pt-6">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Date</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type="date"
+                          className="pl-10"
+                          {...field}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-        {/* Hours and Minutes */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="hours" className="block text-sm font-medium text-gray-700">
-              Hours
-            </label>
-            <input
-              type="number"
-              id="hours"
-              min="0"
-              {...register('hours', { 
-                required: 'Hours is required',
-                min: { value: 0, message: 'Hours must be 0 or greater' }
-              })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-vadm-blue focus:ring-vadm-blue sm:text-sm"
+              <FormField
+                control={form.control}
+                name="groupId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Group (optional)</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a group (optional)" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">No specific group</SelectItem>
+                        {myGroups?.map((group) => (
+                          <SelectItem key={group.id} value={group.id}>
+                            {group.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="hours"
+                rules={{ required: "Hours are required", min: { value: 0, message: "Hours must be 0 or more" } }}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Hours</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Clock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type="number"
+                          min="0"
+                          className="pl-10"
+                          placeholder="0"
+                          {...field}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="minutes"
+                rules={{ min: { value: 0, message: "Minutes must be 0 or more" }, max: { value: 59, message: "Minutes must be less than 60" } }}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Minutes</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Clock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type="number"
+                          min="0"
+                          max="59"
+                          className="pl-10"
+                          placeholder="0"
+                          {...field}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="description"
+              rules={{ required: "Description is required" }}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Describe what you did during these volunteer hours"
+                      className="resize-none min-h-[100px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {errors.hours && (
-              <p className="mt-1 text-sm text-red-600">{errors.hours.message}</p>
-            )}
-          </div>
-          <div>
-            <label htmlFor="minutes" className="block text-sm font-medium text-gray-700">
-              Minutes
-            </label>
-            <input
-              type="number"
-              id="minutes"
-              min="0"
-              max="59"
-              {...register('minutes', { 
-                min: { value: 0, message: 'Minutes must be 0 or greater' },
-                max: { value: 59, message: 'Minutes must be less than 60' }
-              })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-vadm-blue focus:ring-vadm-blue sm:text-sm"
-            />
-            {errors.minutes && (
-              <p className="mt-1 text-sm text-red-600">{errors.minutes.message}</p>
-            )}
-          </div>
-        </div>
 
-        {/* Group Attribution */}
-        <div>
-          <label htmlFor="groupId" className="block text-sm font-medium text-gray-700">
-            Group (Optional)
-          </label>
-          <select
-            id="groupId"
-            {...register('groupId')}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-vadm-blue focus:ring-vadm-blue sm:text-sm"
-          >
-            <option value="">None - Personal Hours</option>
-            {myGroups.map((group) => (
-              <option key={group.id} value={group.id}>
-                {group.name}
-              </option>
-            ))}
-          </select>
-          <p className="mt-1 text-xs text-gray-500">
-            Select a group to attribute these volunteer hours to a specific organization.
-          </p>
-        </div>
-
-        {/* Description */}
-        <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-            Description
-          </label>
-          <textarea
-            id="description"
-            rows={3}
-            {...register('description')}
-            placeholder="Describe your volunteer activity"
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-vadm-blue focus:ring-vadm-blue sm:text-sm"
-          />
-        </div>
-
-        {/* Submit Button */}
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="mr-3 inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-vadm-blue"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-vadm-blue hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-vadm-blue disabled:opacity-50"
-          >
-            {loading ? 'Submitting...' : 'Log Hours'}
-          </button>
-        </div>
-      </form>
-    </div>
+            <Button type="submit" disabled={loading}>
+              {loading ? "Submitting..." : "Log Hours"}
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 }
