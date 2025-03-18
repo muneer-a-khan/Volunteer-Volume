@@ -1,10 +1,9 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { cache } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-// Create a cached Supabase server client for server components
-export const createServerSupabaseClient = cache(() => {
+// Create a Supabase server client for server components
+export const createServerSupabaseClient = () => {
   const cookieStore = cookies();
   
   return createServerClient(
@@ -24,7 +23,7 @@ export const createServerSupabaseClient = cache(() => {
       },
     }
   );
-});
+};
 
 // Create a Supabase admin client with full admin privileges
 export const supabaseAdmin = createClient(

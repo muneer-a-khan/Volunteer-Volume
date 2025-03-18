@@ -48,7 +48,7 @@ export default async function handler(
 
     const shifts = await prisma.shifts.findMany({
       where: {
-        status: 'ACTIVE',
+        status: 'OPEN',
         start_time: {
           gte: new Date()
         }

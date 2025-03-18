@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { User, LogOut, Settings, Calendar, Clock } from "lucide-react";
 
@@ -46,6 +46,7 @@ const NAV_LINKS = {
 
 export default function ShadcnNavbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const { data: session, status } = useSession();
   
   const userRole = session?.user?.role === "ADMIN" || session?.user?.role === "GROUP_ADMIN"
@@ -72,7 +73,7 @@ export default function ShadcnNavbar() {
                 <NavigationMenuItem key={link.name} className="mx-1">
                   <Link href={link.href} legacyBehavior passHref>
                     <Button
-                      variant={link.href === window.location.pathname ? "default" : "ghost"}
+                      variant={link.href === pathname ? "default" : "ghost"}
                       className="rounded-full"
                     >
                       {link.name}

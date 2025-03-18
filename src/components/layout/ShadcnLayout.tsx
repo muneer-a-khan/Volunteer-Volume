@@ -3,7 +3,6 @@
 import { ReactNode } from 'react';
 import { Montserrat } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
-import { SessionProvider } from 'next-auth/react';
 
 import ShadcnNavbar from './ShadcnNavbar';
 import ShadcnFooter from './ShadcnFooter';
@@ -25,13 +24,11 @@ export default function ShadcnLayout({
   hideFooter = false 
 }: ShadcnLayoutProps) {
   return (
-    <SessionProvider>
-      <div className={`${montserrat.variable} font-sans bg-background min-h-screen flex flex-col`}>
-        <Toaster position="top-right" />
-        {!hideNavbar && <ShadcnNavbar />}
-        <main className="flex-1">{children}</main>
-        {!hideFooter && <ShadcnFooter />}
-      </div>
-    </SessionProvider>
+    <div className={`${montserrat.variable} font-sans bg-background min-h-screen flex flex-col`}>
+      <Toaster position="top-right" />
+      {!hideNavbar && <ShadcnNavbar />}
+      <main className="flex-1">{children}</main>
+      {!hideFooter && <ShadcnFooter />}
+    </div>
   );
 } 

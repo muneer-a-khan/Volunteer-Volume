@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import { prisma } from '@/lib/prisma';
 import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
 import { z } from 'zod';
+import { v4 as uuidv4 } from 'uuid';
 
 // Define validation schema
 const registerSchema = z.object({
@@ -29,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { name, email, password } = validatedData;
 
     // Check if user already exists
-    const existingUser = await prisma.userss.findUnique({
+    const existingUser = await prisma.users.findUnique({
       where: { email },
     });
 
@@ -40,9 +41,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create the user
-    const user = await prisma.userss.create({
+    // Create the user with a generated UUID
+    const user = await prisma.users.create({
       data: {
+        id: uuidv4(), // Generate a UUID for the user ID
         name,
         email,
         password: hashedPassword,
