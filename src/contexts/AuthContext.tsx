@@ -1,18 +1,56 @@
 'use client';
 
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 
-// Create auth context
-const AuthContext = createContext();
+// Define user types
+interface DbUser {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  role: string;
+  profile?: any;
+}
 
-export const AuthProvider = ({ children }) => {
+interface AuthContextType {
+  user: any;
+  dbUser: DbUser | null;
+  isAuthenticated: boolean;
+  isAdmin: boolean;
+  loading: boolean;
+  register: (email: string, password: string, name: string, phone?: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<boolean>;
+  forgotPassword: (email: string) => Promise<boolean>;
+  updateProfile: (userData: any) => Promise<boolean>;
+}
+
+// Create auth context with default values
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  dbUser: null,
+  isAuthenticated: false,
+  isAdmin: false,
+  loading: true,
+  register: async () => false,
+  login: async () => false,
+  logout: async () => false,
+  forgotPassword: async () => false,
+  updateProfile: async () => false
+});
+
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export const AuthProvider = ({ children }: AuthProviderProps) => {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const [dbUser, setDbUser] = useState(null);
+  const [dbUser, setDbUser] = useState<DbUser | null>(null);
   const loading = status === 'loading';
 
   // Load user data when session changes
@@ -34,7 +72,7 @@ export const AuthProvider = ({ children }) => {
   }, [session]);
 
   // Register a new user
-  const register = async (email, password, name, phone) => {
+  const register = async (email: string, password: string, name: string, phone?: string) => {
     try {
       // Create user in database
       await axios.post('/api/auth/register', {
@@ -47,7 +85,7 @@ export const AuthProvider = ({ children }) => {
       toast.success('Registration successful! You can now log in.');
       router.push('/login');
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Registration error:', error);
       toast.error(error.response?.data?.message || 'Registration failed. Please try again.');
       return false;
@@ -55,7 +93,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Login user
-  const login = async (email, password) => {
+  const login = async (email: string, password: string) => {
     try {
       const result = await signIn('credentials', {
         redirect: false,
@@ -94,12 +132,12 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Forgot password
-  const forgotPassword = async (email) => {
+  const forgotPassword = async (email: string) => {
     try {
       await axios.post('/api/auth/forgot-password', { email });
       toast.success('Password reset email sent. Please check your inbox.');
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Forgot password error:', error);
       toast.error(error.response?.data?.message || 'Failed to send reset email. Please try again.');
       return false;
@@ -107,13 +145,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Update profile
-  const updateProfile = async (userData) => {
+  const updateProfile = async (userData: any) => {
     try {
       const response = await axios.put('/api/profile', userData);
       setDbUser(response.data);
       toast.success('Profile updated successfully');
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Profile update error:', error);
       toast.error(error.response?.data?.message || 'Failed to update profile. Please try again.');
       return false;
@@ -121,7 +159,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Auth context value
-  const value = {
+  const value: AuthContextType = {
     user: session?.user,
     dbUser,
     isAuthenticated: !!session?.user,
@@ -145,4 +183,4 @@ export const useAuth = () => {
   return context;
 };
 
-export default AuthContext;
+export default AuthContext; 
