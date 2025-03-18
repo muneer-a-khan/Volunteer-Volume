@@ -5,14 +5,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { useForm } from 'react-hook-form';
-import toast from 'react-hot-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import toast from 'react-hot-toast';
+import axios from 'axios';
+import { User, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
@@ -27,24 +27,30 @@ import ShadcnLayout from '@/components/layout/ShadcnLayout';
 
 // Schema for form validation
 const formSchema = z.object({
+  name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
   email: z.string().email({ message: 'Please enter a valid email address' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
-  rememberMe: z.boolean().optional(),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
 });
 
-export default function Login() {
+export default function Register() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Initialize form
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      name: '',
       email: '',
       password: '',
-      rememberMe: false,
+      confirmPassword: '',
     },
   });
 
@@ -54,24 +60,40 @@ export default function Login() {
     setError(null);
     
     try {
-      const result = await signIn('credentials', {
-        redirect: false,
+      // Register the user
+      const response = await axios.post('/api/auth/register', {
+        name: data.name,
         email: data.email,
-        password: data.password
+        password: data.password,
       });
 
-      if (result?.error) {
-        setError("Invalid email or password");
-        setIsLoading(false);
-        return;
-      }
+      if (response.status === 201) {
+        toast.success("Registration successful! Signing in...");
+        
+        // Sign in the user
+        const result = await signIn('credentials', {
+          redirect: false,
+          email: data.email,
+          password: data.password,
+        });
 
-      toast.success("Logged in successfully!");
-      // Redirect to dashboard on successful login
-      router.push('/dashboard');
-    } catch (error) {
-      console.error('Login error:', error);
-      setError("An error occurred during login");
+        if (result?.error) {
+          toast.error("Registration successful but unable to sign in automatically");
+          router.push('/login');
+          return;
+        }
+
+        // Redirect to dashboard on successful login
+        router.push('/dashboard');
+      }
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      if (error.response?.data?.message) {
+        setError(error.response.data.message);
+      } else {
+        setError("An error occurred during registration");
+      }
+    } finally {
       setIsLoading(false);
     }
   };
@@ -80,28 +102,24 @@ export default function Login() {
     signIn('google', { callbackUrl: '/dashboard' });
   };
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
-
   return (
     <ShadcnLayout hideNavbar hideFooter>
       <div className="min-h-screen py-12 flex flex-col justify-center">
         <div className="mx-auto w-full max-w-md px-4 sm:px-0">
           <div className="text-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-900">Sign in to your account</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Create your account</h1>
             <p className="mt-2 text-sm text-gray-600">
               Or{' '}
-              <Link href="/apply" className="font-medium text-primary hover:text-primary/90">
-                apply to become a volunteer
+              <Link href="/login" className="font-medium text-primary hover:text-primary/90">
+                sign in to your existing account
               </Link>
             </p>
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-2xl text-center">Welcome back</CardTitle>
-              <CardDescription className="text-center">Enter your credentials to sign in</CardDescription>
+              <CardTitle className="text-2xl text-center">Sign up</CardTitle>
+              <CardDescription className="text-center">Enter your information to create an account</CardDescription>
             </CardHeader>
             <CardContent>
               {error && (
@@ -112,6 +130,27 @@ export default function Login() {
 
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Full name</FormLabel>
+                        <div className="relative">
+                          <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <FormControl>
+                            <Input 
+                              placeholder="John Doe" 
+                              className="pl-10" 
+                              {...field} 
+                            />
+                          </FormControl>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
                   <FormField
                     control={form.control}
                     name="email"
@@ -152,7 +191,7 @@ export default function Login() {
                           </FormControl>
                           <button 
                             type="button"
-                            onClick={togglePasswordVisibility}
+                            onClick={() => setShowPassword(!showPassword)}
                             className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
                           >
                             {showPassword ? 
@@ -166,41 +205,44 @@ export default function Login() {
                     )}
                   />
                   
-                  <div className="flex items-center justify-between">
-                    <FormField
-                      control={form.control}
-                      name="rememberMe"
-                      render={({ field }) => (
-                        <div className="flex items-center space-x-2">
-                          <Checkbox 
-                            id="rememberMe" 
-                            checked={field.value} 
-                            onCheckedChange={field.onChange}
-                          />
-                          <label
-                            htmlFor="rememberMe"
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirm Password</FormLabel>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <FormControl>
+                            <Input 
+                              placeholder="******" 
+                              className="pl-10 pr-10" 
+                              type={showConfirmPassword ? "text" : "password"}
+                              {...field} 
+                            />
+                          </FormControl>
+                          <button 
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
                           >
-                            Remember me
-                          </label>
+                            {showConfirmPassword ? 
+                              <EyeOff className="h-4 w-4" /> : 
+                              <Eye className="h-4 w-4" />
+                            }
+                          </button>
                         </div>
-                      )}
-                    />
-                    
-                    <Link 
-                      href="/forgot-password" 
-                      className="text-sm font-medium text-primary hover:text-primary/90"
-                    >
-                      Forgot password?
-                    </Link>
-                  </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   
                   <Button 
                     type="submit" 
                     className="w-full" 
                     disabled={isLoading}
                   >
-                    {isLoading ? "Signing in..." : "Sign in"}
+                    {isLoading ? "Creating account..." : "Create account"}
                   </Button>
                   
                   <div className="relative my-4">
@@ -230,9 +272,9 @@ export default function Login() {
             </CardContent>
             <CardFooter className="flex justify-center">
               <p className="text-sm text-center text-muted-foreground">
-                Don't have an account?{' '}
-                <Link href="/register" className="font-medium text-primary hover:text-primary/90">
-                  Sign up
+                Already have an account?{' '}
+                <Link href="/login" className="font-medium text-primary hover:text-primary/90">
+                  Sign in
                 </Link>
               </p>
             </CardFooter>
