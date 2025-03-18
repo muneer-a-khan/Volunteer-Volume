@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { format, parseISO, differenceInMinutes } from 'date-fns';
 import axios, { AxiosError } from 'axios';
-import { ClockIcon, CheckCircle, AlertCircle } from 'lucide-react';
+import { ClockIcon, CheckCircle, AlertCircle, Timer, MapPin, Calendar } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -67,7 +77,11 @@ export default function CheckInPage() {
   const [successMessage, setSuccessMessage] = useState('');
   const [selectedShift, setSelectedShift] = useState('');
   const [notes, setNotes] = useState('');
+  const [checkOutNotes, setCheckOutNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [checkoutId, setCheckoutId] = useState<string | null>(null);
+  const [checkoutDialogOpen, setCheckoutDialogOpen] = useState(false);
+  const [completedCheckout, setCompletedCheckout] = useState<Duration | null>(null);
   const router = useRouter();
   
   // Redirect to login if not authenticated
@@ -152,24 +166,42 @@ export default function CheckInPage() {
     }
   };
 
+  // Open check-out dialog
+  const openCheckOutDialog = (checkInId: string) => {
+    setCheckoutId(checkInId);
+    setCheckOutNotes('');
+    setCheckoutDialogOpen(true);
+  };
+
   // Handle check-out
-  const handleCheckOut = async (checkInId: string) => {
+  const handleCheckOut = async () => {
+    if (!checkoutId) return;
+    
     setIsSubmitting(true);
     setError('');
     setSuccessMessage('');
     
     try {
       const response = await axios.post('/api/check-out', {
-        checkInId
+        checkInId: checkoutId,
+        notes: checkOutNotes
       });
       
-      // Update the check-ins list with the updated check-in
-      const updatedCheckIns = checkIns.map(checkIn => 
-        checkIn.id === checkInId ? response.data : checkIn
-      );
+      // Calculate duration
+      const checkIn = checkIns.find(ci => ci.id === checkoutId);
+      if (checkIn) {
+        const startTime = parseISO(checkIn.checkInTime);
+        const endTime = new Date();
+        const totalMinutes = differenceInMinutes(endTime, startTime);
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        setCompletedCheckout({ hours, minutes });
+      }
       
-      setCheckIns(updatedCheckIns);
-      setSuccessMessage('You have been checked out successfully!');
+      // Remove checked-out entry from active check-ins
+      setCheckIns(checkIns.filter(ci => ci.id !== checkoutId));
+      setSuccessMessage('You have been checked out successfully! Your volunteer hours have been logged.');
+      setCheckoutDialogOpen(false);
     } catch (err) {
       console.error('Error during check-out:', err);
       const error = err as AxiosError<ApiError>;
@@ -194,6 +226,11 @@ export default function CheckInPage() {
   // Format time for display
   const formatTime = (dateString: string): string => {
     return format(parseISO(dateString), 'h:mm a');
+  };
+
+  // Format date for display
+  const formatDate = (dateString: string): string => {
+    return format(parseISO(dateString), 'MMMM d, yyyy');
   };
 
   // Show loading state
@@ -234,7 +271,90 @@ export default function CheckInPage() {
           </Alert>
         )}
         
+        {completedCheckout && (
+          <Alert className="mb-6 bg-green-50 border-green-200">
+            <AlertTitle>Thank you for volunteering!</AlertTitle>
+            <AlertDescription className="mt-2">
+              You volunteered for {completedCheckout.hours} hour{completedCheckout.hours !== 1 ? 's' : ''} and {completedCheckout.minutes} minute{completedCheckout.minutes !== 1 ? 's' : ''}.
+              Your volunteer hours have been logged to your profile.
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Current Check-ins */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Current Check-ins</CardTitle>
+              <CardDescription>
+                Currently active volunteer sessions
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {checkIns.length === 0 ? (
+                <div className="text-center py-8 bg-muted/20 rounded-lg">
+                  <ClockIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-muted-foreground">You are not checked in to any shifts</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {checkIns.map((checkIn) => {
+                    const shift = myShifts.find((s: Shift) => s.id === checkIn.shiftId);
+                    const duration = calculateDuration(checkIn.checkInTime);
+                    
+                    return (
+                      <Card key={checkIn.id} className="overflow-hidden">
+                        <CardContent className="p-0">
+                          <div className="p-4">
+                            <div className="flex justify-between items-start mb-3">
+                              <h3 className="font-medium text-lg">
+                                {shift?.title || 'Volunteer Shift'}
+                              </h3>
+                              <Badge variant="outline" className="ml-2">
+                                Active
+                              </Badge>
+                            </div>
+                            
+                            <div className="space-y-2 text-sm text-muted-foreground mb-4">
+                              <div className="flex items-center">
+                                <Calendar className="h-4 w-4 mr-2" />
+                                <span>{formatDate(checkIn.checkInTime)}</span>
+                              </div>
+                              <div className="flex items-center">
+                                <ClockIcon className="h-4 w-4 mr-2" />
+                                <span>Checked in at {formatTime(checkIn.checkInTime)}</span>
+                              </div>
+                              {shift && (
+                                <div className="flex items-center">
+                                  <MapPin className="h-4 w-4 mr-2" />
+                                  <span>{shift.location}</span>
+                                </div>
+                              )}
+                              <div className="flex items-center">
+                                <Timer className="h-4 w-4 mr-2" />
+                                <span>
+                                  Duration: {duration.hours}h {duration.minutes}m
+                                </span>
+                              </div>
+                            </div>
+                            
+                            <Button 
+                              onClick={() => openCheckOutDialog(checkIn.id)}
+                              variant="default"
+                              className="w-full"
+                            >
+                              Check Out
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          
           {/* Check-in Form */}
           <Card>
             <CardHeader>
@@ -244,161 +364,89 @@ export default function CheckInPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleCheckIn} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="shift">Select Shift</Label>
-                  <Select 
-                    value={selectedShift} 
-                    onValueChange={setSelectedShift}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select an active shift" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {activeShifts.length === 0 ? (
-                        <SelectItem value="none" disabled>No active shifts available</SelectItem>
-                      ) : (
-                        activeShifts.map(shift => (
-                          <SelectItem key={shift.id} value={shift.id}>
-                            {shift.title} - {formatTime(shift.startTime)} to {formatTime(shift.endTime)}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Notes (Optional)</Label>
-                  <Textarea
-                    id="notes"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Add any additional notes about your shift"
-                    className="resize-none"
-                  />
-                </div>
-                
-                <Button 
-                  type="submit" 
-                  disabled={isSubmitting || activeShifts.length === 0}
-                  className="w-full"
-                >
-                  {isSubmitting ? "Processing..." : "Check In"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-          
-          {/* Active Check-ins */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Active Check-ins</CardTitle>
-              <CardDescription>
-                View and check out of your current sessions
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {checkIns.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <ClockIcon className="mx-auto h-12 w-12 mb-3 opacity-50" />
-                  <p>You don't have any active check-ins.</p>
+              {activeShifts.length === 0 ? (
+                <div className="text-center py-8 bg-muted/20 rounded-lg">
+                  <ClockIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-muted-foreground">No active shifts found</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    You don't have any shifts scheduled for right now
+                  </p>
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Shift</TableHead>
-                      <TableHead>Check-in Time</TableHead>
-                      <TableHead>Duration</TableHead>
-                      <TableHead></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {checkIns.filter(checkIn => !checkIn.checkOutTime).map((checkIn) => {
-                      const shift = myShifts.find((s: Shift) => s.id === checkIn.shiftId);
-                      const duration = calculateDuration(checkIn.checkInTime);
-                      
-                      return (
-                        <TableRow key={checkIn.id}>
-                          <TableCell className="font-medium">{shift?.title || 'Unknown Shift'}</TableCell>
-                          <TableCell>{formatTime(checkIn.checkInTime)}</TableCell>
-                          <TableCell>
-                            {duration.hours}h {duration.minutes}m
-                          </TableCell>
-                          <TableCell>
-                            <Button 
-                              variant="outline" 
-                              onClick={() => handleCheckOut(checkIn.id)}
-                              disabled={isSubmitting}
-                              size="sm"
-                            >
-                              Check Out
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                <form onSubmit={handleCheckIn} className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="shift">Select Shift</Label>
+                    <Select 
+                      value={selectedShift} 
+                      onValueChange={setSelectedShift}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a shift" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {activeShifts.map((shift) => (
+                          <SelectItem key={shift.id} value={shift.id}>
+                            {shift.title} - {formatTime(shift.startTime)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">Notes (optional)</Label>
+                    <Textarea
+                      id="notes"
+                      placeholder="Add any additional information about your check-in"
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      className="resize-none"
+                      rows={3}
+                    />
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting || !selectedShift}
+                    className="w-full"
+                  >
+                    {isSubmitting ? "Processing..." : "Check In"}
+                  </Button>
+                </form>
               )}
             </CardContent>
           </Card>
         </div>
-        
-        {/* Recent Check-in History */}
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle>Recent Check-in History</CardTitle>
-            <CardDescription>
-              Your completed check-ins from the past week
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {checkIns.filter(checkIn => checkIn.checkOutTime).length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <p>No recent check-out history available.</p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Shift</TableHead>
-                    <TableHead>Check-in</TableHead>
-                    <TableHead>Check-out</TableHead>
-                    <TableHead>Duration</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {checkIns
-                    .filter(checkIn => checkIn.checkOutTime)
-                    .slice(0, 5)
-                    .map((checkIn) => {
-                      const shift = myShifts.find((s: Shift) => s.id === checkIn.shiftId);
-                      const checkOutTime = parseISO(checkIn.checkOutTime!);
-                      const checkInTime = parseISO(checkIn.checkInTime);
-                      const totalMinutes = differenceInMinutes(checkOutTime, checkInTime);
-                      const hours = Math.floor(totalMinutes / 60);
-                      const minutes = totalMinutes % 60;
-                      
-                      return (
-                        <TableRow key={checkIn.id}>
-                          <TableCell className="font-medium">{shift?.title || 'Unknown Shift'}</TableCell>
-                          <TableCell>{formatTime(checkIn.checkInTime)}</TableCell>
-                          <TableCell>{formatTime(checkIn.checkOutTime!)}</TableCell>
-                          <TableCell>
-                            {hours}h {minutes}m
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  }
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
       </div>
+      
+      {/* Check-out Dialog */}
+      <Dialog open={checkoutDialogOpen} onOpenChange={setCheckoutDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Check-out</DialogTitle>
+            <DialogDescription>
+              You're about to check out of your current volunteer shift. Would you like to add any notes?
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <Textarea
+              placeholder="Add any notes about your volunteer experience (optional)"
+              value={checkOutNotes}
+              onChange={(e) => setCheckOutNotes(e.target.value)}
+              className="resize-none"
+              rows={4}
+            />
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCheckoutDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleCheckOut} disabled={isSubmitting}>
+              {isSubmitting ? "Processing..." : "Complete Check-out"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </ShadcnLayout>
   );
 } 
