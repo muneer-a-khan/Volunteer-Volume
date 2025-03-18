@@ -1,8 +1,10 @@
+'use client';
+
 import { Fragment, useState } from 'react';
 import { Disclosure, Menu, Transition } from '@headlessui/react';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
-import { useRouter } from 'next/router';
+import { usePathname, useRouter } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import Image from 'next/image';
 
@@ -11,10 +13,17 @@ function classNames(...classes: string[]) {
 }
 
 export default function Navbar() {
+  const pathname = usePathname();
   const router = useRouter();
   const { data: session, status } = useSession();
   const isAdmin = session?.user?.role === 'ADMIN' || session?.user?.role === 'GROUP_ADMIN';
   const isAuthenticated = status === 'authenticated';
+
+  // Handle sign out with redirection
+  const handleSignOut = async () => {
+    await signOut({ redirect: false });
+    router.push('/login');
+  };
 
   // Define navigation items
   const navigation = [
@@ -56,7 +65,7 @@ export default function Navbar() {
                       key={item.name}
                       href={item.href}
                       className={classNames(
-                        router.pathname === item.href
+                        pathname === item.href
                           ? 'border-indigo-500 text-gray-900'
                           : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
                         'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium'
@@ -152,7 +161,7 @@ export default function Navbar() {
                         <Menu.Item>
                           {({ active }) => (
                             <button
-                              onClick={() => signOut({ callbackUrl: '/' })}
+                              onClick={handleSignOut}
                               className={classNames(
                                 active ? 'bg-gray-100' : '',
                                 'block w-full text-left px-4 py-2 text-sm text-gray-700'
@@ -204,7 +213,7 @@ export default function Navbar() {
                   as="a"
                   href={item.href}
                   className={classNames(
-                    router.pathname === item.href
+                    pathname === item.href
                       ? 'bg-indigo-50 border-indigo-500 text-indigo-700'
                       : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700',
                     'block pl-3 pr-4 py-2 border-l-4 text-base font-medium'
@@ -220,7 +229,7 @@ export default function Navbar() {
                   as="a"
                   href={item.href}
                   className={classNames(
-                    router.pathname === item.href
+                    pathname === item.href
                       ? 'bg-indigo-50 border-indigo-500 text-indigo-700'
                       : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700',
                     'block pl-3 pr-4 py-2 border-l-4 text-base font-medium'
@@ -267,7 +276,7 @@ export default function Navbar() {
                     <Disclosure.Button
                       as="a"
                       href="#"
-                      onClick={() => signOut({ callbackUrl: '/' })}
+                      onClick={handleSignOut}
                       className="block px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800"
                     >
                       Sign out
