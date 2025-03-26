@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import ShadcnLayout from '@/components/layout/ShadcnLayout';
+
 import { useAuth } from '@/contexts/AuthContext';
 
 // Mock data for events/shifts
@@ -80,7 +80,7 @@ export default function CalendarPage() {
   // Show loading state
   if (status === 'loading' || authLoading || loading) {
     return (
-      <ShadcnLayout>
+      
         <div className="container mx-auto py-10">
           <Skeleton className="h-12 w-48 mb-6" />
           <div className="flex justify-between items-center mb-6">
@@ -93,7 +93,7 @@ export default function CalendarPage() {
           </div>
           <Skeleton className="h-[600px] w-full rounded-md" />
         </div>
-      </ShadcnLayout>
+      
     );
   }
 
@@ -103,7 +103,7 @@ export default function CalendarPage() {
   }
 
   return (
-    <ShadcnLayout>
+    
       <div className="container mx-auto py-10">
         <h1 className="text-3xl font-bold text-foreground mb-6">Volunteer Calendar</h1>
         
@@ -201,6 +201,6 @@ export default function CalendarPage() {
           </CardContent>
         </Card>
       </div>
-    </ShadcnLayout>
+    
   );
 } 

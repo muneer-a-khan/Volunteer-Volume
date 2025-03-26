@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import ShadcnLayout from '@/components/layout/ShadcnLayout';
+
 import { useAuth } from '@/contexts/AuthContext';
 
 interface VolunteerStats {
@@ -107,7 +107,7 @@ export default function VolunteerDetailPage() {
   // Show loading state
   if (authLoading || loading) {
     return (
-      <ShadcnLayout>
+      
         <div className="container mx-auto py-10 space-y-8">
           <Skeleton className="h-8 w-32" />
           
@@ -166,14 +166,14 @@ export default function VolunteerDetailPage() {
             </div>
           </div>
         </div>
-      </ShadcnLayout>
+      
     );
   }
 
   // Show error state
   if (error) {
     return (
-      <ShadcnLayout>
+      
         <div className="container mx-auto py-10">
           <Card className="mx-auto max-w-md text-center py-8">
             <CardContent className="pt-6">
@@ -192,7 +192,7 @@ export default function VolunteerDetailPage() {
             </CardContent>
           </Card>
         </div>
-      </ShadcnLayout>
+      
     );
   }
 
@@ -201,7 +201,7 @@ export default function VolunteerDetailPage() {
   }
 
   return (
-    <ShadcnLayout>
+    
       <div className="container mx-auto py-10 space-y-8">
         {/* Back button and admin actions */}
         <div className="flex justify-between items-center">
@@ -392,6 +392,6 @@ export default function VolunteerDetailPage() {
           </div>
         </div>
       </div>
-    </ShadcnLayout>
+    
   );
 } 
