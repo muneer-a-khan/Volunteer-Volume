@@ -27,7 +27,7 @@ interface DBShift {
   capacity: number | null;
   status: string | null;
   _count: {
-    volunteers: number;
+    shift_volunteers: number;
   };
 }
 
@@ -55,7 +55,7 @@ export default async function handler(
       },
       include: {
         _count: {
-          select: { volunteers: true }
+          select: { shift_volunteers: true }
         }
       },
       orderBy: {
@@ -64,7 +64,7 @@ export default async function handler(
     });
 
     // Map snake_case fields to camelCase
-    const formattedShifts = shifts.map((shift: DBShift) => ({
+    const formattedShifts = shifts.map((shift) => ({
       id: shift.id,
       title: shift.title,
       description: shift.description || '',
@@ -72,7 +72,7 @@ export default async function handler(
       endTime: shift.end_time.toISOString(),
       location: shift.location,
       maxVolunteers: shift.capacity || 1,
-      currentVolunteers: shift._count.volunteers,
+      currentVolunteers: shift._count.shift_volunteers,
       status: shift.status || 'UNKNOWN'
     }));
 

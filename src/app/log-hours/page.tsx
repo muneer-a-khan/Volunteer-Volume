@@ -7,7 +7,7 @@ import { AlertTriangle } from 'lucide-react';
 
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import ShadcnLayout from '@/components/layout/ShadcnLayout';
+
 import { useAuth } from '@/contexts/AuthContext';
 import LogHoursForm from '@/components/volunteers/LogHoursForm';
 
@@ -26,7 +26,7 @@ export default function LogHours() {
   // Show loading state
   if (status === 'loading' || authLoading) {
     return (
-      <ShadcnLayout>
+      
         <div className="container mx-auto max-w-3xl py-10 px-4 sm:px-6 lg:px-8">
           <Skeleton className="h-10 w-64 mb-8" />
           <div className="space-y-6">
@@ -37,12 +37,12 @@ export default function LogHours() {
             <Skeleton className="h-12 w-32" />
           </div>
         </div>
-      </ShadcnLayout>
+      
     );
   }
 
   return (
-    <ShadcnLayout>
+    
       <div className="container mx-auto max-w-3xl py-10 px-4 sm:px-6 lg:px-8">
         <h1 className="text-3xl font-bold text-foreground mb-8">Log Volunteer Hours</h1>
         
@@ -59,6 +59,6 @@ export default function LogHours() {
           </Alert>
         </div>
       </div>
-    </ShadcnLayout>
+    
   );
 } 

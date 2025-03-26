@@ -9,7 +9,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import ShadcnLayout from '@/components/layout/ShadcnLayout';
+
 import { useAuth } from '@/contexts/AuthContext';
 
 // Import existing shifts components - these will need to be updated later
@@ -42,7 +42,7 @@ export default function ShiftsPage() {
   // Show loading state
   if (status === 'loading' || authLoading) {
     return (
-      <ShadcnLayout>
+      
         <div className="container mx-auto py-10">
           <Skeleton className="h-10 w-48 mb-6" />
           <div className="flex justify-between items-center mb-6">
@@ -51,12 +51,12 @@ export default function ShiftsPage() {
           </div>
           <Skeleton className="h-[600px] w-full rounded-md" />
         </div>
-      </ShadcnLayout>
+      
     );
   }
 
   return (
-    <ShadcnLayout>
+    
       <div className="container mx-auto py-10">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
           <div>
@@ -105,6 +105,6 @@ export default function ShiftsPage() {
           </Tabs>
         </Card>
       </div>
-    </ShadcnLayout>
+    
   );
 } 

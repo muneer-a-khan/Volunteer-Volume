@@ -7,11 +7,11 @@ import { Mail, Phone, MapPin } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import ShadcnLayout from '@/components/layout/ShadcnLayout';
+
 
 export default function AboutPage() {
   return (
-    <ShadcnLayout>
+    
       <div className="container mx-auto py-10">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div>
@@ -128,6 +128,6 @@ export default function AboutPage() {
           </div>
         </div>
       </div>
-    </ShadcnLayout>
+    
   );
 } 

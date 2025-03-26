@@ -7,7 +7,7 @@ import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import ShadcnLayout from '@/components/layout/ShadcnLayout';
+
 import { useAuth } from '@/contexts/AuthContext';
 import { useShifts } from '@/contexts/ShiftContext';
 
@@ -31,7 +31,7 @@ export default function Dashboard() {
   // Show loading state
   if (status === 'loading' || authLoading || shiftsLoading) {
     return (
-      <ShadcnLayout>
+      
         <div className="container mx-auto py-10">
           <Card>
             <CardHeader>
@@ -48,16 +48,16 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
-      </ShadcnLayout>
+      
     );
   }
 
   // Render the appropriate dashboard based on user role
   return (
-    <ShadcnLayout>
+    
       <div className="container mx-auto py-10">
         {isAdmin ? <AdminDashboard /> : <VolunteerDashboard />}
       </div>
-    </ShadcnLayout>
+    
   );
 } 

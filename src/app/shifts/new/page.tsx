@@ -8,7 +8,7 @@ import { ChevronLeft } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import ShadcnLayout from '@/components/layout/ShadcnLayout';
+
 import { useAuth } from '@/contexts/AuthContext';
 
 // Import the updated ShiftForm component
@@ -31,7 +31,7 @@ export default function NewShiftPage() {
   // Show loading state
   if (authLoading) {
     return (
-      <ShadcnLayout>
+      
         <div className="container mx-auto py-10">
           <Skeleton className="h-8 w-32 mb-6" />
           <Skeleton className="h-12 w-64 mb-6" />
@@ -50,7 +50,7 @@ export default function NewShiftPage() {
             </CardContent>
           </Card>
         </div>
-      </ShadcnLayout>
+      
     );
   }
 
@@ -60,7 +60,7 @@ export default function NewShiftPage() {
   }
 
   return (
-    <ShadcnLayout>
+    
       <div className="container mx-auto py-10">
         <div className="mb-6">
           <Button 
@@ -91,6 +91,6 @@ export default function NewShiftPage() {
           </CardContent>
         </Card>
       </div>
-    </ShadcnLayout>
+    
   );
 } 

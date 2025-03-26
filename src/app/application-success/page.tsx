@@ -8,7 +8,7 @@ import { CheckCircle2, ArrowRight, Info } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import ShadcnLayout from '@/components/layout/ShadcnLayout';
+
 
 export default function ApplicationSuccessPage() {
   const router = useRouter();
@@ -27,7 +27,7 @@ export default function ApplicationSuccessPage() {
   }, [router, submitted]);
 
   return (
-    <ShadcnLayout>
+    
       <div className="container max-w-md mx-auto py-12 px-4">
         <div className="flex flex-col items-center justify-center mb-8">
           <div className="bg-green-100 p-4 rounded-full mb-4">
@@ -86,6 +86,6 @@ export default function ApplicationSuccessPage() {
           </CardContent>
         </Card>
       </div>
-    </ShadcnLayout>
+    
   );
 }

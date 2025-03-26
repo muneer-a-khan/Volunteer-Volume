@@ -24,7 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import ShadcnLayout from '@/components/layout/ShadcnLayout';
+
 import { useAuth } from '@/contexts/AuthContext';
 
 interface Volunteer {
@@ -107,7 +107,7 @@ export default function AdminVolunteersPage() {
   // Show loading state
   if (status === 'loading' || authLoading || loading) {
     return (
-      <ShadcnLayout>
+      
         <div className="container mx-auto py-10">
           <Skeleton className="h-10 w-48 mb-4" />
           <div className="flex justify-between items-center mb-6">
@@ -119,7 +119,7 @@ export default function AdminVolunteersPage() {
           </div>
           <Skeleton className="h-[500px] w-full rounded-md" />
         </div>
-      </ShadcnLayout>
+      
     );
   }
 
@@ -129,7 +129,7 @@ export default function AdminVolunteersPage() {
   }
 
   return (
-    <ShadcnLayout>
+    
       <div className="container mx-auto py-10">
         <h1 className="text-3xl font-bold text-foreground mb-6">Volunteer Management</h1>
         
@@ -234,6 +234,6 @@ export default function AdminVolunteersPage() {
           </CardContent>
         </Card>
       </div>
-    </ShadcnLayout>
+    
   );
 } 

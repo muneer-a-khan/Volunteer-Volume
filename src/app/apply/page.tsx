@@ -16,7 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import ShadcnLayout from '@/components/layout/ShadcnLayout';
+
 
 // Application form data structure
 interface ApplicationFormData {
@@ -108,7 +108,7 @@ export default function ApplyPage() {
   ];
 
   return (
-    <ShadcnLayout>
+    
       <div className="container max-w-4xl mx-auto py-10">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-foreground">
@@ -535,6 +535,6 @@ export default function ApplyPage() {
           </form>
         </Card>
       </div>
-    </ShadcnLayout>
+    
   );
 } 

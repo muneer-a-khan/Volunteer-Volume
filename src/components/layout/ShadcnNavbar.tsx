@@ -44,14 +44,23 @@ const NAV_LINKS = {
   ]
 };
 
-export default function ShadcnNavbar() {
+interface ShadcnNavbarProps {
+  isAuthenticated?: boolean;
+  isAdmin?: boolean;
+}
+
+export default function ShadcnNavbar({ isAuthenticated, isAdmin }: ShadcnNavbarProps = {}) {
   const router = useRouter();
   const pathname = usePathname();
   const { data: session, status } = useSession();
   
-  const userRole = session?.user?.role === "ADMIN" || session?.user?.role === "GROUP_ADMIN"
+  // Use the props if provided, otherwise fall back to the session data
+  const isUserAuthenticated = isAuthenticated !== undefined ? isAuthenticated : status === "authenticated";
+  const isUserAdmin = isAdmin !== undefined ? isAdmin : (session?.user?.role === "ADMIN" || session?.user?.role === "GROUP_ADMIN");
+  
+  const userRole = isUserAdmin
     ? "admin"
-    : status === "authenticated"
+    : isUserAuthenticated
       ? "regular"
       : "guest";
 
@@ -84,7 +93,7 @@ export default function ShadcnNavbar() {
             </NavigationMenuList>
           </NavigationMenu>
 
-          {status === "authenticated" && session.user && (
+          {isUserAuthenticated && session?.user && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Avatar className="cursor-pointer hover:ring-2 hover:ring-primary/50">
@@ -112,7 +121,7 @@ export default function ShadcnNavbar() {
                   <Clock className="mr-2 h-4 w-4" />
                   <span>Log Hours</span>
                 </DropdownMenuItem>
-                {userRole === "admin" && (
+                {isUserAdmin && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => router.push("/admin/dashboard")}>

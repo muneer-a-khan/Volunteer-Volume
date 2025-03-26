@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import ShadcnLayout from '@/components/layout/ShadcnLayout';
+
 
 interface Profile {
   address: string;
@@ -105,7 +105,7 @@ export default function ProfilePage() {
 
   if (loading || status === 'loading') {
     return (
-      <ShadcnLayout>
+      
         <div className="container mx-auto py-10">
           <Skeleton className="h-12 w-48 mb-6" />
           <Card>
@@ -129,12 +129,12 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
         </div>
-      </ShadcnLayout>
+      
     );
   }
 
   return (
-    <ShadcnLayout>
+    
       <div className="container mx-auto py-10">
         <h1 className="text-3xl font-bold mb-6">Profile</h1>
         
@@ -376,6 +376,6 @@ export default function ProfilePage() {
           )}
         </Card>
       </div>
-    </ShadcnLayout>
+    
   );
 } 
