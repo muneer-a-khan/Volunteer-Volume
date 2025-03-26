@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Acme } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
+import RootLayout from "@/components/layout/RootLayout";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
   description: "Volunteer management system for the Virginia Discovery Museum",
 };
 
-export default function RootLayout({
+export default function AppLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -27,7 +28,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} ${acme.variable} font-sans antialiased`}>
-        <Providers>{children}</Providers>
+        <Providers>
+          <RootLayout>
+            {children}
+          </RootLayout>
+        </Providers>
       </body>
     </html>
   );

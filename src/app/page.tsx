@@ -2,11 +2,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import ShadcnLayout from "@/components/layout/ShadcnLayout";
 
 export default function Home() {
   return (
-    <ShadcnLayout>
+    <>
       {/* Hero Section */}
       <div className="relative bg-cover bg-center h-96 flex items-center justify-start px-10 text-white" 
            style={{
@@ -165,6 +164,6 @@ export default function Home() {
           </div>
         </div>
       </div>
-    </ShadcnLayout>
+    </>
   );
 }
