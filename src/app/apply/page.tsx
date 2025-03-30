@@ -48,14 +48,22 @@ export default function ApplyPage() {
   const { register, handleSubmit, watch, formState: { errors } } = useForm<ApplicationFormData>();
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState(1);
+  const [selectedDays, setSelectedDays] = useState<string[]>([]);
+
   const totalSteps = 3;
 
   // Watch fields for conditional rendering
   const criminalRecord = watch('criminalRecord');
-  
+
+  const handleDayChange = (day: string, isChecked: boolean) => {
+    setSelectedDays((prevDays) => 
+      isChecked ? [...prevDays, day] : prevDays.filter((d) => d !== day)
+    );
+  };
+
   const onSubmit = async (data: ApplicationFormData) => {
+    data.availableDays = selectedDays;  // Assign the selected checkboxes to the form data
     setIsLoading(true);
-    
     try {
       // Submit application
       const response = await axios.post('/api/applications/submit', data);
@@ -485,11 +493,16 @@ export default function ApplyPage() {
                     <div className="grid grid-cols-2 gap-2">
                       {daysOfWeek.map((day) => (
                         <div key={day} className="flex items-center space-x-2">
-                          <Checkbox 
+                          {/* <Checkbox 
                             id={`day-${day}`}
                             value={day}
-                            {...register('availableDays', { required: 'Please select at least one day' })}
-                          />
+                            {...register('availableDays', { required: 'Please select at least one day'})}
+                          /> */}
+                          <Checkbox 
+                            id={`day-${day}`}
+                            checked={selectedDays.includes(day)}
+                            onCheckedChange={(checked) => handleDayChange(day, Boolean(checked))}
+                            />
                           <Label htmlFor={`day-${day}`}>{day}</Label>
                         </div>
                       ))}
