@@ -167,7 +167,7 @@ export default function ApplyPage() {
             </CardDescription>
           </CardHeader>
           
-          <form onSubmit={handleSubmit(onSubmit)}>
+          <form onSubmit={(e) => e.preventDefault()}>
             <CardContent className="space-y-6">
               {/* Step 1: Personal Information */}
               {step === 1 && (
@@ -562,6 +562,7 @@ export default function ApplyPage() {
                   type="submit" 
                   disabled={isLoading}
                   className="ml-auto"
+                  onClick={handleSubmit(onSubmit)}
                 >
                   {isLoading ? 'Submitting...' : 'Submit Application'} 
                   {!isLoading && <CheckCircle2 className="w-4 h-4 ml-2" />}
