@@ -60,7 +60,6 @@ export default function ApplyPage() {
       isChecked ? [...prevDays, day] : prevDays.filter((d) => d !== day)
     );
   };
-
   const onSubmit = async (data: ApplicationFormData) => {
     data.availableDays = selectedDays;  // Assign the selected checkboxes to the form data
     setIsLoading(true);
@@ -83,7 +82,6 @@ export default function ApplyPage() {
       setIsLoading(false);
     }
   };
-
   const nextStep = () => setStep(Math.min(step + 1, totalSteps));
   const prevStep = () => setStep(Math.max(step - 1, 1));
 
@@ -331,7 +329,7 @@ export default function ApplyPage() {
 
                   <div className="space-y-2">
                     <Label>Have you ever been convicted of a crime? <span className="text-red-500">*</span></Label>
-                    <RadioGroup defaultValue="no">
+                    {/* <RadioGroup defaultValue="no">
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem 
                           value="yes" 
@@ -348,6 +346,31 @@ export default function ApplyPage() {
                         />
                         <Label htmlFor="criminal-no">No</Label>
                       </div>
+                    </RadioGroup> */}
+                    <RadioGroup 
+                        defaultValue="no"
+                        onValueChange={(value) => {
+                        // Update the form value
+                        const event = { target: { name: 'criminalRecord', value } };
+                        register('criminalRecord', { required: true }).onChange(event);
+                        }}
+                    >
+                        <div className="flex items-center space-x-2">
+                        <RadioGroupItem 
+                            value="yes" 
+                            id="criminal-yes"
+                            checked={criminalRecord === 'yes'}
+                        />
+                        <Label htmlFor="criminal-yes">Yes</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                        <RadioGroupItem 
+                            value="no" 
+                            id="criminal-no"
+                            checked={!criminalRecord || criminalRecord === 'no'}
+                        />
+                        <Label htmlFor="criminal-no">No</Label>
+                        </div>
                     </RadioGroup>
                     {errors.criminalRecord && (
                       <p className="text-sm text-destructive">Please select an option</p>
@@ -362,7 +385,7 @@ export default function ApplyPage() {
                         {...register('criminalExplanation', { 
                           required: criminalRecord === 'yes' ? 'Please provide an explanation' : false
                         })}
-                        placeholder="Please provide details"
+                        placeholder= "Please provide details"
                       />
                       {errors.criminalExplanation && (
                         <p className="text-sm text-destructive">{errors.criminalExplanation.message}</p>
