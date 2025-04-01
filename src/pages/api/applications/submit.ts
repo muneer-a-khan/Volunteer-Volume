@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
-import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils'; from '../../../lib/prisma';
+import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils'; //from '../../../lib/prisma';
 import { sendEmail, emailTemplates } from '@/lib/email';
 
 // Define the validation schema for application data
@@ -34,11 +34,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
-
+  console.log("Type of req body: ", typeof req.body);
+  console.log("Req body: ", req.body);
   try {
     // Validate the request data
     const validatedData = applicationSchema.parse(req.body);
-
+    console.log("Validated Data", validatedData);
     // Check if user with email already exists
     const existingUser = await prisma.users.findUnique({
       where: { email: validatedData.email },
@@ -53,21 +54,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         address: validatedData.address,
         city: validatedData.city,
         state: validatedData.state,
-        zip_code: validatedData.zip_code,
+        zip_code: validatedData.zipCode,
         birthdate: new Date(validatedData.birthdate),
-        volunteerType: validatedData.volunteerType,
-        covidVaccinated: validatedData.covidVaccinated,
-        criminalRecord: validatedData.criminalRecord,
-        criminalExplanation: validatedData.criminalExplanation,
-        referralSource: validatedData.referralSource,
-        volunteerExperience: validatedData.volunteerExperience,
-        employmentExperience: validatedData.employmentExperience,
+        volunteer_type: validatedData.volunteerType,
+        covid_vaccinated: validatedData.covidVaccinated,
+        criminal_record: validatedData.criminalRecord,
+        criminal_explanation: validatedData.criminalExplanation,
+        referral_source: validatedData.referralSource,
+        volunteer_experience: validatedData.volunteerExperience,
+        employment_experience: validatedData.employmentExperience,
         reference: validatedData.reference,
         interests: validatedData.interests,
-        reasonForVolunteering: validatedData.reasonForVolunteering,
-        volunteerPosition: validatedData.volunteerPosition,
+        reason_for_volunteering: validatedData.reasonForVolunteering,
+        volunteer_position: validatedData.volunteerPosition,
         availability: validatedData.availability,
-        availableDays: validatedData.availableDays,
+        available_days: validatedData.availableDays,
         status: 'PENDING',
         user_id: existingUser?.id || null,
       },

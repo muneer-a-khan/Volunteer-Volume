@@ -48,14 +48,21 @@ export default function ApplyPage() {
   const { register, handleSubmit, watch, formState: { errors } } = useForm<ApplicationFormData>();
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState(1);
+  const [selectedDays, setSelectedDays] = useState<string[]>([]);
+
   const totalSteps = 3;
 
   // Watch fields for conditional rendering
   const criminalRecord = watch('criminalRecord');
-  
+
+  const handleDayChange = (day: string, isChecked: boolean) => {
+    setSelectedDays((prevDays) => 
+      isChecked ? [...prevDays, day] : prevDays.filter((d) => d !== day)
+    );
+  };
   const onSubmit = async (data: ApplicationFormData) => {
+    data.availableDays = selectedDays;  // Assign the selected checkboxes to the form data
     setIsLoading(true);
-    
     try {
       // Submit application
       const response = await axios.post('/api/applications/submit', data);
@@ -75,7 +82,6 @@ export default function ApplyPage() {
       setIsLoading(false);
     }
   };
-
   const nextStep = () => setStep(Math.min(step + 1, totalSteps));
   const prevStep = () => setStep(Math.max(step - 1, 1));
 
@@ -161,7 +167,7 @@ export default function ApplyPage() {
             </CardDescription>
           </CardHeader>
           
-          <form onSubmit={handleSubmit(onSubmit)}>
+          <form onSubmit={(e) => e.preventDefault()}>
             <CardContent className="space-y-6">
               {/* Step 1: Personal Information */}
               {step === 1 && (
@@ -323,7 +329,7 @@ export default function ApplyPage() {
 
                   <div className="space-y-2">
                     <Label>Have you ever been convicted of a crime? <span className="text-red-500">*</span></Label>
-                    <RadioGroup defaultValue="no">
+                    {/* <RadioGroup defaultValue="no">
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem 
                           value="yes" 
@@ -340,6 +346,31 @@ export default function ApplyPage() {
                         />
                         <Label htmlFor="criminal-no">No</Label>
                       </div>
+                    </RadioGroup> */}
+                    <RadioGroup 
+                        defaultValue="no"
+                        onValueChange={(value) => {
+                        // Update the form value
+                        const event = { target: { name: 'criminalRecord', value } };
+                        register('criminalRecord', { required: true }).onChange(event);
+                        }}
+                    >
+                        <div className="flex items-center space-x-2">
+                        <RadioGroupItem 
+                            value="yes" 
+                            id="criminal-yes"
+                            checked={criminalRecord === 'yes'}
+                        />
+                        <Label htmlFor="criminal-yes">Yes</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                        <RadioGroupItem 
+                            value="no" 
+                            id="criminal-no"
+                            checked={!criminalRecord || criminalRecord === 'no'}
+                        />
+                        <Label htmlFor="criminal-no">No</Label>
+                        </div>
                     </RadioGroup>
                     {errors.criminalRecord && (
                       <p className="text-sm text-destructive">Please select an option</p>
@@ -354,7 +385,7 @@ export default function ApplyPage() {
                         {...register('criminalExplanation', { 
                           required: criminalRecord === 'yes' ? 'Please provide an explanation' : false
                         })}
-                        placeholder="Please provide details"
+                        placeholder= "Please provide details"
                       />
                       {errors.criminalExplanation && (
                         <p className="text-sm text-destructive">{errors.criminalExplanation.message}</p>
@@ -485,11 +516,16 @@ export default function ApplyPage() {
                     <div className="grid grid-cols-2 gap-2">
                       {daysOfWeek.map((day) => (
                         <div key={day} className="flex items-center space-x-2">
-                          <Checkbox 
+                          {/* <Checkbox 
                             id={`day-${day}`}
                             value={day}
-                            {...register('availableDays', { required: 'Please select at least one day' })}
-                          />
+                            {...register('availableDays', { required: 'Please select at least one day'})}
+                          /> */}
+                          <Checkbox 
+                            id={`day-${day}`}
+                            checked={selectedDays.includes(day)}
+                            onCheckedChange={(checked) => handleDayChange(day, Boolean(checked))}
+                            />
                           <Label htmlFor={`day-${day}`}>{day}</Label>
                         </div>
                       ))}
@@ -526,6 +562,7 @@ export default function ApplyPage() {
                   type="submit" 
                   disabled={isLoading}
                   className="ml-auto"
+                  onClick={handleSubmit(onSubmit)}
                 >
                   {isLoading ? 'Submitting...' : 'Submit Application'} 
                   {!isLoading && <CheckCircle2 className="w-4 h-4 ml-2" />}
