@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import axios from 'axios';
+import Image from 'next/image';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { UploadCloud } from 'lucide-react';
 
 
 interface Profile {
@@ -31,11 +34,12 @@ interface Volunteer {
   email: string;
   name: string;
   phone: string;
+  image?: string;
   profiles: Profile | null;
 }
 
 export default function ProfilePage() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update: updateSession } = useSession();
   const router = useRouter();
   const [volunteer, setVolunteer] = useState<Volunteer | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,6 +47,8 @@ export default function ProfilePage() {
   const [formData, setFormData] = useState<Partial<Volunteer & Profile>>({});
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // Fetch volunteer data
   useEffect(() => {
@@ -87,16 +93,77 @@ export default function ProfilePage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setImageFile(file);
+      
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setImagePreview(event.target.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadImage = async () => {
+    if (!imageFile) return null;
+    
+    // Create a FormData instance
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    
+    try {
+      const response = await axios.post('/api/profile/upload-image', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      // After successfully uploading, update the session to reflect the new image
+      await updateSession({ image: response.data.imageUrl });
+      
+      return response.data.imageUrl;
+    } catch (err) {
+      console.error('Error uploading image:', err);
+      throw err;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
     
     try {
-      const response = await axios.put(`/api/profile`, formData);
+      // First upload image if exists
+      let imageUrl = null;
+      if (imageFile) {
+        try {
+          imageUrl = await uploadImage();
+        } catch (err) {
+          setError('Failed to upload profile image');
+          return;
+        }
+      }
+      
+      // Then update the profile with form data and image URL if available
+      const profileData = {
+        ...formData,
+        ...(imageUrl && { image: imageUrl }),
+      };
+      
+      const response = await axios.put(`/api/profile`, profileData);
       setVolunteer(response.data.volunteer);
       setSuccess('Profile updated successfully');
       setIsEditing(false);
+      
+      // Reset image state
+      setImageFile(null);
+      setImagePreview(null);
     } catch (err) {
       setError('Failed to update profile');
       console.error(err);
@@ -161,6 +228,57 @@ export default function ProfilePage() {
           {isEditing ? (
             <form onSubmit={handleSubmit}>
               <CardContent className="space-y-4">
+                {/* Profile Image Upload */}
+                <div className="flex flex-col items-center space-y-4 mb-6">
+                  <div className="relative w-24 h-24">
+                    {imagePreview ? (
+                      <Image 
+                        src={imagePreview} 
+                        alt="Profile preview" 
+                        className="rounded-full object-cover" 
+                        fill 
+                      />
+                    ) : volunteer?.image ? (
+                      <Image 
+                        src={volunteer.image} 
+                        alt={volunteer.name} 
+                        className="rounded-full object-cover" 
+                        fill 
+                      />
+                    ) : (
+                      <Avatar className="w-24 h-24">
+                        <AvatarFallback className="bg-indigo-600 text-white text-2xl">
+                          {volunteer?.name
+                            ? volunteer.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+                            : "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="profile-image" className="cursor-pointer flex flex-col items-center">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm" 
+                        className="cursor-pointer"
+                      >
+                        <UploadCloud className="mr-2 h-4 w-4" />
+                        Upload Photo
+                      </Button>
+                      <span className="text-xs text-muted-foreground mt-1">JPEG, PNG or GIF up to 2MB</span>
+                    </Label>
+                    <Input 
+                      id="profile-image" 
+                      type="file" 
+                      className="hidden" 
+                      accept="image/*"
+                      onChange={handleImageChange}
+                    />
+                  </div>
+                </div>
+
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Name</Label>
@@ -303,6 +421,28 @@ export default function ProfilePage() {
             </form>
           ) : (
             <CardContent className="space-y-6">
+              {/* Display Profile Image */}
+              <div className="flex flex-col items-center space-y-4 mb-6">
+                <div className="relative w-32 h-32">
+                  {volunteer?.image ? (
+                    <Image 
+                      src={volunteer.image} 
+                      alt={volunteer.name} 
+                      className="rounded-full object-cover" 
+                      fill 
+                    />
+                  ) : (
+                    <Avatar className="w-32 h-32">
+                      <AvatarFallback className="bg-indigo-600 text-white text-3xl">
+                        {volunteer?.name
+                          ? volunteer.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+                          : "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+                </div>
+              </div>
+              
               <div className="space-y-2">
                 <h3 className="text-lg font-medium">Personal Information</h3>
                 <div className="grid md:grid-cols-2 gap-2">
