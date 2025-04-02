@@ -258,15 +258,12 @@ export default function ProfilePage() {
                   
                   <div className="space-y-2">
                     <Label htmlFor="profile-image" className="cursor-pointer flex flex-col items-center">
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm" 
-                        className="cursor-pointer"
+                      <div 
+                        className="flex h-9 rounded-md px-3 py-2 text-sm border border-input bg-background hover:bg-accent hover:text-accent-foreground items-center justify-center cursor-pointer"
                       >
                         <UploadCloud className="mr-2 h-4 w-4" />
                         Upload Photo
-                      </Button>
+                      </div>
                       <span className="text-xs text-muted-foreground mt-1">JPEG, PNG or GIF up to 2MB</span>
                     </Label>
                     <Input 
