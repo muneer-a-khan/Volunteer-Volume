@@ -1,6 +1,5 @@
 import NextAuth, { NextAuthOptions, User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import GoogleProvider from "next-auth/providers/google";
 import { compare } from "bcrypt";
 import { prisma } from '@/lib/prisma';
 import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
@@ -10,19 +9,6 @@ import { v4 as uuidv4 } from 'uuid';
 export const authOptions: NextAuthOptions = {
   // Removing adapter and handling OAuth manually
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      profile(profile) {
-        return {
-          id: profile.sub,
-          name: profile.name,
-          email: profile.email,
-          image: profile.picture,
-          role: "VOLUNTEER",
-        };
-      },
-    }),
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -43,7 +29,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         if (!user.password) {
-          throw new Error("Please login with Google or set a password");
+          throw new Error("Please set a password for your account");
         }
 
         const isPasswordValid = await compare(
@@ -70,38 +56,7 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   callbacks: {
-    async signIn({ user, account, profile }) {
-      // Handle OAuth account and user creation manually if necessary
-      if (account?.provider === 'google') {
-        try {
-          // Check if user exists
-          const existingUser = await prisma.users.findUnique({
-            where: { email: user.email! },
-          });
-          
-          // If user doesn't exist, create it
-          if (!existingUser) {
-            await prisma.users.create({
-              data: {
-                id: uuidv4(),
-                name: user.name!,
-                email: user.email!,
-                image: user.image,
-                role: "VOLUNTEER",
-              },
-            });
-          }
-          
-          return true;
-        } catch (error) {
-          console.error("Error during OAuth sign in:", error);
-          return false;
-        }
-      }
-      
-      return true;
-    },
-    async jwt({ token, user, account }) {
+    async jwt({ token, user }) {
       // Initial sign in
       if (user) {
         token.id = user.id;
@@ -111,44 +66,20 @@ export const authOptions: NextAuthOptions = {
         token.picture = user.image;
       }
       
-      // For Google sign in, fetch the user from DB for complete info
-      if (account?.provider === 'google') {
-        try {
-          const dbUser = await prisma.users.findUnique({
-            where: { email: token.email as string },
-          });
-          
-          if (dbUser) {
-            token.id = dbUser.id;
-            token.role = dbUser.role || 'VOLUNTEER';
-          }
-        } catch (error) {
-          console.error("Error fetching user data for token:", error);
-        }
-      }
-      
       return token;
     },
-    async session({ token, session }) {
+    async session({ session, token }) {
       if (token) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
-        session.user.email = token.email as string;
-        session.user.name = token.name as string;
-        session.user.image = token.picture as string;
       }
-      
-      // Sync with Supabase
-      return syncUserWithSupabase(token, session);
+      return session;
     },
   },
   pages: {
-    signIn: "/login",
-    signOut: "/login",
-    error: "/login",
+    signIn: '/login',
+    error: '/login',
   },
-  secret: process.env.NEXTAUTH_SECRET,
-  debug: process.env.NODE_ENV === "development",
 };
 
 export default NextAuth(authOptions); 

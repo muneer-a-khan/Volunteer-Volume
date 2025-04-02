@@ -100,4 +100,18 @@ export const emailTemplates = {
       <p>Best regards,<br>VADM Volunteer Team</p>
     `,
   }),
+
+  // Add new email template for admin notification of new application
+  newApplication: (application: any) => ({
+    subject: 'New Volunteer Application Submitted',
+    html: `
+      <h2>New Volunteer Application</h2>
+      <p>A new volunteer application has been submitted and requires your review.</p>
+      <p><strong>Name:</strong> ${application.name}</p>
+      <p><strong>Email:</strong> ${application.email}</p>
+      <p><strong>Phone:</strong> ${application.phone}</p>
+      <p><strong>Position of Interest:</strong> ${application.volunteerPosition}</p>
+      <p>Please login to the admin dashboard to review this application.</p>
+    `,
+  }),
 }; 

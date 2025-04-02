@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import axios from 'axios';
@@ -16,6 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DatePicker } from '@/components/ui/date-picker';
 
 
 // Application form data structure
@@ -29,8 +30,8 @@ interface ApplicationFormData {
   zipCode: string;
   birthdate: string;
   volunteerType: string;
-  covidVaccinated: string;
-  criminalRecord: string;
+  covidVaccinated: boolean;
+  criminalRecord: boolean;
   criminalExplanation?: string;
   referralSource?: string;
   volunteerExperience?: string;
@@ -45,7 +46,8 @@ interface ApplicationFormData {
 
 export default function ApplyPage() {
   const router = useRouter();
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<ApplicationFormData>();
+  const searchParams = useSearchParams();
+  const { register, handleSubmit, watch, formState: { errors }, setValue } = useForm<ApplicationFormData>();
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState(1);
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
@@ -54,6 +56,19 @@ export default function ApplyPage() {
 
   // Watch fields for conditional rendering
   const criminalRecord = watch('criminalRecord');
+
+  // Prefill form with data from registration if available
+  useEffect(() => {
+    if (searchParams) {
+      const name = searchParams.get('name');
+      const email = searchParams.get('email');
+      const phone = searchParams.get('phone');
+      
+      if (name) setValue('name', name);
+      if (email) setValue('email', email);
+      if (phone) setValue('phone', phone);
+    }
+  }, [searchParams, setValue]);
 
   const handleDayChange = (day: string, isChecked: boolean) => {
     setSelectedDays((prevDays) => 
@@ -329,24 +344,6 @@ export default function ApplyPage() {
 
                   <div className="space-y-2">
                     <Label>Have you ever been convicted of a crime? <span className="text-red-500">*</span></Label>
-                    {/* <RadioGroup defaultValue="no">
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem 
-                          value="yes" 
-                          id="criminal-yes" 
-                          {...register('criminalRecord', { required: true })}
-                        />
-                        <Label htmlFor="criminal-yes">Yes</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem 
-                          value="no" 
-                          id="criminal-no" 
-                          {...register('criminalRecord', { required: true })}
-                        />
-                        <Label htmlFor="criminal-no">No</Label>
-                      </div>
-                    </RadioGroup> */}
                     <RadioGroup 
                         defaultValue="no"
                         onValueChange={(value) => {
@@ -516,62 +513,30 @@ export default function ApplyPage() {
                     <div className="grid grid-cols-2 gap-2">
                       {daysOfWeek.map((day) => (
                         <div key={day} className="flex items-center space-x-2">
-                          {/* <Checkbox 
-                            id={`day-${day}`}
-                            value={day}
-                            {...register('availableDays', { required: 'Please select at least one day'})}
-                          /> */}
                           <Checkbox 
                             id={`day-${day}`}
                             checked={selectedDays.includes(day)}
-                            onCheckedChange={(checked) => handleDayChange(day, Boolean(checked))}
-                            />
+                            onCheckedChange={(isChecked) => handleDayChange(day, isChecked)}
+                          />
                           <Label htmlFor={`day-${day}`}>{day}</Label>
                         </div>
                       ))}
                     </div>
-                    {errors.availableDays && (
-                      <p className="text-sm text-destructive">{errors.availableDays.message}</p>
-                    )}
                   </div>
                 </div>
               )}
             </CardContent>
-
-            <CardFooter className="flex justify-between">
-              {step > 1 && (
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={prevStep}
-                  disabled={isLoading}
-                >
-                  <ChevronLeft className="w-4 h-4 mr-2" /> Previous
-                </Button>
-              )}
-              {step < totalSteps ? (
-                <Button 
-                  type="button" 
-                  onClick={validateCurrentStep}
-                  className={step === 1 ? 'ml-auto' : ''}
-                >
-                  Next <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-              ) : (
-                <Button 
-                  type="submit" 
-                  disabled={isLoading}
-                  className="ml-auto"
-                  onClick={handleSubmit(onSubmit)}
-                >
-                  {isLoading ? 'Submitting...' : 'Submit Application'} 
-                  {!isLoading && <CheckCircle2 className="w-4 h-4 ml-2" />}
-                </Button>
-              )}
-            </CardFooter>
           </form>
         </Card>
+
+        <div className="mt-8 flex items-center justify-between">
+          <Button onClick={prevStep} disabled={step === 1}>
+            Previous
+          </Button>
+          <Button onClick={nextStep} disabled={step === totalSteps}>
+            Next
+          </Button>
+        </div>
       </div>
-    
-  );
-} 
+    );
+}
