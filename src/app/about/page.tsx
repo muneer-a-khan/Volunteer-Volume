@@ -22,9 +22,8 @@ export default function AboutPage() {
             
             <div className="space-y-4">
               <p>
-                Volunteer Volume was founded in 2022 with a simple mission: to create a seamless connection 
-                between volunteers and organizations. We believe that everyone has something valuable to 
-                contribute, and we're here to make that process as easy as possible.
+                Volunteer Volume was founded in 2025 by a group of UVA first and second year engineering students in order to ease
+                the volunteer managing process for the Virginia Discovery Museum in Charlottesville VA. 
               </p>
               
               <p>
@@ -49,12 +48,16 @@ export default function AboutPage() {
             </div>
           </div>
           
-          <div className="flex flex-col items-center space-y-6">
-            <div className="relative aspect-square w-full max-w-md overflow-hidden rounded-xl">
-              <div className="w-full h-full bg-gradient-to-r from-indigo-600 to-indigo-400 rounded-xl flex items-center justify-center">
-                <div className="text-white text-4xl font-bold p-8 text-center">Volunteer Volume</div>
-              </div>
-            </div>
+          <div className="flex flex-col items-center space-y-6 pt-20">
+          <div className="relative aspect-square w-full max-w-md overflow-hidden rounded-xl">
+            <Image 
+              src="/eng_cent_rgb.png" 
+              alt="Volunteer Volume"
+              width={500}
+              height={500}
+              className="rounded-xl object-cover"
+            />
+          </div>
             
             <Card className="w-full">
               <CardContent className="p-6">
@@ -62,15 +65,15 @@ export default function AboutPage() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <Mail className="h-5 w-5 text-muted-foreground" />
-                    <span>contact@volunteervolume.org</span>
+                    <span>vadmvolunteersystem@gmail.com</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <Phone className="h-5 w-5 text-muted-foreground" />
-                    <span>(555) 123-4567</span>
+                    <span>(434) 977-1025</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <MapPin className="h-5 w-5 text-muted-foreground" />
-                    <span>123 Volunteer St, Community, CA 12345</span>
+                    <span>524 East Main Street Charlottesville, Virginia 22902</span>
                   </div>
                 </div>
               </CardContent>
@@ -121,9 +124,6 @@ export default function AboutPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" asChild>
               <a href="/register">Join as Volunteer</a>
-            </Button>
-            <Button size="lg" variant="outline" asChild>
-              <a href="/apply">Apply for Opportunities</a>
             </Button>
           </div>
         </div>

@@ -143,7 +143,7 @@ export default function RegisterPage() {
                     required: "Password is required",
                     minLength: {
                       value: 8,
-                      message: "Password must be at least 8 characters"
+                      message: 'Password must be at least 8 characters long and include uppercase, lowercase, a number, and a special character',
                     },
                     pattern: {
                       value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
