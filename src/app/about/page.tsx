@@ -125,9 +125,6 @@ export default function AboutPage() {
             <Button size="lg" asChild>
               <a href="/register">Join as Volunteer</a>
             </Button>
-            <Button size="lg" variant="outline" asChild>
-              <a href="/apply">Apply for Opportunities</a>
-            </Button>
           </div>
         </div>
       </div>
