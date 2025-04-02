@@ -16,6 +16,15 @@ const adminRoutes = [
   '/admin',
 ];
 
+// Define routes that are volunteer-only (approved volunteers)
+const volunteerRoutes = [
+  '/dashboard',
+  '/profile',
+  '/log-hours',
+  '/check-in',
+  '/shifts',
+];
+
 // Define routes that are public (no authentication required)
 const publicRoutes = [
   '/',
@@ -24,6 +33,7 @@ const publicRoutes = [
   '/apply',
   '/about',
   '/api/auth',
+  '/application-success',
 ];
 
 export async function middleware(request: NextRequest) {
@@ -53,6 +63,11 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith(route)
   );
 
+  // Check if we're on a volunteer-only route
+  const isVolunteerRoute = volunteerRoutes.some(route =>
+    pathname.startsWith(route)
+  );
+
   // Get user's session token
   const token = await getToken({ 
     req: request,
@@ -71,8 +86,17 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
+  // Redirect pending users to application success page if they try to access volunteer routes
+  if (isVolunteerRoute && token?.role === 'PENDING') {
+    return NextResponse.redirect(new URL('/application-success', request.url));
+  }
+
   // If user is authenticated and tries to access login/register, redirect to dashboard
   if ((pathname === '/login' || pathname === '/register') && token) {
+    // Pending users should be sent to application-success page
+    if (token.role === 'PENDING') {
+      return NextResponse.redirect(new URL('/application-success', request.url));
+    }
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 

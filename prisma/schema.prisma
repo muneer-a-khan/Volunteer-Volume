@@ -277,6 +277,7 @@ enum user_role {
   ADMIN
   VOLUNTEER
   GROUP_ADMIN
+  PENDING
 
   @@schema("public")
 }

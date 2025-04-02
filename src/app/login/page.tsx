@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import axios from 'axios';
 
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -33,6 +34,7 @@ const formSchema = z.object({
 
 export default function Login() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -56,21 +58,29 @@ export default function Login() {
       const result = await signIn('credentials', {
         redirect: false,
         email: data.email,
-        password: data.password
+        password: data.password,
       });
-
+      
       if (result?.error) {
-        setError("Invalid email or password");
-        setIsLoading(false);
+        setError(result.error);
         return;
       }
-
-      toast.success("Logged in successfully!");
-      // Redirect to dashboard on successful login
-      router.push('/dashboard');
-    } catch (error) {
+      
+      // Check if user is pending
+      const userResponse = await axios.get('/api/profile');
+      if (userResponse.data.role === 'PENDING') {
+        router.push('/application-success');
+        return;
+      }
+      
+      // Handle successful login for non-pending users
+      const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard';
+      toast.success('Successfully logged in!');
+      router.push(callbackUrl);
+    } catch (error: any) {
       console.error('Login error:', error);
-      setError("An error occurred during login");
+      setError(error.response?.data?.message || 'Failed to login');
+    } finally {
       setIsLoading(false);
     }
   };
