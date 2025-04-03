@@ -16,7 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DatePicker } from '@/components/ui/date-picker';
+//import { DatePicker } from '@/components/ui/date-picker';
 
 
 // Application form data structure
@@ -346,17 +346,21 @@ export default function ApplyPage() {
                     <Label>Have you ever been convicted of a crime? <span className="text-red-500">*</span></Label>
                     <RadioGroup 
                         defaultValue="no"
-                        onValueChange={(value) => {
-                        // Update the form value
-                        const event = { target: { name: 'criminalRecord', value } };
-                        register('criminalRecord', { required: true }).onChange(event);
-                        }}
-                    >
+                        // onValueChange={(value) => {
+                        // // Update the form value
+                        // const event = { target: { name: 'criminalRecord', value } };
+                        // register('criminalRecord', { required: true }).onChange(event);
+                        // }}
+                        value={watch('criminalRecord') ? "yes" : "no"}
+                            onValueChange={(value) => {
+                            setValue('criminalRecord', value === "yes");
+                            }}
+                        >
                         <div className="flex items-center space-x-2">
                         <RadioGroupItem 
                             value="yes" 
                             id="criminal-yes"
-                            checked={criminalRecord === 'yes'}
+                            checked={criminalRecord}
                         />
                         <Label htmlFor="criminal-yes">Yes</Label>
                         </div>
@@ -364,7 +368,7 @@ export default function ApplyPage() {
                         <RadioGroupItem 
                             value="no" 
                             id="criminal-no"
-                            checked={!criminalRecord || criminalRecord === 'no'}
+                            checked={!criminalRecord}
                         />
                         <Label htmlFor="criminal-no">No</Label>
                         </div>
@@ -374,13 +378,13 @@ export default function ApplyPage() {
                     )}
                   </div>
 
-                  {criminalRecord === 'yes' && (
+                  {criminalRecord && (
                     <div className="space-y-2">
                       <Label htmlFor="criminalExplanation">Please explain <span className="text-red-500">*</span></Label>
                       <Textarea
                         id="criminalExplanation"
                         {...register('criminalExplanation', { 
-                          required: criminalRecord === 'yes' ? 'Please provide an explanation' : false
+                          required: criminalRecord ? 'Please provide an explanation' : false
                         })}
                         placeholder= "Please provide details"
                       />
@@ -516,7 +520,7 @@ export default function ApplyPage() {
                           <Checkbox 
                             id={`day-${day}`}
                             checked={selectedDays.includes(day)}
-                            onCheckedChange={(isChecked) => handleDayChange(day, isChecked)}
+                            onCheckedChange={(isChecked) => handleDayChange(day, Boolean(isChecked))}
                           />
                           <Label htmlFor={`day-${day}`}>{day}</Label>
                         </div>
