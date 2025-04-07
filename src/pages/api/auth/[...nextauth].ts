@@ -28,6 +28,10 @@ export const authOptions: NextAuthOptions = {
           throw new Error("No user found with this email");
         }
 
+        if (!user.password) {
+          throw new Error("Password not configured for this account");
+        }
+
         const isPasswordValid = await compare(
           credentials.password,
           user.password || ''
@@ -36,6 +40,12 @@ export const authOptions: NextAuthOptions = {
         if (!isPasswordValid) {
           throw new Error("Invalid password");
         }
+
+        console.log("User authenticated successfully:", {
+          id: user.id,
+          email: user.email,
+          role: user.role || 'VOLUNTEER'
+        });
 
         // Return as User type expected by NextAuth
         return {
@@ -61,6 +71,9 @@ export const authOptions: NextAuthOptions = {
         token.name = user.name;
         token.picture = user.image;
       }
+      
+      // Add additional logging
+      console.log("JWT callback:", { tokenRole: token.role });
       
       return token;
     },

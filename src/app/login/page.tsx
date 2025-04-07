@@ -69,7 +69,8 @@ export default function Login() {
       // Check if user is pending
       const userResponse = await axios.get('/api/profile');
       if (userResponse.data.role === 'PENDING') {
-        router.push('/application-success');
+        toast.success('Successfully logged in!');
+        router.push('/my-applications');
         return;
       }
       

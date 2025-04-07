@@ -6,27 +6,41 @@ import { sendEmail, emailTemplates } from '@/lib/email';
 
 // Define the validation schema for application data
 const applicationSchema = z.object({
+  // Personal Information (all required)
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Invalid email address'),
   phone: z.string().min(10, 'Phone number is required'),
   address: z.string().min(1, 'Address is required'),
   city: z.string().min(1, 'City is required'),
   state: z.string().min(1, 'State is required'),
-  zipCode: z.string().regex(/^\d{5}(-\d{4})?$/, 'Invalid ZIP code'),
+  zipCode: z.string().min(1, 'ZIP code is required'),
   birthdate: z.string().min(1, 'Date of birth is required'),
   volunteerType: z.string().min(1, 'Volunteer type is required'),
   covidVaccinated: z.union([z.boolean(), z.string().transform(val => val === 'true')]),
   criminalRecord: z.union([z.boolean(), z.string().transform(val => val === 'true')]),
   criminalExplanation: z.string().optional(),
+  
+  // Experience & Interests (required fields)
   referralSource: z.string().optional(),
   volunteerExperience: z.string().optional(),
-  employmentExperience: z.string().optional(),
+  employmentExperience: z.string().min(1, 'Current/previous employment information is required'),
   reference: z.string().min(1, 'Reference is required'),
   interests: z.string().optional(),
   reasonForVolunteering: z.string().min(1, 'Reason for volunteering is required'),
   volunteerPosition: z.string().min(1, 'Volunteer position is required'),
+  
+  // Availability (all required)
   availability: z.string().min(1, 'Availability is required'),
   availableDays: z.array(z.string()).min(1, 'At least one day must be selected'),
+}).refine((data) => {
+  // If criminal record is true, then explanation must be provided
+  if (data.criminalRecord === true) {
+    return !!data.criminalExplanation && data.criminalExplanation.trim() !== '';
+  }
+  return true;
+}, {
+  message: "Explanation is required when criminal record is indicated",
+  path: ["criminalExplanation"]
 });
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {

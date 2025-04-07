@@ -5,6 +5,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:clean": "node scripts/reset-db-connections.js && next dev",
+    "restart-pg": "node scripts/restart-postgres.js",
+    "dev:restart": "node scripts/restart-postgres.js && next dev",
+    "dev:safe": "npm run restart-pg && npm run dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

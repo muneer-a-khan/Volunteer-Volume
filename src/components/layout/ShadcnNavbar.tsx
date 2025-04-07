@@ -30,6 +30,7 @@ import {
 
 const NAV_LINKS = {
   guest: [
+    { name: "Home", href: "/" },
     { name: "Login", href: "/login" },
     { name: "Register", href: "/register" }
   ],
@@ -38,10 +39,12 @@ const NAV_LINKS = {
     { name: "My Application", href: "/my-applications" }
   ],
   regular: [
+    { name: "Home", href: "/" },
     { name: "Shifts Calendar", href: "/shifts" },
     { name: "Log Hours", href: "/log-hours" }
   ],
   admin: [
+    { name: "Home", href: "/" },
     { name: "Shifts Calendar", href: "/shifts" },
     { name: "Check-in/Check-out", href: "/check-in" },
     { name: "Admin Dashboard", href: "/admin/dashboard" }
@@ -73,6 +76,14 @@ export default function ShadcnNavbar({ isAuthenticated, isAdmin }: ShadcnNavbarP
       userRole = "regular";
     }
   }
+
+  // For debugging purposes
+  console.log("User auth status:", { 
+    isUserAuthenticated, 
+    status, 
+    userRole, 
+    role: session?.user?.role 
+  });
 
   const navLinks = NAV_LINKS[userRole as keyof typeof NAV_LINKS];
 
@@ -125,14 +136,29 @@ export default function ShadcnNavbar({ isAuthenticated, isAdmin }: ShadcnNavbarP
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push("/shifts")}>
-                  <Calendar className="mr-2 h-4 w-4" />
-                  <span>My Shifts</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push("/log-hours")}>
-                  <Clock className="mr-2 h-4 w-4" />
-                  <span>Log Hours</span>
-                </DropdownMenuItem>
+                
+                {/* Only show these options for regular volunteers and admins */}
+                {!isPending && (
+                  <>
+                    <DropdownMenuItem onClick={() => router.push("/shifts")}>
+                      <Calendar className="mr-2 h-4 w-4" />
+                      <span>My Shifts</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/log-hours")}>
+                      <Clock className="mr-2 h-4 w-4" />
+                      <span>Log Hours</span>
+                    </DropdownMenuItem>
+                  </>
+                )}
+                
+                {/* Show application link for pending users */}
+                {isPending && (
+                  <DropdownMenuItem onClick={() => router.push("/my-applications")}>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>My Application</span>
+                  </DropdownMenuItem>
+                )}
+                
                 {isUserAdmin && (
                   <>
                     <DropdownMenuSeparator />
