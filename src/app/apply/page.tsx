@@ -56,6 +56,13 @@ export default function ApplyPage() {
 
   const totalSteps = 3;
 
+  // Initialize criminalRecord to false if not already set
+  useEffect(() => {
+    if (watch('criminalRecord') === undefined) {
+      setValue('criminalRecord', false);
+    }
+  }, [setValue, watch]);
+
   // Watch fields for conditional rendering
   const criminalRecord = watch('criminalRecord');
 
@@ -195,6 +202,13 @@ export default function ApplyPage() {
       step1Fields.push('criminalExplanation');
     }
     
+    // Debug criminal record value
+    console.log('Criminal record value during validation:', {
+      criminalRecord: watch('criminalRecord'),
+      criminalRecordType: typeof watch('criminalRecord'),
+      formValues: getValues()
+    });
+    
     // Determine which fields to validate based on current step
     let fieldsToValidate: string[] = [];
     if (step === 1) fieldsToValidate = step1Fields;
@@ -203,6 +217,12 @@ export default function ApplyPage() {
     
     // Trigger validation for required fields
     isValid = await trigger(fieldsToValidate as any);
+    
+    // Log the validation result and any errors
+    console.log('Validation result:', {
+      isValid,
+      errors: Object.keys(errors).length > 0 ? errors : 'No errors'
+    });
     
     // Additional validation for step 3
     if (step === 3 && selectedDays.length === 0) {
@@ -515,34 +535,25 @@ export default function ApplyPage() {
                 <div className="space-y-2">
                   <Label>Have you ever been convicted of a crime? <span className="text-red-500">*</span></Label>
                   <RadioGroup 
-                    defaultValue={watch('criminalRecord') === true ? "yes" : "no"}
+                    value={watch('criminalRecord') === true ? "yes" : "no"}
                     onValueChange={(value) => {
-                      // Update the form value
-                      setValue('criminalRecord', value === 'yes');
-                      trigger('criminalRecord');
+                      const boolValue = value === "yes";
+                      console.log(`Setting criminalRecord to: ${boolValue}`);
+                      setValue('criminalRecord', boolValue, { shouldValidate: true });
                     }}
                   >
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem 
-                        value="yes" 
-                        id="criminal-yes"
-                        checked={watch('criminalRecord') === true}
-                      />
+                      <RadioGroupItem value="yes" id="criminal-yes" />
                       <Label htmlFor="criminal-yes">Yes</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem 
-                        value="no" 
-                        id="criminal-no"
-                        checked={watch('criminalRecord') === false}
-                      />
+                      <RadioGroupItem value="no" id="criminal-no" />
                       <Label htmlFor="criminal-no">No</Label>
                     </div>
                   </RadioGroup>
-                  <input 
-                    type="hidden" 
-                    {...register('criminalRecord', { required: 'Please select an option' })} 
-                    value={watch('criminalRecord') ? 'true' : 'false'}
+                  <input
+                    type="hidden"
+                    {...register('criminalRecord', { required: 'Please select an option' })}
                   />
                   {errors.criminalRecord && (
                     <p className="text-sm text-destructive">{errors.criminalRecord.message}</p>

@@ -13,6 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar, Clock, MapPin, Phone, Mail, FileEdit, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
+import { formatDate } from '@/utils/dates';
 
 interface Application {
   id: string;
@@ -75,12 +76,12 @@ export default function MyApplicationsPage() {
     }
   };
 
-  // Helper to format dates
-  const formatDate = (dateString?: string) => {
+  // Helper to safely format dates with fallback for invalid dates
+  const safeFormatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
     
     try {
-      // Check if the date is valid
+      // Check if the date is valid 
       const date = new Date(dateString);
       
       // Check if date is valid (Invalid Date objects return NaN for getTime())
@@ -88,7 +89,7 @@ export default function MyApplicationsPage() {
         return 'N/A';
       }
       
-      return format(date, 'MMMM d, yyyy');
+      return formatDate(dateString, 'MMMM d, yyyy');
     } catch (error) {
       console.error('Error formatting date:', dateString, error);
       return 'N/A';
@@ -200,7 +201,7 @@ export default function MyApplicationsPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
               <CardTitle>Application Details</CardTitle>
-              <CardDescription>Submitted on {formatDate(application.createdAt)}</CardDescription>
+              <CardDescription>Submitted on {safeFormatDate(application.createdAt)}</CardDescription>
             </div>
             <Badge 
               className={`mt-2 sm:mt-0 ${getStatusColor(application.status)}`}
@@ -237,7 +238,7 @@ export default function MyApplicationsPage() {
                 <p className="text-sm text-muted-foreground">Date of Birth</p>
                 <div className="flex items-center gap-1">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <p>{formatDate(application.birthdate)}</p>
+                  <p>{safeFormatDate(application.birthdate)}</p>
                 </div>
               </div>
               <div className="md:col-span-2">
