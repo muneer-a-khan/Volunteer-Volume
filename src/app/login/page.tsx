@@ -28,7 +28,7 @@ import {
 // Schema for form validation
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
-  password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
+  password: z.string().min(6, { message: 'Password must be at least 8 characters long and include uppercase, lowercase, a number, and a special character' }),
   rememberMe: z.boolean().optional(),
 });
 
