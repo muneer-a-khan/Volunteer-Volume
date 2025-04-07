@@ -45,7 +45,7 @@ export default function Login() {
     defaultValues: {
       email: '',
       password: '',
-      rememberMe: false,
+      rememberMe: true,
     },
   });
 
@@ -59,28 +59,37 @@ export default function Login() {
         redirect: false,
         email: data.email,
         password: data.password,
+        callbackUrl: searchParams?.get('callbackUrl') || '/dashboard',
       });
       
       if (result?.error) {
         setError(result.error);
+        console.error('Login error:', result.error);
         return;
       }
       
       // Check if user is pending
-      const userResponse = await axios.get('/api/profile');
-      if (userResponse.data.role === 'PENDING') {
+      try {
+        const userResponse = await axios.get('/api/profile');
+        if (userResponse.data.role === 'PENDING') {
+          toast.success('Successfully logged in!');
+          router.push('/my-applications');
+          return;
+        }
+        
+        // Handle successful login for non-pending users
+        const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard';
         toast.success('Successfully logged in!');
-        router.push('/my-applications');
-        return;
+        router.push(callbackUrl);
+      } catch (profileError) {
+        console.error('Error fetching profile:', profileError);
+        // If we can't get the profile, still try to redirect
+        toast.success('Successfully logged in! Redirecting...');
+        router.push('/dashboard');
       }
-      
-      // Handle successful login for non-pending users
-      const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard';
-      toast.success('Successfully logged in!');
-      router.push(callbackUrl);
     } catch (error: any) {
       console.error('Login error:', error);
-      setError(error.response?.data?.message || 'Failed to login');
+      setError(error.response?.data?.message || 'Failed to login. Please check your credentials and try again.');
     } finally {
       setIsLoading(false);
     }

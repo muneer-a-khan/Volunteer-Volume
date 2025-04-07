@@ -46,11 +46,17 @@ export default function MyApplicationsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Skip any redirects or fetches on the first render
+    if (status === 'loading') return;
+    
+    // Handle unauthenticated users
     if (status === 'unauthenticated') {
-      router.push('/login');
+      const redirect = () => router.push('/login');
+      redirect();
       return;
     }
 
+    // Only fetch application data when authenticated
     if (status === 'authenticated') {
       fetchApplication();
     }
@@ -72,7 +78,21 @@ export default function MyApplicationsPage() {
   // Helper to format dates
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
-    return format(new Date(dateString), 'MMMM d, yyyy');
+    
+    try {
+      // Check if the date is valid
+      const date = new Date(dateString);
+      
+      // Check if date is valid (Invalid Date objects return NaN for getTime())
+      if (isNaN(date.getTime())) {
+        return 'N/A';
+      }
+      
+      return format(date, 'MMMM d, yyyy');
+    } catch (error) {
+      console.error('Error formatting date:', dateString, error);
+      return 'N/A';
+    }
   };
 
   // Get status badge color

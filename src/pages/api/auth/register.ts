@@ -11,11 +11,7 @@ const registerSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z
     .string()
-    .min(8, 'Password must be at least 8 characters long and include uppercase, lowercase, a number, and a special character')
-    .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-      'Password must include uppercase, lowercase, number and special character'
-    ),
+    .min(8, 'Password must be at least 8 characters'),
   phone: z.string().optional(),
 });
 
