@@ -461,50 +461,22 @@ export default function ApplyPage() {
               {step === 3 && (
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="volunteerPosition">Preferred Volunteer Position <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="availability">Availability <span className="text-red-500">*</span></Label>
                     <Select 
-                      onValueChange={(value) => {
-                        const event = { target: { name: 'volunteerPosition', value } };
-                        register('volunteerPosition').onChange(event);
-                      }}
+                      onValueChange={(value) => setValue('availability', value)}
+                      defaultValue={watch('availability')}
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a position" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {volunteerPositions.map((position) => (
-                          <SelectItem key={position} value={position}>
-                            {position}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {errors.volunteerPosition && (
-                      <p className="text-sm text-destructive">Please select a position</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="availability">Availability Pattern <span className="text-red-500">*</span></Label>
-                    <Select 
-                      onValueChange={(value) => {
-                        const event = { target: { name: 'availability', value } };
-                        register('availability').onChange(event);
-                      }}
-                    >
-                      <SelectTrigger>
+                      <SelectTrigger id="availability">
                         <SelectValue placeholder="Select your availability" />
                       </SelectTrigger>
                       <SelectContent>
                         {availabilityOptions.map((option) => (
-                          <SelectItem key={option} value={option}>
-                            {option}
-                          </SelectItem>
+                          <SelectItem key={option} value={option}>{option}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                     {errors.availability && (
-                      <p className="text-sm text-destructive">Please select your availability</p>
+                      <p className="text-sm text-destructive">{errors.availability.message}</p>
                     )}
                   </div>
 
@@ -513,30 +485,64 @@ export default function ApplyPage() {
                     <div className="grid grid-cols-2 gap-2">
                       {daysOfWeek.map((day) => (
                         <div key={day} className="flex items-center space-x-2">
-                          <Checkbox 
-                            id={`day-${day}`}
+                          <Checkbox
+                            id={`day-${day.toLowerCase()}`} 
                             checked={selectedDays.includes(day)}
-                            onCheckedChange={(isChecked) => handleDayChange(day, isChecked)}
+                            onCheckedChange={(checked) => handleDayChange(day, !!checked)}
                           />
-                          <Label htmlFor={`day-${day}`}>{day}</Label>
+                          <label
+                            htmlFor={`day-${day.toLowerCase()}`}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            {day}
+                          </label>
                         </div>
                       ))}
                     </div>
+                    {selectedDays.length === 0 && (
+                      <p className="text-sm text-destructive">Please select at least one day</p>
+                    )}
                   </div>
                 </div>
               )}
             </CardContent>
+
+            <CardFooter className="flex justify-between">
+              {step > 1 && (
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={prevStep}
+                  disabled={isLoading}
+                >
+                  <ChevronLeft className="mr-2 h-4 w-4" />
+                  Previous
+                </Button>
+              )}
+              
+              {step < totalSteps ? (
+                <Button 
+                  type="button" 
+                  onClick={validateCurrentStep}
+                  className={step === 1 ? 'ml-auto' : ''}
+                >
+                  Next
+                  <ChevronRight className="ml-2 h-4 w-4" />
+                </Button>
+              ) : (
+                <Button 
+                  type="button" 
+                  onClick={handleSubmit(onSubmit)}
+                  disabled={isLoading || selectedDays.length === 0}
+                  className="ml-auto"
+                >
+                  {isLoading ? 'Submitting...' : 'Submit Application'}
+                  <CheckCircle2 className="ml-2 h-4 w-4" />
+                </Button>
+              )}
+            </CardFooter>
           </form>
         </Card>
-
-        <div className="mt-8 flex items-center justify-between">
-          <Button onClick={prevStep} disabled={step === 1}>
-            Previous
-          </Button>
-          <Button onClick={nextStep} disabled={step === totalSteps}>
-            Next
-          </Button>
-        </div>
       </div>
     );
 }

@@ -33,6 +33,10 @@ const NAV_LINKS = {
     { name: "Login", href: "/login" },
     { name: "Register", href: "/register" }
   ],
+  pending: [
+    { name: "Home", href: "/" },
+    { name: "My Application", href: "/my-applications" }
+  ],
   regular: [
     { name: "Shifts Calendar", href: "/shifts" },
     { name: "Log Hours", href: "/log-hours" }
@@ -57,12 +61,18 @@ export default function ShadcnNavbar({ isAuthenticated, isAdmin }: ShadcnNavbarP
   // Use the props if provided, otherwise fall back to the session data
   const isUserAuthenticated = isAuthenticated !== undefined ? isAuthenticated : status === "authenticated";
   const isUserAdmin = isAdmin !== undefined ? isAdmin : (session?.user?.role === "ADMIN" || session?.user?.role === "GROUP_ADMIN");
+  const isPending = session?.user?.role === "PENDING";
   
-  const userRole = isUserAdmin
-    ? "admin"
-    : isUserAuthenticated
-      ? "regular"
-      : "guest";
+  let userRole = "guest";
+  if (isUserAuthenticated) {
+    if (isUserAdmin) {
+      userRole = "admin";
+    } else if (isPending) {
+      userRole = "pending";
+    } else {
+      userRole = "regular";
+    }
+  }
 
   const navLinks = NAV_LINKS[userRole as keyof typeof NAV_LINKS];
 

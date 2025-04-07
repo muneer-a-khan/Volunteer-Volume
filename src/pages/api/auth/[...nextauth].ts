@@ -28,13 +28,9 @@ export const authOptions: NextAuthOptions = {
           throw new Error("No user found with this email");
         }
 
-        if (!user.password) {
-          throw new Error("Please set a password for your account");
-        }
-
         const isPasswordValid = await compare(
           credentials.password,
-          user.password
+          user.password || ''
         );
 
         if (!isPasswordValid) {
