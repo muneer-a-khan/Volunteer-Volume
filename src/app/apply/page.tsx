@@ -141,12 +141,12 @@ export default function ApplyPage() {
       toast.error("Please complete all required fields before submitting");
       return;
     }
-    
     data.availableDays = selectedDays;  // Assign the selected checkboxes to the form data
     data.status = 'PENDING';
     setIsLoading(true);
     try {
       // Submit application
+      console.log("Data: ", data);
       const response = await axios.post('/api/applications/submit', data);
       
       if (response.status === 201) {
@@ -526,7 +526,7 @@ export default function ApplyPage() {
                       <Label htmlFor="covid-no">No</Label>
                     </div>
                   </RadioGroup>
-                  <input type="hidden" {...register('covidVaccinated', { required: 'Please select an option' })} />
+                  <input type="hidden" {...register('covidVaccinated', { required: 'Please select an option'})} />
                   {errors.covidVaccinated && (
                     <p className="text-sm text-destructive">{errors.covidVaccinated.message}</p>
                   )}
@@ -534,27 +534,26 @@ export default function ApplyPage() {
 
                 <div className="space-y-2">
                   <Label>Have you ever been convicted of a crime? <span className="text-red-500">*</span></Label>
-                  <RadioGroup 
-                    value={watch('criminalRecord') === true ? "yes" : "no"}
-                    onValueChange={(value) => {
-                      const boolValue = value === "yes";
-                      console.log(`Setting criminalRecord to: ${boolValue}`);
-                      setValue('criminalRecord', boolValue, { shouldValidate: true });
-                    }}
-                  >
+                    <RadioGroup defaultValue="no">
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="yes" id="criminal-yes" />
+                      <RadioGroupItem 
+                        value="yes" 
+                        id="criminal-yes" 
+                        checked={watch('criminalRecord') === true}
+                        onClick={() => setValue('criminalRecord', true)}
+                      />
                       <Label htmlFor="criminal-yes">Yes</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="no" id="criminal-no" />
+                      <RadioGroupItem 
+                        value="no" 
+                        id="criminal-no" 
+                        checked={watch('criminalRecord') === false}
+                        onClick={() => setValue('criminalRecord', false)}
+                      />
                       <Label htmlFor="criminal-no">No</Label>
                     </div>
-                  </RadioGroup>
-                  <input
-                    type="hidden"
-                    {...register('criminalRecord', { required: 'Please select an option' })}
-                  />
+                  </RadioGroup>                  
                   {errors.criminalRecord && (
                     <p className="text-sm text-destructive">{errors.criminalRecord.message}</p>
                   )}
