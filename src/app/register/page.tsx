@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import { EyeIcon, EyeOffIcon } from 'lucide-react';
+import { signIn } from 'next-auth/react';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -53,9 +54,23 @@ export default function RegisterPage() {
       });
 
       if (response.status === 201) {
-        toast.success("Registration successful! Redirecting to application form...");
+        toast.success("Registration successful! Logging you in...");
         
-        // Redirect to application form instead of signing in
+        // Auto sign-in after registration
+        const signInResult = await signIn('credentials', {
+          redirect: false,
+          email: data.email,
+          password: data.password
+        });
+        
+        if (signInResult?.error) {
+          console.error('Auto sign-in error:', signInResult.error);
+          toast.error("Registration successful but couldn't automatically log you in. Please log in manually.");
+          router.push('/login');
+          return;
+        }
+        
+        // Redirect to application form
         router.push(`/apply?email=${encodeURIComponent(data.email)}&name=${encodeURIComponent(data.name)}&phone=${encodeURIComponent(data.phone || '')}`);
       }
     } catch (error: any) {
@@ -143,11 +158,7 @@ export default function RegisterPage() {
                     required: "Password is required",
                     minLength: {
                       value: 8,
-                      message: 'Password must be at least 8 characters long and include uppercase, lowercase, a number, and a special character',
-                    },
-                    pattern: {
-                      value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-                      message: "Password must include uppercase, lowercase, number and special character"
+                      message: 'Password must be at least 8 characters',
                     }
                   })}
                   placeholder="••••••••"
