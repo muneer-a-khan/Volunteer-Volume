@@ -66,19 +66,19 @@ export default function ProfilePage() {
     try {
       setLoading(true);
       const response = await axios.get('/api/profile');
-      setVolunteer(response.data.volunteer);
-      setFormData({
-        name: response.data.volunteer.name || '',
-        email: response.data.volunteer.email || '',
-        phone: response.data.volunteer.phone || '',
-        address: response.data.volunteer.profiles?.address || '',
-        city: response.data.volunteer.profiles?.city || '',
-        state: response.data.volunteer.profiles?.state || '',
-        zipCode: response.data.volunteer.profiles?.zipCode || '',
-        emergencyContact: response.data.volunteer.profiles?.emergencyContact || '',
-        emergencyPhone: response.data.volunteer.profiles?.emergencyPhone || '',
-        interests: response.data.volunteer.profiles?.interests || '',
-        skills: response.data.volunteer.profiles?.skills || '',
+      setVolunteer(response.data);
+    setFormData({
+        name: response.data.name || '',
+        email: response.data.email || '',
+        phone: response.data.phone || '',
+        address: response.data.profiles?.address || '',
+        city: response.data.profiles?.city || '',
+        state: response.data.profiles?.state || '',
+        zipCode: response.data.profiles?.zipCode || '',
+        emergencyContact: response.data.profiles?.emergencyContact || '',
+        emergencyPhone: response.data.profiles?.emergencyPhone || '',
+        interests: response.data.profiles?.interests || '',
+        skills: response.data.profiles?.skills || '',
       });
     } catch (err) {
       setError('Failed to load profile data');
