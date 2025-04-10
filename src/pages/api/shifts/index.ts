@@ -40,6 +40,7 @@ export default async function handler(
   }
 
   try {
+    await prisma.$connect();
     const session = await getServerSession(req, res, authOptions);
     
     if (!session) {
@@ -80,5 +81,8 @@ export default async function handler(
   } catch (error) {
     console.error('Error fetching shifts:', error);
     return res.status(500).json({ message: 'Internal server error' });
+  }
+  finally {
+    await prisma.$disconnect();
   }
 } 

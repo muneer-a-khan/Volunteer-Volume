@@ -11,6 +11,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    await prisma.$connect();
     // Get current user from session
     const session = await getServerSession(req, res, authOptions);
     
@@ -44,5 +45,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } catch (error) {
     console.error('Error fetching user profile:', error);
     return res.status(500).json({ message: 'An error occurred while fetching profile' });
+  }
+  finally {
+    await prisma.$disconnect();
   }
 } 
