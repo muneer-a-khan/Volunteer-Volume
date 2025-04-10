@@ -511,7 +511,7 @@ export default function ApplyPage() {
                       <RadioGroupItem 
                         value="yes" 
                         id="covid-yes" 
-                        checked={watch('covidVaccinated') === true}
+                        checked={watch('covidVaccinated') === true || watch('covidVaccinated') === undefined}
                         onClick={() => setValue('covidVaccinated', true)}
                       />
                       <Label htmlFor="covid-yes">Yes</Label>
@@ -526,7 +526,6 @@ export default function ApplyPage() {
                       <Label htmlFor="covid-no">No</Label>
                     </div>
                   </RadioGroup>
-                  <input type="hidden" {...register('covidVaccinated', { required: 'Please select an option'})} />
                   {errors.covidVaccinated && (
                     <p className="text-sm text-destructive">{errors.covidVaccinated.message}</p>
                   )}
