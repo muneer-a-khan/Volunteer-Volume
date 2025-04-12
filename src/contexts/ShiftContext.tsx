@@ -55,7 +55,7 @@ const ShiftContext = createContext<ShiftContextType | undefined>(undefined);
 interface ShiftProviderProps {
   children: ReactNode;
 }
-
+let hasShownFetchError = false;
 export const ShiftProvider: React.FC<ShiftProviderProps> = ({ children }) => {
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [myShifts, setMyShifts] = useState<Shift[]>([]);
@@ -63,19 +63,24 @@ export const ShiftProvider: React.FC<ShiftProviderProps> = ({ children }) => {
   const { isAuthenticated, dbUser } = useAuth();
 
   // Fetch all shifts
-  const fetchShifts = async (): Promise<Shift[]> => {
-    try {
-      setLoading(true);
-      const response = await axios.get('/api/shifts');
-      setShifts(response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching shifts:', error);
-      toast.error('Failed to load shifts. Please try again.');
-      return [];
-    } finally {
-      setLoading(false);
-    }
+    const fetchShifts = async (): Promise<Shift[]> => {
+    // Add static variable to track if error has been shown
+        try {
+            setLoading(true);
+            const response = await axios.get('/api/shifts');
+            hasShownFetchError = false; // Reset on successful fetch
+            setShifts(response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching shifts:', error);
+            if (!hasShownFetchError) {
+                toast.error('Failed to load shifts. Please try again.');
+                hasShownFetchError = true;
+        }
+        return [];
+        } finally {
+            setLoading(false);
+        }
   };
 
   // Fetch shifts for current user
