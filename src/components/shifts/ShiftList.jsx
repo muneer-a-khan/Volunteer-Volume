@@ -16,7 +16,7 @@ export default function ShiftList({ initialFilter = 'upcoming' }) {
   // Fetch shifts on component mount
   useEffect(() => {
     fetchShifts();
-  }, [fetchShifts]);
+  }, []);
 
   // Filter shifts based on user selection
   useEffect(() => {
@@ -37,7 +37,8 @@ export default function ShiftList({ initialFilter = 'upcoming' }) {
     } else if (filter === 'available') {
       filtered = filtered.filter(shift => 
         isAfter(parseISO(shift.startTime), now) && 
-        shift.volunteers.length < shift.capacity
+        // shift.volunteers.length < shift.capacity
+        shift.currentVolunteers < shift.maxVolunteers
       );
     }
 
@@ -114,12 +115,14 @@ export default function ShiftList({ initialFilter = 'upcoming' }) {
 
   // Check if user is signed up for a shift
   const isSignedUp = (shift) => {
-    return shift.volunteers.some(volunteer => volunteer.id === dbUser?.id);
+    // return shift.volunteers.some(volunteer => volunteer.id === dbUser?.id);
+    return false;
   };
 
   // Check if shift has available spots
   const hasAvailableSpots = (shift) => {
-    return shift.volunteers.length < shift.capacity;
+    // return shift.volunteers.length < shift.capacity;
+    return shift.currentVolunteers < shift.maxVolunteers;
   };
 
   // Show loading state
@@ -225,7 +228,8 @@ export default function ShiftList({ initialFilter = 'upcoming' }) {
                       </span>
                       
                       <span className="text-sm text-gray-500">
-                        {shift.volunteers.length} / {shift.capacity} volunteers
+                        {/* {shift.volunteers.length} / {shift.capacity} volunteers */}
+                        {shift.currentVolunteers} / {shift.maxVolunteers} volunteers
                       </span>
                       
                       {isAfter(parseISO(shift.startTime), new Date()) && shift.status !== 'CANCELLED' && (

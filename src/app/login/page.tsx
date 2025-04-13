@@ -106,7 +106,7 @@ export default function Login() {
           <h1 className="text-3xl font-bold text-gray-900">Sign in to your account</h1>
           <p className="mt-2 text-sm text-gray-600">
             Or{' '}
-            <Link href="/apply" className="font-medium text-primary hover:text-primary/90">
+            <Link href="/register" className="font-medium text-primary hover:text-primary/90">
               apply to become a volunteer
             </Link>
           </p>

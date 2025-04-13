@@ -51,10 +51,11 @@ export default function VolunteerDashboard() {
       try {
         // Fetch volunteer's shifts
         await fetchMyShifts();
-        
-        // Fetch volunteer's stats
-        const response = await axios.get('/api/volunteers/stats');
-        setVolunteerStats(response.data);
+        if (myShifts.length !== 0) {
+            // Fetch volunteer's stats
+            const response = await axios.get('/api/volunteers/stats');
+            setVolunteerStats(response.data);
+        }
       } catch (error) {
         console.error('Error loading dashboard data:', error);
       } finally {
