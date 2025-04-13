@@ -35,7 +35,7 @@ interface Application {
   availability: string;
   availableDays: string[];
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'INCOMPLETE';
-  createdAt?: string;
+  applicationDate: string;
   updatedAt?: string;
 }
 
@@ -201,7 +201,7 @@ export default function MyApplicationsPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
               <CardTitle>Application Details</CardTitle>
-              <CardDescription>Submitted on {safeFormatDate(application.createdAt)}</CardDescription>
+              <CardDescription>Submitted on {safeFormatDate(application.applicationDate)}</CardDescription>
             </div>
             <Badge 
               className={`mt-2 sm:mt-0 ${getStatusColor(application.status)}`}

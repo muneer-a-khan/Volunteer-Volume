@@ -17,8 +17,7 @@ export function mapSnakeToCamel(data: any): any {
     
     for (const [key, value] of Object.entries(data)) {
       // Handle nested objects/arrays
-      const newValue = typeof value === 'object' && value !== null ? mapSnakeToCamel(value) : value;
-      
+      const newValue = typeof value === 'object' && value !== null && !(value instanceof Date)? mapSnakeToCamel(value) : value;
       // Map snake_case to camelCase
       const newKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
       result[newKey] = newValue;
@@ -45,7 +44,7 @@ export function mapCamelToSnake(data: any): any {
     
     for (const [key, value] of Object.entries(data)) {
       // Handle nested objects/arrays
-      const newValue = typeof value === 'object' && value !== null ? mapCamelToSnake(value) : value;
+      const newValue = typeof value === 'object' && value !== null && !(value instanceof Date) ? mapCamelToSnake(value) : value;
       
       // Map camelCase to snake_case
       const newKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
