@@ -70,6 +70,21 @@ export const emailTemplates = {
     `,
   }),
 
+  shiftCancellation: (shift: any) => ({
+    subject: `Shift Cancellation - ${shift.title}`,
+    html: `
+      <h2>Shift Cancellation</h2>
+      <p>You have successfully cancelled your registration for the following shift:</p>
+      <ul>
+        <li><strong>Title:</strong> ${shift.title}</li>
+        <li><strong>Date:</strong> ${new Date(shift.start_time).toLocaleString()}</li>
+        <li><strong>Location:</strong> ${shift.location}</li>
+      </ul>
+      <p>If this was done in error, please sign up again on the website.</p>
+      <p>Thank you for keeping your schedule updated!</p>
+    `,
+  }),
+
   applicationReceived: (application: any) => ({
     subject: 'Volunteer Application Received',
     html: `
