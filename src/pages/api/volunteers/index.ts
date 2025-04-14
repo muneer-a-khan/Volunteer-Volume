@@ -17,12 +17,12 @@ interface VolunteerWithStats {
   name?: string;
   email?: string;
   role?: string;
-  profile?: any; // TODO: Define proper type based on Prisma schema
+  profiles?: any; // TODO: Define proper type based on Prisma schema
   stats: VolunteerStats;
   _count?: {
-    shifts: number;
-    checkIns: number;
-    volunteerLogs: number;
+    shift_volunteers: number;
+    check_ins: number;
+    volunteer_logs: number;
   };
 }
 
@@ -94,12 +94,12 @@ async function getVolunteers(req: NextApiRequest, res: NextApiResponse) {
     const volunteers = await prisma.users.findMany({
       where,
       include: {
-        profile: true,
+        profiles: true,
         _count: {
           select: {
-            shifts: true,
-            checkIns: true,
-            volunteerLogs: true
+            shift_volunteers: true,
+            check_ins: true,
+            volunteer_logs: true
           }
         }
       },
@@ -110,7 +110,7 @@ async function getVolunteers(req: NextApiRequest, res: NextApiResponse) {
     
     // Calculate volunteer statistics
     const volunteersWithStats = await Promise.all(
-      volunteers.map(async (volunteer: { id: string; _count: { shifts: number; checkIns: number; volunteerLogs: number } }) => {
+      volunteers.map(async (volunteer: { id: string; _count: { shift_volunteers: number; check_ins: number; volunteer_logs: number } }) => {
         // Get total hours from volunteer logs
         const logs = await prisma.volunteer_logs.aggregate({
           where: {
@@ -135,9 +135,9 @@ async function getVolunteers(req: NextApiRequest, res: NextApiResponse) {
           stats: {
             totalHours,
             totalMinutes,
-            shiftsCount: volunteer._count.shifts,
-            checkInsCount: volunteer._count.checkIns,
-            logsCount: volunteer._count.volunteerLogs
+            shiftsCount: volunteer._count.shift_volunteers,
+            checkInsCount: volunteer._count.check_ins,
+            logsCount: volunteer._count.volunteer_logs
           }
         };
         
