@@ -146,7 +146,7 @@ export default function VolunteerDashboard() {
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl">
-            Welcome, {dbUser?.name || 'Volunteer'}!
+            Welcome, {dbUser?.name || "Volunteer"}!
           </CardTitle>
           <CardDescription>
             Here&apos;s an overview of your volunteer activity and upcoming shifts.
@@ -218,11 +218,11 @@ export default function VolunteerDashboard() {
         </CardContent>
       </Card>
       
-      {/* Today's Shifts */}
+      {/* Today&apos;s Shifts */}
       {todayShifts.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Today's Shifts</CardTitle>
+            <CardTitle>Today&apos;s Shifts</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {todayShifts.map((shift) => (
