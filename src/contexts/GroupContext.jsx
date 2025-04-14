@@ -230,7 +230,7 @@ export const GroupProvider = ({ children }) => {
       fetchGroups();
       fetchMyGroups();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchGroups, fetchMyGroups]);
 
   // Provider value
   const value = {
