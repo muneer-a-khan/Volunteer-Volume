@@ -253,7 +253,7 @@ export const ShiftProvider: React.FC<ShiftProviderProps> = ({ children }) => {
       fetchShifts();
       fetchMyShifts();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchShifts, fetchMyShifts]);
 
   // Provider value
   const value: ShiftContextType = {
