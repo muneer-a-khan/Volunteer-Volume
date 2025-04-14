@@ -53,7 +53,7 @@ export default function Login() {
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const result = await signIn('credentials', {
         redirect: false,
@@ -61,13 +61,13 @@ export default function Login() {
         password: data.password,
         callbackUrl: searchParams?.get('callbackUrl') || '/dashboard',
       });
-      
+
       if (result?.error) {
         setError(result.error);
         console.error('Login error:', result.error);
         return;
       }
-      
+
       // Check if user is pending
       try {
         const userResponse = await axios.get('/api/profile');
@@ -76,7 +76,7 @@ export default function Login() {
           router.push('/my-applications');
           return;
         }
-        
+
         // Handle successful login for non-pending users
         const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard';
         toast.success('Successfully logged in!');
@@ -123,7 +123,7 @@ export default function Login() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            
+
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField
@@ -147,7 +147,7 @@ export default function Login() {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="password"
@@ -176,16 +176,16 @@ export default function Login() {
                     </FormItem>
                   )}
                 />
-                
+
                 <div className="flex items-center justify-between">
                   <FormField
                     control={form.control}
                     name="rememberMe"
                     render={({ field }) => (
                       <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="rememberMe" 
-                          checked={field.value} 
+                        <Checkbox
+                          id="rememberMe"
+                          checked={field.value}
                           onCheckedChange={field.onChange}
                         />
                         <label
@@ -197,18 +197,18 @@ export default function Login() {
                       </div>
                     )}
                   />
-                  
-                  <Link 
-                    href="/forgot-password" 
+
+                  <Link
+                    href="/forgot-password"
                     className="text-sm font-medium text-primary hover:text-primary/90"
                   >
                     Forgot password?
                   </Link>
                 </div>
-                
-                <Button 
-                  type="submit" 
-                  className="w-full" 
+
+                <Button
+                  type="submit"
+                  className="w-full"
                   disabled={isLoading}
                 >
                   {isLoading ? "Signing in..." : "Sign in"}

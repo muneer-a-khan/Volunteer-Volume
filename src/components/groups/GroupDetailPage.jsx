@@ -12,16 +12,16 @@ export default function GroupDetailPage() {
   const router = useRouter();
   const { id } = router.query;
   const { isAuthenticated, isAdmin, dbUser } = useAuth();
-  const { 
-    loading, 
-    getGroup, 
-    joinGroup, 
+  const {
+    loading,
+    getGroup,
+    joinGroup,
     leaveGroup,
     getGroupShifts,
     getGroupVolunteers,
     getGroupHoursReport
   } = useGroups();
-  
+
   const [group, setGroup] = useState(null);
   const [shifts, setShifts] = useState([]);
   const [volunteers, setVolunteers] = useState([]);
@@ -50,17 +50,17 @@ export default function GroupDetailPage() {
           const groupData = await getGroup(id);
           if (groupData) {
             setGroup(groupData);
-            
+
             // Check if user is admin of this group
             if (dbUser) {
               setIsGroupAdmin(groupData.admins && groupData.admins.some(admin => admin.id === dbUser.id) || isAdmin);
               setIsMember(groupData.members && groupData.members.some(membership => membership.user.id === dbUser.id));
             }
-            
+
             // Load shifts
             const shiftsData = await getGroupShifts(id);
             setShifts(shiftsData || []);
-            
+
             // Load volunteers
             const volunteersData = await getGroupVolunteers(id);
             setVolunteers(volunteersData || []);
@@ -70,7 +70,7 @@ export default function GroupDetailPage() {
         }
       }
     };
-    
+
     loadGroupData();
   }, [id, isAuthenticated, dbUser, isAdmin, getGroup, getGroupShifts, getGroupVolunteers]);
 
@@ -113,7 +113,7 @@ export default function GroupDetailPage() {
               Back to Groups
             </Link>
           </div>
-          
+
           {/* Group header */}
           <div className="bg-white shadow rounded-lg overflow-hidden mb-8">
             <div className="p-6 sm:p-8">
@@ -142,7 +142,7 @@ export default function GroupDetailPage() {
               </div>
             </div>
           </div>
-          
+
           {/* Display content based on active tab */}
           <div>
             {/* Basic group details */}

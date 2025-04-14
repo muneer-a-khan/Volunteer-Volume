@@ -57,7 +57,7 @@ export function useVolunteers() {
 
       if (error) throw error;
       const typedData = data as unknown as Volunteer;
-      setVolunteers(prev => prev.map(volunteer => 
+      setVolunteers(prev => prev.map(volunteer =>
         volunteer.id === id ? typedData : volunteer
       ));
       return typedData;

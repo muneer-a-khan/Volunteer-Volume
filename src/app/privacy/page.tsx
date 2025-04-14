@@ -7,11 +7,11 @@ const PrivacyPolicy: React.FC = () => {
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-3xl mx-auto bg-white p-8 rounded-lg shadow-md">
         <h1 className="text-3xl font-bold text-gray-900 mb-4">Privacy Policy</h1>
-        
+
         <p className="text-gray-700 mb-4">
           Volunteer Volume is committed to protecting your privacy and ensuring the security of your personal information. By accessing or using our website, you agree to the practices described in this Privacy Policy.
         </p>
-        
+
         <h2 className="text-2xl font-semibold text-gray-800 mt-6">1. Information We Collect</h2>
         <p className="text-gray-700 mb-4">
           We collect personal information that you voluntarily provide to us when you use our services or interact with our website. The types of personal information we collect include:

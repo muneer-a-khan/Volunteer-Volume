@@ -25,7 +25,7 @@ export default async function handler(
 
   try {
     const session = await getServerSession(req, res, authOptions);
-    
+
     if (!session || session.user.role !== 'ADMIN') {
       return res.status(401).json({ message: 'Unauthorized' });
     }
@@ -53,7 +53,7 @@ export default async function handler(
       phone: app.phone,
       status: app.status,
       createdAt: app.application_date ? new Date(app.application_date).toISOString() : '',
-      updatedAt: app.approved_at || app.rejected_at ? 
+      updatedAt: app.approved_at || app.rejected_at ?
         new Date(app.approved_at || app.rejected_at || '').toISOString() : ''
     }));
 

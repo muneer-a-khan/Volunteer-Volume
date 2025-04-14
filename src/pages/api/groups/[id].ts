@@ -35,7 +35,7 @@ export default async function handler(
 
   try {
     const session = await getServerSession(req, res, authOptions);
-    
+
     if (!session) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
@@ -54,9 +54,9 @@ export default async function handler(
         });
 
         if (!group) {
-          return res.status(404).json({ 
-            success: false, 
-            message: 'Group not found' 
+          return res.status(404).json({
+            success: false,
+            message: 'Group not found'
           });
         }
 
@@ -73,17 +73,17 @@ export default async function handler(
           updatedAt: group.updated_at ? group.updated_at.toISOString() : new Date().toISOString()
         };
 
-        return res.status(200).json({ 
-          success: true, 
-          data: formattedGroup 
+        return res.status(200).json({
+          success: true,
+          data: formattedGroup
         });
       }
 
       case 'PATCH': {
         if (session.user.role !== 'ADMIN') {
-          return res.status(403).json({ 
-            success: false, 
-            message: 'Forbidden' 
+          return res.status(403).json({
+            success: false,
+            message: 'Forbidden'
           });
         }
 
@@ -97,8 +97,8 @@ export default async function handler(
           }
         });
 
-        return res.status(200).json({ 
-          success: true, 
+        return res.status(200).json({
+          success: true,
           data: {
             id: updatedGroup.id,
             name: updatedGroup.name,
@@ -112,9 +112,9 @@ export default async function handler(
 
       case 'DELETE': {
         if (session.user.role !== 'ADMIN') {
-          return res.status(403).json({ 
-            success: false, 
-            message: 'Forbidden' 
+          return res.status(403).json({
+            success: false,
+            message: 'Forbidden'
           });
         }
 
@@ -126,16 +126,16 @@ export default async function handler(
       }
 
       default:
-        return res.status(405).json({ 
-          success: false, 
-          message: 'Method not allowed' 
+        return res.status(405).json({
+          success: false,
+          message: 'Method not allowed'
         });
     }
   } catch (error) {
     console.error('Error handling group:', error);
-    return res.status(500).json({ 
-      success: false, 
-      message: 'Internal server error' 
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error'
     });
   }
 } 

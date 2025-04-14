@@ -49,7 +49,7 @@ export default function MyApplicationsPage() {
   useEffect(() => {
     // Skip any redirects or fetches on the first render
     if (status === 'loading') return;
-    
+
     // Handle unauthenticated users
     if (status === 'unauthenticated') {
       const redirect = () => router.push('/login');
@@ -79,16 +79,16 @@ export default function MyApplicationsPage() {
   // Helper to safely format dates with fallback for invalid dates
   const safeFormatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
-    
+
     try {
       // Check if the date is valid 
       const date = new Date(dateString);
-      
+
       // Check if date is valid (Invalid Date objects return NaN for getTime())
       if (isNaN(date.getTime())) {
         return 'N/A';
       }
-      
+
       return formatDate(dateString, 'MMMM d, yyyy');
     } catch (error) {
       console.error('Error formatting date:', dateString, error);
@@ -203,7 +203,7 @@ export default function MyApplicationsPage() {
               <CardTitle>Application Details</CardTitle>
               <CardDescription>Submitted on {safeFormatDate(application.applicationDate)}</CardDescription>
             </div>
-            <Badge 
+            <Badge
               className={`mt-2 sm:mt-0 ${getStatusColor(application.status)}`}
             >
               {application.status}

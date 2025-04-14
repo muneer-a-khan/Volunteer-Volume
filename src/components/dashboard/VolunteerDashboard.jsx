@@ -25,7 +25,7 @@ export default function VolunteerDashboard() {
       try {
         // Fetch volunteer's shifts
         await fetchMyShifts();
-        
+
         // Fetch volunteer's stats
         const response = await axios.get('/api/volunteers/stats');
         setVolunteerStats(response.data);
@@ -47,14 +47,14 @@ export default function VolunteerDashboard() {
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const tomorrow = addDays(today, 1);
-      
+
       const upcoming = [];
       const past = [];
       const today_shifts = [];
-      
+
       myShifts.forEach((shift) => {
         const shiftStart = parseISO(shift.startTime);
-        
+
         if (isAfter(shiftStart, tomorrow)) {
           upcoming.push(shift);
         } else if (isBefore(shiftStart, today)) {
@@ -63,26 +63,26 @@ export default function VolunteerDashboard() {
           today_shifts.push(shift);
         }
       });
-      
+
       // Sort by start time
       upcoming.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
       past.sort((a, b) => new Date(b.startTime) - new Date(a.startTime)); // Most recent first
       today_shifts.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
-      
+
       setUpcomingShifts(upcoming);
       setPastShifts(past);
       setTodayShifts(today_shifts);
     }
   }, [myShifts]);
-  
+
   // Format shift time
   const formatShiftTime = (start, end) => {
     const startDate = parseISO(start);
     const endDate = parseISO(end);
-    
+
     return `${format(startDate, 'MMM d, yyyy h:mm a')} - ${format(endDate, 'h:mm a')}`;
   };
-  
+
   // Get shift status class
   const getStatusClass = (status) => {
     switch (status) {
@@ -126,7 +126,7 @@ export default function VolunteerDashboard() {
       <h1 className="text-3xl font-bold text-gray-900 mb-8">
         Welcome, {dbUser?.name || 'Volunteer'}!
       </h1>
-      
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-white p-6 shadow rounded-lg border-l-4 border-vadm-blue">
@@ -135,14 +135,14 @@ export default function VolunteerDashboard() {
             {volunteerStats.totalHours.toFixed(1)}
           </p>
         </div>
-        
+
         <div className="bg-white p-6 shadow rounded-lg border-l-4 border-vadm-green">
           <p className="text-sm text-gray-600 font-medium">Shifts Completed</p>
           <p className="text-3xl font-bold text-gray-900 mt-2">
             {volunteerStats.shiftsCompleted}
           </p>
         </div>
-        
+
         <div className="bg-white p-6 shadow rounded-lg border-l-4 border-vadm-orange">
           <p className="text-sm text-gray-600 font-medium">Upcoming Shifts</p>
           <p className="text-3xl font-bold text-gray-900 mt-2">
@@ -150,7 +150,7 @@ export default function VolunteerDashboard() {
           </p>
         </div>
       </div>
-      
+
       {/* Quick Actions */}
       <div className="bg-white p-6 shadow rounded-lg mb-8">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">Quick Actions</h2>
@@ -161,14 +161,14 @@ export default function VolunteerDashboard() {
           >
             Browse Shifts
           </Link>
-          
+
           <Link
             href="/check-in"
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-vadm-green hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-vadm-green"
           >
             Check In/Out
           </Link>
-          
+
           <Link
             href="/log-hours"
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-vadm-orange hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-vadm-orange"
@@ -177,7 +177,7 @@ export default function VolunteerDashboard() {
           </Link>
         </div>
       </div>
-      
+
       {/* Today&apos;s Shifts */}
       {todayShifts.length > 0 && (
         <div className="bg-white p-6 shadow rounded-lg mb-8">
@@ -222,7 +222,7 @@ export default function VolunteerDashboard() {
           </div>
         </div>
       )}
-      
+
       {/* Upcoming Shifts */}
       {upcomingShifts.length > 0 && (
         <div className="bg-white p-6 shadow rounded-lg mb-8">
@@ -254,7 +254,7 @@ export default function VolunteerDashboard() {
                 </div>
               </div>
             ))}
-            
+
             {upcomingShifts.length > 3 && (
               <div className="text-center pt-2">
                 <Link
@@ -268,7 +268,7 @@ export default function VolunteerDashboard() {
           </div>
         </div>
       )}
-      
+
       {/* Recent Activity */}
       {pastShifts.length > 0 && (
         <div className="bg-white p-6 shadow rounded-lg">
@@ -301,7 +301,7 @@ export default function VolunteerDashboard() {
                 </div>
               </div>
             ))}
-            
+
             {pastShifts.length > 3 && (
               <div className="text-center pt-2">
                 <Link
@@ -315,7 +315,7 @@ export default function VolunteerDashboard() {
           </div>
         </div>
       )}
-      
+
       {/* No shifts message */}
       {upcomingShifts.length === 0 && todayShifts.length === 0 && pastShifts.length === 0 && (
         <div className="bg-white p-8 shadow rounded-lg text-center">

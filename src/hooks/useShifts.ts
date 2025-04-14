@@ -57,7 +57,7 @@ export function useShifts() {
 
       if (error) throw error;
       const typedData = data as unknown as Shift;
-      setShifts(prev => prev.map(shift => 
+      setShifts(prev => prev.map(shift =>
         shift.id === id ? typedData : shift
       ));
       return typedData;

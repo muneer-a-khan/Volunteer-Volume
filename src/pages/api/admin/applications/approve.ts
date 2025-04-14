@@ -28,8 +28,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse, session: any) 
     }
 
     if (application.status !== 'PENDING') {
-      return res.status(400).json({ 
-        message: `Application cannot be approved because it is already ${application.status.toLowerCase()}` 
+      return res.status(400).json({
+        message: `Application cannot be approved because it is already ${application.status.toLowerCase()}`
       });
     }
 

@@ -58,9 +58,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   } catch (error) {
     console.error('Volunteers API error:', error);
-    return res.status(500).json({ 
-      message: 'Internal server error', 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    return res.status(500).json({
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 }
@@ -68,11 +68,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 // Get all volunteers with optional filtering
 async function getVolunteers(req: NextApiRequest, res: NextApiResponse) {
   const { search, status, group } = req.query;
-  
+
   let where: any = {
     role: 'VOLUNTEER'
   };
-  
+
   // Apply search filter
   if (search && typeof search === 'string') {
     where.OR = [
@@ -80,7 +80,7 @@ async function getVolunteers(req: NextApiRequest, res: NextApiResponse) {
       { email: { contains: search, mode: 'insensitive' } }
     ];
   }
-  
+
   // Filter by group if provided
   if (group && typeof group === 'string') {
     where.memberGroups = {
@@ -89,7 +89,7 @@ async function getVolunteers(req: NextApiRequest, res: NextApiResponse) {
       }
     };
   }
-  
+
   try {
     const volunteers = await prisma.users.findMany({
       where,
@@ -107,7 +107,7 @@ async function getVolunteers(req: NextApiRequest, res: NextApiResponse) {
         name: 'asc'
       }
     });
-    
+
     // Calculate volunteer statistics
     const volunteersWithStats = await Promise.all(
       volunteers.map(async (volunteer: { id: string; _count: { shift_volunteers: number; check_ins: number; volunteer_logs: number } }) => {
@@ -121,15 +121,15 @@ async function getVolunteers(req: NextApiRequest, res: NextApiResponse) {
             minutes: true
           }
         });
-        
+
         // Calculate total hours
         let totalHours = logs._sum.hours || 0;
         let totalMinutes = logs._sum.minutes || 0;
-        
+
         // Normalize minutes
         totalHours += Math.floor(totalMinutes / 60);
         totalMinutes = totalMinutes % 60;
-        
+
         const volunteerWithStats: VolunteerWithStats = {
           ...volunteer,
           stats: {
@@ -140,17 +140,17 @@ async function getVolunteers(req: NextApiRequest, res: NextApiResponse) {
             logsCount: volunteer._count.volunteer_logs
           }
         };
-        
+
         return volunteerWithStats;
       })
     );
-    
+
     return res.status(200).json(mapSnakeToCamel(volunteersWithStats));
   } catch (error) {
     console.error('Error fetching volunteers:', error);
-    return res.status(500).json({ 
-      message: 'Failed to fetch volunteers', 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    return res.status(500).json({
+      message: 'Failed to fetch volunteers',
+      error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 } 

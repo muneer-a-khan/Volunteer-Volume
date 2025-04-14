@@ -13,7 +13,7 @@ export default function GroupsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredGroups, setFilteredGroups] = useState([]);
   const router = useRouter();
-  
+
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!isAuthenticated) {
@@ -26,7 +26,7 @@ export default function GroupsPage() {
     if (groups) {
       if (searchTerm) {
         setFilteredGroups(
-          groups.filter(group => 
+          groups.filter(group =>
             group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (group.description && group.description.toLowerCase().includes(searchTerm.toLowerCase()))
           )
@@ -100,7 +100,7 @@ export default function GroupsPage() {
               </div>
             )}
           </div>
-          
+
           {/* Search and filter */}
           <div className="mb-8">
             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
@@ -126,7 +126,7 @@ export default function GroupsPage() {
               </div>
             </div>
           </div>
-          
+
           {/* Groups grid */}
           {filteredGroups.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -163,7 +163,7 @@ export default function GroupsPage() {
                         </p>
                       </div>
                     </div>
-                    
+
                     <div className="mt-4 border-t border-gray-100 pt-4">
                       <div className="flex items-center justify-between">
                         <div className="text-sm text-gray-500">
@@ -174,7 +174,7 @@ export default function GroupsPage() {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="mt-4 flex items-center justify-end space-x-4">
                       <Link
                         href={`/groups/${group.id}`}
@@ -182,7 +182,7 @@ export default function GroupsPage() {
                       >
                         View Details
                       </Link>
-                      
+
                       {!isMember(group.id) ? (
                         <button
                           onClick={() => handleJoinGroup(group.id)}

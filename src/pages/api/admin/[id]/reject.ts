@@ -20,7 +20,7 @@ export default async function handler(
 
   try {
     const session = await getServerSession(req, res, authOptions);
-    
+
     if (!session || session.user.role !== 'ADMIN') {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
@@ -48,7 +48,7 @@ export default async function handler(
     // Update application status
     await prisma.applications.update({
       where: { id },
-      data: { 
+      data: {
         status: 'REJECTED',
         rejected_by: session.user.id,
         rejected_at: new Date(),
@@ -67,16 +67,16 @@ export default async function handler(
       // Continue with the process even if email sending fails
     }
 
-    return res.status(200).json({ 
-      success: true, 
-      message: 'Application rejected successfully' 
+    return res.status(200).json({
+      success: true,
+      message: 'Application rejected successfully'
     });
 
   } catch (error) {
     console.error('Error rejecting application:', error);
-    return res.status(500).json({ 
-      success: false, 
-      message: 'Internal server error' 
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error'
     });
   }
 } 

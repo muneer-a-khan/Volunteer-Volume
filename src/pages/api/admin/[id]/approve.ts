@@ -20,7 +20,7 @@ export default async function handler(
 
   try {
     const session = await getServerSession(req, res, authOptions);
-    
+
     if (!session || session.user.role !== 'ADMIN') {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
@@ -43,7 +43,7 @@ export default async function handler(
     // Update application status
     await prisma.applications.update({
       where: { id },
-      data: { 
+      data: {
         status: 'APPROVED',
         approved_by: session.user.id,
         approved_at: new Date()
@@ -61,16 +61,16 @@ export default async function handler(
       // Continue with the process even if email sending fails
     }
 
-    return res.status(200).json({ 
-      success: true, 
-      message: 'Application approved successfully' 
+    return res.status(200).json({
+      success: true,
+      message: 'Application approved successfully'
     });
 
   } catch (error) {
     console.error('Error approving application:', error);
-    return res.status(500).json({ 
-      success: false, 
-      message: 'Internal server error' 
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error'
     });
   }
 }
@@ -80,11 +80,11 @@ function generateTemporaryPassword(): string {
   const length = 12;
   const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()';
   let password = '';
-  
+
   for (let i = 0; i < length; i++) {
     const randomIndex = Math.floor(Math.random() * charset.length);
     password += charset[randomIndex];
   }
-  
+
   return password;
 } 

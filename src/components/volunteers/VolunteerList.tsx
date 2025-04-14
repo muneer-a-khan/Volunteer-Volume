@@ -52,7 +52,7 @@ export default function VolunteerList({ initialFilter = 'active', groupId = null
         if (groupId) {
           url = `/api/groups/${groupId}/volunteers`;
         }
-        
+
         const response = await axios.get(url);
         setVolunteers(response.data);
       } catch (error) {
@@ -68,27 +68,27 @@ export default function VolunteerList({ initialFilter = 'active', groupId = null
   // Apply filters, search, and sorting
   useEffect(() => {
     let result = [...volunteers];
-    
+
     // Apply status filter
     if (filter === 'active') {
       // Consider volunteers with activity in the last 30 days as active
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      
-      result = result.filter(volunteer => 
+
+      result = result.filter(volunteer =>
         volunteer.lastActive && new Date(volunteer.lastActive) >= thirtyDaysAgo
       );
     }
-    
+
     // Apply search filter
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
-      result = result.filter(volunteer => 
-        volunteer.name.toLowerCase().includes(search) || 
+      result = result.filter(volunteer =>
+        volunteer.name.toLowerCase().includes(search) ||
         volunteer.email.toLowerCase().includes(search)
       );
     }
-    
+
     // Apply sorting
     if (sortConfig.key) {
       result.sort((a: any, b: any) => {
@@ -101,7 +101,7 @@ export default function VolunteerList({ initialFilter = 'active', groupId = null
         return 0;
       });
     }
-    
+
     setFilteredVolunteers(result);
   }, [volunteers, filter, searchTerm, sortConfig]);
 
@@ -172,7 +172,7 @@ export default function VolunteerList({ initialFilter = 'active', groupId = null
               </button>
             )}
           </div>
-          
+
           <div className="flex space-x-2">
             <Select
               defaultValue={filter}
@@ -186,7 +186,7 @@ export default function VolunteerList({ initialFilter = 'active', groupId = null
                 <SelectItem value="active">Active Volunteers</SelectItem>
               </SelectContent>
             </Select>
-            
+
             {isAdmin && !groupId && (
               <Button
                 onClick={() => router.push('/admin/volunteers/new')}
@@ -278,8 +278,8 @@ export default function VolunteerList({ initialFilter = 'active', groupId = null
             {searchTerm
               ? `No volunteers match your search "${searchTerm}"`
               : filter === 'active'
-              ? 'There are no active volunteers'
-              : 'There are no volunteers yet'}
+                ? 'There are no active volunteers'
+                : 'There are no volunteers yet'}
           </p>
           {isAdmin && !groupId && searchTerm && (
             <div className="mt-6">

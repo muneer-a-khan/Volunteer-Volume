@@ -19,7 +19,7 @@ export default async function handler(
 
   try {
     const session = await getServerSession(req, res, authOptions);
-    
+
     if (!session) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
@@ -38,9 +38,9 @@ export default async function handler(
     });
 
     if (existingMember) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'You are already a member of this group' 
+      return res.status(400).json({
+        success: false,
+        message: 'You are already a member of this group'
       });
     }
 
@@ -53,16 +53,16 @@ export default async function handler(
       }
     });
 
-    return res.status(200).json({ 
-      success: true, 
-      message: 'Successfully joined group' 
+    return res.status(200).json({
+      success: true,
+      message: 'Successfully joined group'
     });
 
   } catch (error) {
     console.error('Error joining group:', error);
-    return res.status(500).json({ 
-      success: false, 
-      message: 'Internal server error' 
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error'
     });
   }
 } 
