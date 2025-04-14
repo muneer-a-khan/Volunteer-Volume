@@ -30,9 +30,8 @@ const { createClient } = require('@supabase/supabase-js');
 const puppeteer = require('puppeteer');
 
 // Supabase client setup
-const SUPABASE_URL = 'https://nvtfgmbtnmckjbekznad.supabase.co'; 
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52dGZnbWJ0bm1ja2piZWt6bmFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMwMDcxMTYsImV4cCI6MjA1ODU4MzExNn0.a_QMo5A_S1B8SnkxNt-NI8q5sCQ4HbNwyIVtfOilWBs';
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
 // Function to scrape the image URL and upsert it in Supabase
 async function scrapeAndStoreImageUrl() {
