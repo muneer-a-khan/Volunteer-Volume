@@ -124,14 +124,17 @@ export function useSlowRenderWarning(
   // Define refs outside of any conditional
   const startTimeRef = useRef<number>(0);
   const renderCountRef = useRef<number>(0);
+  const isDevelopment = process.env.NODE_ENV === 'development';
   
-  // Only proceed with the timing logic in development
-  if (process.env.NODE_ENV === 'development') {
-    // Start timing at the beginning of render
+  // Always update the startTime in development
+  if (isDevelopment) {
     startTimeRef.current = performance.now();
     renderCountRef.current += 1;
-    
-    useEffect(() => {
+  }
+  
+  // Always call hooks unconditionally
+  useEffect(() => {
+    if (isDevelopment) {
       const endTime = performance.now();
       const renderTime = endTime - startTimeRef.current;
       
@@ -141,15 +144,10 @@ export function useSlowRenderWarning(
           `(render #${renderCountRef.current}). Consider optimizing this component.`
         );
       }
-      
-      return () => {
-        // Cleanup if needed
-      };
-    });
-  } else {
-    // Empty useEffect to ensure consistent hook call order in production
-    useEffect(() => {});
-  }
+    }
+    // Empty cleanup function
+    return () => {};
+  });
 }
 
 /**
