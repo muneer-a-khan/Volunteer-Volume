@@ -17,7 +17,7 @@ export function useVolunteers() {
           .order('created_at', { ascending: false });
 
         if (error) throw error;
-        setVolunteers(data || []);
+        setVolunteers(data ? (data as unknown as Volunteer[]) : []);
       } catch (err) {
         setError(err as Error);
       } finally {
@@ -37,8 +37,9 @@ export function useVolunteers() {
         .single();
 
       if (error) throw error;
-      setVolunteers(prev => [data, ...prev]);
-      return data;
+      const typedData = data as unknown as Volunteer;
+      setVolunteers(prev => [typedData, ...prev]);
+      return typedData;
     } catch (err) {
       setError(err as Error);
       throw err;
@@ -55,10 +56,11 @@ export function useVolunteers() {
         .single();
 
       if (error) throw error;
+      const typedData = data as unknown as Volunteer;
       setVolunteers(prev => prev.map(volunteer => 
-        volunteer.id === id ? data : volunteer
+        volunteer.id === id ? typedData : volunteer
       ));
-      return data;
+      return typedData;
     } catch (err) {
       setError(err as Error);
       throw err;
