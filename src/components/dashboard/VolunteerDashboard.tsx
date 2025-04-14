@@ -5,30 +5,18 @@ import Link from 'next/link';
 import { format, parseISO, isAfter, isBefore, addDays } from 'date-fns';
 import { Calendar, Clock, MapPin } from 'lucide-react';
 import axios from 'axios';
+import { useShifts, Shift } from '@/contexts/ShiftContext';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
-import { useShifts } from '@/contexts/ShiftContext';
 
 interface VolunteerStats {
   totalHours: number;
   shiftsCompleted: number;
   upcomingShifts: number;
-}
-
-interface Shift {
-  id: string;
-  title: string;
-  description: string;
-  startTime: string;
-  endTime: string;
-  location: string;
-  capacity: number;
-  status: 'OPEN' | 'FILLED' | 'CANCELLED' | 'COMPLETED';
-  volunteers: any[];
 }
 
 export default function VolunteerDashboard() {
@@ -52,9 +40,9 @@ export default function VolunteerDashboard() {
         // Fetch volunteer's shifts
         await fetchMyShifts();
         if (myShifts.length !== 0) {
-            // Fetch volunteer's stats
-            const response = await axios.get('/api/volunteers/stats');
-            setVolunteerStats(response.data);
+          // Fetch volunteer's stats
+          const response = await axios.get('/api/volunteers/stats');
+          setVolunteerStats(response.data);
         }
       } catch (error) {
         console.error('Error loading dashboard data:', error);
@@ -74,14 +62,14 @@ export default function VolunteerDashboard() {
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const tomorrow = addDays(today, 1);
-      
+
       const upcoming: Shift[] = [];
       const past: Shift[] = [];
       const today_shifts: Shift[] = [];
-      
-      myShifts.forEach((shift: Shift) => {
+
+      myShifts.forEach((shift) => {
         const shiftStart = parseISO(shift.startTime);
-        
+
         if (isAfter(shiftStart, tomorrow)) {
           upcoming.push(shift);
         } else if (isBefore(shiftStart, today)) {
@@ -90,26 +78,27 @@ export default function VolunteerDashboard() {
           today_shifts.push(shift);
         }
       });
-      
+
       // Sort by start time
       upcoming.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
       past.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()); // Most recent first
       today_shifts.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
-      
+
       setUpcomingShifts(upcoming);
       setPastShifts(past);
       setTodayShifts(today_shifts);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [myShifts]);
-  
+
   // Format shift time
   const formatShiftTime = (start: string, end: string) => {
     const startDate = parseISO(start);
     const endDate = parseISO(end);
-    
+
     return `${format(startDate, 'MMM d, yyyy h:mm a')} - ${format(endDate, 'h:mm a')}`;
   };
-  
+
   // Get shift status variant
   const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
@@ -134,15 +123,15 @@ export default function VolunteerDashboard() {
           <Skeleton className="h-8 w-[250px]" />
           <Skeleton className="h-4 w-[400px]" />
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-[120px] w-full rounded-xl" />
           ))}
         </div>
-        
+
         <Skeleton className="h-[200px] w-full rounded-xl" />
-        
+
         <div className="space-y-4">
           <Skeleton className="h-6 w-[150px]" />
           {[1, 2, 3].map((i) => (
@@ -158,14 +147,14 @@ export default function VolunteerDashboard() {
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl">
-            Welcome, {dbUser?.name || 'Volunteer'}!
+            Welcome, {dbUser?.name || "Volunteer"}!
           </CardTitle>
           <CardDescription>
-            Here's an overview of your volunteer activity and upcoming shifts.
+            Here&apos;s an overview of your volunteer activity and upcoming shifts.
           </CardDescription>
         </CardHeader>
       </Card>
-      
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
@@ -178,7 +167,7 @@ export default function VolunteerDashboard() {
             </p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-muted-foreground">Shifts Completed</CardTitle>
@@ -189,7 +178,7 @@ export default function VolunteerDashboard() {
             </p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-muted-foreground">Upcoming Shifts</CardTitle>
@@ -201,7 +190,7 @@ export default function VolunteerDashboard() {
           </CardContent>
         </Card>
       </div>
-      
+
       {/* Quick Actions */}
       <Card>
         <CardHeader>
@@ -214,13 +203,13 @@ export default function VolunteerDashboard() {
                 Browse Shifts
               </Link>
             </Button>
-            
+
             <Button variant="secondary" asChild>
               <Link href="/check-in">
                 Check In/Out
               </Link>
             </Button>
-            
+
             <Button variant="outline" asChild>
               <Link href="/log-hours">
                 Log Hours
@@ -229,18 +218,18 @@ export default function VolunteerDashboard() {
           </div>
         </CardContent>
       </Card>
-      
-      {/* Today's Shifts */}
+
+      {/* Today&apos;s Shifts */}
       {todayShifts.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Today's Shifts</CardTitle>
+            <CardTitle>Today&apos;s Shifts</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {todayShifts.map((shift) => (
               <Card key={shift.id} className="overflow-hidden">
                 <CardContent className="p-0">
-                  <Link 
+                  <Link
                     href={`/shifts/${shift.id}`}
                     className="block p-4 hover:bg-muted/50 transition-colors"
                   >
@@ -279,7 +268,7 @@ export default function VolunteerDashboard() {
           </CardContent>
         </Card>
       )}
-      
+
       {/* Upcoming Shifts */}
       {upcomingShifts.length > 0 && (
         <Card>
@@ -290,7 +279,7 @@ export default function VolunteerDashboard() {
             {upcomingShifts.slice(0, 3).map((shift) => (
               <Card key={shift.id} className="overflow-hidden">
                 <CardContent className="p-0">
-                  <Link 
+                  <Link
                     href={`/shifts/${shift.id}`}
                     className="block p-4 hover:bg-muted/50 transition-colors"
                   >
@@ -320,7 +309,7 @@ export default function VolunteerDashboard() {
                 </CardContent>
               </Card>
             ))}
-            
+
             {upcomingShifts.length > 3 && (
               <Button variant="ghost" className="w-full" asChild>
                 <Link href="/shifts">
@@ -331,7 +320,7 @@ export default function VolunteerDashboard() {
           </CardContent>
         </Card>
       )}
-      
+
       {/* No Shifts */}
       {upcomingShifts.length === 0 && todayShifts.length === 0 && (
         <Card>
@@ -340,7 +329,7 @@ export default function VolunteerDashboard() {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">
-              You don't have any upcoming shifts scheduled. Browse available shifts to sign up!
+              You don&apos;t have any upcoming shifts scheduled. Browse available shifts to sign up!
             </p>
             <Button asChild>
               <Link href="/shifts">

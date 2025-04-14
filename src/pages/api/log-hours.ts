@@ -37,11 +37,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // If groupId is provided, verify the user is a member of that group
     if (groupId) {
-      const membership = await prisma.usersGroup.findUnique({
+      const membership = await prisma.user_groups.findUnique({
         where: {
           user_id_group_id: {
             user_id: user.id,
-            group_id
+            group_id: groupId
           }
         }
       });
@@ -60,7 +60,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         description: description || 'Manually logged hours',
         date: new Date(date),
         approved: false,
-        group_id: group_id || null
+        group_id: groupId || null
       }
     });
 

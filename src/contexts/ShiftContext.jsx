@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { useAuth } from './AuthContext';
@@ -12,7 +12,7 @@ export const ShiftProvider = ({ children }) => {
   const { isAuthenticated, dbUser } = useAuth();
 
   // Fetch all shifts
-  const fetchShifts = async () => {
+  const fetchShifts = useCallback(async () => {
     try {
       setLoading(true);
       const response = await axios.get('/api/shifts');
@@ -25,12 +25,12 @@ export const ShiftProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Fetch shifts for current user
-  const fetchMyShifts = async () => {
+  const fetchMyShifts = useCallback(async () => {
     if (!isAuthenticated || !dbUser) return [];
-    
+
     try {
       setLoading(true);
       const response = await axios.get(`/api/shifts/my-shifts`);
@@ -43,7 +43,7 @@ export const ShiftProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAuthenticated, dbUser]);
 
   // Create a new shift
   const createShift = async (shiftData) => {
@@ -68,10 +68,10 @@ export const ShiftProvider = ({ children }) => {
       setLoading(true);
       const response = await axios.put(`/api/shifts/${id}`, shiftData);
       setShifts(prev => prev.map(shift => shift.id === id ? response.data : shift));
-      
+
       // Update myShifts if it exists there
       setMyShifts(prev => prev.map(shift => shift.id === id ? response.data : shift));
-      
+
       toast.success('Shift updated successfully');
       return response.data;
     } catch (error) {
@@ -106,18 +106,18 @@ export const ShiftProvider = ({ children }) => {
     try {
       setLoading(true);
       const response = await axios.post(`/api/shifts/${shiftId}/signup`);
-      
+
       // Update shifts and myShifts
-      setShifts(prev => prev.map(shift => 
+      setShifts(prev => prev.map(shift =>
         shift.id === shiftId ? response.data : shift
       ));
-      
+
       // Add to myShifts if not already there
       setMyShifts(prev => {
         const exists = prev.some(shift => shift.id === shiftId);
         return exists ? prev.map(shift => shift.id === shiftId ? response.data : shift) : [...prev, response.data];
       });
-      
+
       toast.success('Successfully signed up for shift');
       return response.data;
     } catch (error) {
@@ -134,15 +134,15 @@ export const ShiftProvider = ({ children }) => {
     try {
       setLoading(true);
       const response = await axios.post(`/api/shifts/${shiftId}/cancel`);
-      
+
       // Update shifts and myShifts
-      setShifts(prev => prev.map(shift => 
+      setShifts(prev => prev.map(shift =>
         shift.id === shiftId ? response.data : shift
       ));
-      
+
       // Remove from myShifts
       setMyShifts(prev => prev.filter(shift => shift.id !== shiftId));
-      
+
       toast.success('Successfully canceled shift registration');
       return true;
     } catch (error) {
@@ -186,13 +186,13 @@ export const ShiftProvider = ({ children }) => {
     }
   };
 
-  // Load shifts on mount if authenticated
+  // Load shifts and my shifts on mount if authenticated
   useEffect(() => {
     if (isAuthenticated) {
       fetchShifts();
       fetchMyShifts();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchShifts, fetchMyShifts]);
 
   // Provider value
   const value = {

@@ -60,12 +60,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const now = new Date();
     const upcomingShifts = await prisma.shifts.count({
       where: {
-        volunteers: {
+        shift_volunteers: {
           some: {
-            id: user.id
+            user_id: user.id
           }
         },
-        startTime: {
+        start_time: {
           gt: now
         },
         status: {
@@ -92,9 +92,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json(mapSnakeToCamel(stats));
   } catch (error) {
     console.error('Error fetching volunteer stats:', error);
-    return res.status(500).json({ 
-      message: 'Failed to fetch volunteer statistics', 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    return res.status(500).json({
+      message: 'Failed to fetch volunteer statistics',
+      error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 } 

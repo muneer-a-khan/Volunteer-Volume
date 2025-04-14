@@ -35,7 +35,7 @@ export default async function handler(
 
   try {
     const session = await getServerSession(req, res, authOptions);
-    
+
     if (!session) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
@@ -45,45 +45,45 @@ export default async function handler(
         const group = await prisma.groups.findUnique({
           where: { id },
           include: {
-            members: {
+            user_groups: {
               include: {
-                user: true
+                users: true
               }
             }
           }
         });
 
         if (!group) {
-          return res.status(404).json({ 
-            success: false, 
-            message: 'Group not found' 
+          return res.status(404).json({
+            success: false,
+            message: 'Group not found'
           });
         }
 
         const formattedGroup = {
           id: group.id,
           name: group.name,
-          description: group.description,
-          members: group.members.map(member => ({
-            id: member.userId,
-            name: member.user.name,
-            role: member.role
+          description: group.description || '',
+          members: group.user_groups.map(member => ({
+            id: member.user_id,
+            name: member.users.name,
+            role: member.role || 'MEMBER'
           })),
-          createdAt: group.createdAt.toISOString(),
-          updatedAt: group.updatedAt.toISOString()
+          createdAt: group.created_at ? group.created_at.toISOString() : new Date().toISOString(),
+          updatedAt: group.updated_at ? group.updated_at.toISOString() : new Date().toISOString()
         };
 
-        return res.status(200).json({ 
-          success: true, 
-          data: formattedGroup 
+        return res.status(200).json({
+          success: true,
+          data: formattedGroup
         });
       }
 
       case 'PATCH': {
         if (session.user.role !== 'ADMIN') {
-          return res.status(403).json({ 
-            success: false, 
-            message: 'Forbidden' 
+          return res.status(403).json({
+            success: false,
+            message: 'Forbidden'
           });
         }
 
@@ -97,24 +97,24 @@ export default async function handler(
           }
         });
 
-        return res.status(200).json({ 
-          success: true, 
+        return res.status(200).json({
+          success: true,
           data: {
             id: updatedGroup.id,
             name: updatedGroup.name,
-            description: updatedGroup.description,
+            description: updatedGroup.description || '',
             members: [], // This would need to be fetched separately
-            created_at: updatedGroup.created_at.toISOString(),
-            updated_at: updatedGroup.updated_at.toISOString()
+            createdAt: updatedGroup.created_at ? updatedGroup.created_at.toISOString() : new Date().toISOString(),
+            updatedAt: updatedGroup.updated_at ? updatedGroup.updated_at.toISOString() : new Date().toISOString()
           }
         });
       }
 
       case 'DELETE': {
         if (session.user.role !== 'ADMIN') {
-          return res.status(403).json({ 
-            success: false, 
-            message: 'Forbidden' 
+          return res.status(403).json({
+            success: false,
+            message: 'Forbidden'
           });
         }
 
@@ -126,16 +126,16 @@ export default async function handler(
       }
 
       default:
-        return res.status(405).json({ 
-          success: false, 
-          message: 'Method not allowed' 
+        return res.status(405).json({
+          success: false,
+          message: 'Method not allowed'
         });
     }
   } catch (error) {
     console.error('Error handling group:', error);
-    return res.status(500).json({ 
-      success: false, 
-      message: 'Internal server error' 
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error'
     });
   }
 } 

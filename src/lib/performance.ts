@@ -70,12 +70,12 @@ export function useRenderTime(componentName: string, logToConsole = false): void
   useEffect(() => {
     const endTime = performance.now();
     const renderTime = endTime - startTimeRef.current;
-    
+
     // Only log in development
     if (process.env.NODE_ENV === 'development' && logToConsole) {
       console.log(`[Performance] ${componentName} rendered in ${renderTime.toFixed(2)}ms`);
     }
-    
+
     // In production, we could send this data to an analytics service
     if (process.env.NODE_ENV === 'production' && renderTime > 100) {
       // Example: sendMetric(`render_time_${componentName}`, renderTime);
@@ -95,17 +95,17 @@ export async function measurePerformance<T>(
     const result = await fn();
     const end = performance.now();
     const duration = end - start;
-    
+
     // Log in development
     if (process.env.NODE_ENV === 'development') {
       console.log(`[Performance] ${operationName} took ${duration.toFixed(2)}ms`);
     }
-    
+
     // Send to analytics in production if the operation is slow
     if (process.env.NODE_ENV === 'production' && duration > 500) {
       // Example: sendMetric(`duration_${operationName}`, duration);
     }
-    
+
     return result;
   } catch (error) {
     const end = performance.now();
@@ -121,32 +121,32 @@ export function useSlowRenderWarning(
   componentName: string,
   threshold = 50 // threshold in ms
 ): void {
-  // Only enable in development
-  if (process.env.NODE_ENV !== 'development') {
-    return;
-  }
-  
+  // Define refs outside of any conditional
   const startTimeRef = useRef<number>(0);
   const renderCountRef = useRef<number>(0);
-  
-  // Start timing at the beginning of render
-  startTimeRef.current = performance.now();
-  renderCountRef.current += 1;
-  
+  const isDevelopment = process.env.NODE_ENV === 'development';
+
+  // Always update the startTime in development
+  if (isDevelopment) {
+    startTimeRef.current = performance.now();
+    renderCountRef.current += 1;
+  }
+
+  // Always call hooks unconditionally
   useEffect(() => {
-    const endTime = performance.now();
-    const renderTime = endTime - startTimeRef.current;
-    
-    if (renderTime > threshold) {
-      console.warn(
-        `[Performance Warning] ${componentName} took ${renderTime.toFixed(2)}ms to render ` +
-        `(render #${renderCountRef.current}). Consider optimizing this component.`
-      );
+    if (isDevelopment) {
+      const endTime = performance.now();
+      const renderTime = endTime - startTimeRef.current;
+
+      if (renderTime > threshold) {
+        console.warn(
+          `[Performance Warning] ${componentName} took ${renderTime.toFixed(2)}ms to render ` +
+          `(render #${renderCountRef.current}). Consider optimizing this component.`
+        );
+      }
     }
-    
-    return () => {
-      // Cleanup if needed
-    };
+    // Empty cleanup function
+    return () => { };
   });
 }
 
@@ -155,7 +155,7 @@ export function useSlowRenderWarning(
  */
 export function useLazyLoading(ref: React.RefObject<HTMLElement>, rootMargin = '200px'): boolean {
   const [isIntersecting, setIsIntersecting] = useState<boolean>(false);
-  
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -165,18 +165,18 @@ export function useLazyLoading(ref: React.RefObject<HTMLElement>, rootMargin = '
         rootMargin,
       }
     );
-    
+
     const currentRef = ref.current;
     if (currentRef) {
       observer.observe(currentRef);
     }
-    
+
     return () => {
       if (currentRef) {
         observer.unobserve(currentRef);
       }
     };
   }, [ref, rootMargin]);
-  
+
   return isIntersecting;
 } 

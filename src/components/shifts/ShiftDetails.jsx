@@ -22,10 +22,10 @@ export default function ShiftDetails({ shift }) {
   }
 
   // Check if user is signed up for this shift
-  const isSignedUp = shift.volunteers.some(volunteer => volunteer.id === dbUser?.id);
+  const isSignedUp = shift.volunteers && shift.volunteers.some(volunteer => volunteer.id === dbUser?.id);
 
   // Check if shift has available spots
-  const hasAvailableSpots = shift.volunteers.length < shift.capacity;
+  const hasAvailableSpots = shift.currentVolunteers < shift.capacity;
 
   // Check if shift is in the past
   const isShiftPast = isPast(parseISO(shift.endTime));
@@ -37,7 +37,7 @@ export default function ShiftDetails({ shift }) {
   const formatShiftTime = (start, end) => {
     const startDate = parseISO(start);
     const endDate = parseISO(end);
-    
+
     return `${format(startDate, 'EEEE, MMMM d, yyyy h:mm a')} - ${format(endDate, 'h:mm a')}`;
   };
 
@@ -89,16 +89,16 @@ export default function ShiftDetails({ shift }) {
             <h2 className="text-2xl font-bold text-gray-900">{shift.title}</h2>
             <p className="text-gray-600 mt-1">{shift.location}</p>
             <p className="text-gray-500 mt-1">{formatShiftTime(shift.startTime, shift.endTime)}</p>
-            
+
             <div className="mt-4 flex flex-wrap gap-3">
               <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusClass(shift.status)}`}>
                 {shift.status}
               </span>
-              
+
               <span className="px-3 py-1 text-sm font-medium rounded-full bg-gray-100 text-gray-800">
-                {shift.volunteers.length} / {shift.capacity} volunteers
+                {shift.currentVolunteers} / {shift.capacity} volunteers
               </span>
-              
+
               {shift.group && (
                 <Link
                   href={`/groups/${shift.group.id}`}
@@ -109,7 +109,7 @@ export default function ShiftDetails({ shift }) {
               )}
             </div>
           </div>
-          
+
           <div className="mt-6 md:mt-0 flex space-x-4">
             {isAdmin && !isShiftPast && (
               <Link
@@ -119,7 +119,7 @@ export default function ShiftDetails({ shift }) {
                 Edit Shift
               </Link>
             )}
-            
+
             {!isShiftPast && shift.status !== 'CANCELLED' && (
               <>
                 {isSignedUp ? (
@@ -143,7 +143,7 @@ export default function ShiftDetails({ shift }) {
                 )}
               </>
             )}
-            
+
             {isSignedUp && isShiftActive && (
               <Link
                 href="/check-in"
@@ -154,7 +154,7 @@ export default function ShiftDetails({ shift }) {
             )}
           </div>
         </div>
-        
+
         {shift.description && (
           <div className="mt-6">
             <h3 className="text-lg font-medium text-gray-900 mb-2">Description</h3>
@@ -163,73 +163,43 @@ export default function ShiftDetails({ shift }) {
             </div>
           </div>
         )}
-        
+
         <div className="mt-8">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Registered Volunteers</h3>
-          
-          {shift.volunteers.length > 0 ? (
-            <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-              <table className="min-w-full divide-y divide-gray-300">
+
+          {shift.volunteers && shift.volunteers.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
-                      Name
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Volunteer Name
                     </th>
                     {isAdmin && (
-                      <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                        Contact
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Email
                       </th>
                     )}
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Status
-                    </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200 bg-white">
+                <tbody className="bg-white divide-y divide-gray-200">
                   {shift.volunteers.map((volunteer) => (
                     <tr key={volunteer.id}>
-                      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {volunteer.name}
                       </td>
                       {isAdmin && (
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                          <p>{volunteer.email}</p>
-                          {volunteer.phone && <p>{volunteer.phone}</p>}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {volunteer.email}
                         </td>
                       )}
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {shift.checkIns.find(checkIn => checkIn.user.id === volunteer.id) ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Checked In
-                          </span>
-                        ) : isShiftPast ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                            No-show
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            Registered
-                          </span>
-                        )}
-                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           ) : (
-            <div className="text-center py-8 bg-gray-50 rounded-lg">
-              <p className="text-gray-500">No volunteers have signed up for this shift yet.</p>
-              {!isShiftPast && shift.status !== 'CANCELLED' && !isSignedUp && hasAvailableSpots && (
-                <button
-                  onClick={handleSignUp}
-                  disabled={isSigningUp}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-vadm-green hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-vadm-green disabled:opacity-50 mt-4"
-                >
-                  {isSigningUp ? 'Signing Up...' : 'Be the first to sign up!'}
-                </button>
-              )}
-            </div>
+            <p className="text-gray-500">No volunteers have signed up for this shift yet.</p>
           )}
         </div>
       </div>

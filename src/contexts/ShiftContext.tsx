@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useContext, useEffect, ReactNode, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { useAuth } from './AuthContext';
@@ -63,31 +63,31 @@ export const ShiftProvider: React.FC<ShiftProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const { isAuthenticated, dbUser } = useAuth();
 
-  // Fetch all shifts
-    const fetchShifts = async (): Promise<Shift[]> => {
+  // Fetch all shifts - wrapped in useCallback to maintain reference stability
+  const fetchShifts = useCallback(async (): Promise<Shift[]> => {
     // Add static variable to track if error has been shown
-        try {
-            setLoading(true);
-            const response = await axios.get('/api/shifts');
-            hasShownFetchError = false; // Reset on successful fetch
-            setShifts(response.data);
-            return response.data;
-        } catch (error) {
-            if (!hasShownFetchError) {
-                console.error('Error fetching shifts:', error);
-                toast.error('Failed to load shifts. Please try again.');
-                hasShownFetchError = true;
-        }
-        return [];
-        } finally {
-            setLoading(false);
-        }
-  };
+    try {
+      setLoading(true);
+      const response = await axios.get('/api/shifts');
+      hasShownFetchError = false; // Reset on successful fetch
+      setShifts(response.data);
+      return response.data;
+    } catch (error) {
+      if (!hasShownFetchError) {
+        console.error('Error fetching shifts:', error);
+        toast.error('Failed to load shifts. Please try again.');
+        hasShownFetchError = true;
+      }
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  // Fetch shifts for current user
-  const fetchMyShifts = async (): Promise<Shift[]> => {
+  // Fetch shifts for current user - wrapped in useCallback to maintain reference stability
+  const fetchMyShifts = useCallback(async (): Promise<Shift[]> => {
     if (!isAuthenticated || !dbUser) return [];
-    
+
     try {
       setLoading(true);
       const response = await axios.get(`/api/shifts/my-shifts`);
@@ -104,7 +104,7 @@ export const ShiftProvider: React.FC<ShiftProviderProps> = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAuthenticated, dbUser]);
 
   // Create a new shift
   const createShift = async (shiftData: Partial<Shift>): Promise<Shift> => {
@@ -129,10 +129,10 @@ export const ShiftProvider: React.FC<ShiftProviderProps> = ({ children }) => {
       setLoading(true);
       const response = await axios.put(`/api/shifts/${id}`, shiftData);
       setShifts(prev => prev.map(shift => shift.id === id ? response.data : shift));
-      
+
       // Update myShifts if it exists there
       setMyShifts(prev => prev.map(shift => shift.id === id ? response.data : shift));
-      
+
       toast.success('Shift updated successfully');
       return response.data;
     } catch (error: any) {
@@ -167,18 +167,18 @@ export const ShiftProvider: React.FC<ShiftProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       const response = await axios.post(`/api/shifts/${shiftId}/signup`);
-      
+
       // Update shifts and myShifts
-      setShifts(prev => prev.map(shift => 
+      setShifts(prev => prev.map(shift =>
         shift.id === shiftId ? response.data : shift
       ));
-      
+
       // Add to myShifts if not already there
       setMyShifts(prev => {
         const exists = prev.some(shift => shift.id === shiftId);
         return exists ? prev.map(shift => shift.id === shiftId ? response.data : shift) : [...prev, response.data];
       });
-      
+
       toast.success('Successfully signed up for shift');
       return response.data;
     } catch (error: any) {
@@ -195,15 +195,15 @@ export const ShiftProvider: React.FC<ShiftProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       const response = await axios.post(`/api/shifts/${shiftId}/cancel`);
-      
+
       // Update shifts and myShifts
-      setShifts(prev => prev.map(shift => 
+      setShifts(prev => prev.map(shift =>
         shift.id === shiftId ? response.data : shift
       ));
-      
+
       // Remove from myShifts
       setMyShifts(prev => prev.filter(shift => shift.id !== shiftId));
-      
+
       toast.success('Successfully canceled shift registration');
       return true;
     } catch (error) {
@@ -253,7 +253,7 @@ export const ShiftProvider: React.FC<ShiftProviderProps> = ({ children }) => {
       fetchShifts();
       fetchMyShifts();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchShifts, fetchMyShifts]);
 
   // Provider value
   const value: ShiftContextType = {

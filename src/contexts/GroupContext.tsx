@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useContext, useEffect, ReactNode, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { useAuth } from './AuthContext';
@@ -83,7 +83,7 @@ export const GroupProvider: React.FC<GroupProviderProps> = ({ children }) => {
   const { isAuthenticated, dbUser } = useAuth();
 
   // Fetch all groups
-  const fetchGroups = async (): Promise<Group[]> => {
+  const fetchGroups = useCallback(async (): Promise<Group[]> => {
     try {
       setLoading(true);
       const response = await axios.get('/api/groups');
@@ -96,12 +96,12 @@ export const GroupProvider: React.FC<GroupProviderProps> = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Fetch groups for current user
-  const fetchMyGroups = async (): Promise<Group[]> => {
+  const fetchMyGroups = useCallback(async (): Promise<Group[]> => {
     if (!isAuthenticated || !dbUser) return [];
-    
+
     try {
       setLoading(true);
       const response = await axios.get(`/api/groups/my-groups`);
@@ -114,7 +114,7 @@ export const GroupProvider: React.FC<GroupProviderProps> = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAuthenticated, dbUser]);
 
   // Get a specific group
   const getGroup = async (id: string): Promise<Group | null> => {
@@ -137,10 +137,10 @@ export const GroupProvider: React.FC<GroupProviderProps> = ({ children }) => {
       setLoading(true);
       const response = await axios.post('/api/groups', groupData);
       setGroups(prev => [...prev, response.data]);
-      
+
       // Add to myGroups if current user is the admin
       setMyGroups(prev => [...prev, response.data]);
-      
+
       toast.success('Group created successfully');
       return response.data;
     } catch (error: any) {
@@ -157,13 +157,13 @@ export const GroupProvider: React.FC<GroupProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       const response = await axios.put(`/api/groups/${id}`, groupData);
-      
+
       // Update in groups array
       setGroups(prev => prev.map(group => group.id === id ? response.data : group));
-      
+
       // Update in myGroups if it exists there
       setMyGroups(prev => prev.map(group => group.id === id ? response.data : group));
-      
+
       toast.success('Group updated successfully');
       return response.data;
     } catch (error: any) {
@@ -180,13 +180,13 @@ export const GroupProvider: React.FC<GroupProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       await axios.delete(`/api/groups/${id}`);
-      
+
       // Remove from groups array
       setGroups(prev => prev.filter(group => group.id !== id));
-      
+
       // Remove from myGroups
       setMyGroups(prev => prev.filter(group => group.id !== id));
-      
+
       toast.success('Group deleted successfully');
       return true;
     } catch (error) {
@@ -203,7 +203,7 @@ export const GroupProvider: React.FC<GroupProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       const response = await axios.post(`/api/groups/${groupId}/join`);
-      
+
       // Add to myGroups if not already there
       setMyGroups(prev => {
         const exists = prev.some(group => group.id === groupId);
@@ -211,12 +211,12 @@ export const GroupProvider: React.FC<GroupProviderProps> = ({ children }) => {
           // Find the group in all groups
           const groupToAdd = groups.find(g => g.id === groupId);
           if (groupToAdd) {
-            return [...prev, {...groupToAdd, userRole: 'MEMBER', status: 'ACTIVE'}];
+            return [...prev, { ...groupToAdd, userRole: 'MEMBER', status: 'ACTIVE' }];
           }
         }
         return prev;
       });
-      
+
       toast.success('Successfully joined group');
       return response.data;
     } catch (error: any) {
@@ -233,10 +233,10 @@ export const GroupProvider: React.FC<GroupProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       await axios.post(`/api/groups/${groupId}/leave`);
-      
+
       // Remove from myGroups
       setMyGroups(prev => prev.filter(group => group.id !== groupId));
-      
+
       toast.success('Successfully left group');
       return true;
     } catch (error) {
@@ -301,7 +301,7 @@ export const GroupProvider: React.FC<GroupProviderProps> = ({ children }) => {
       fetchGroups();
       fetchMyGroups();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchGroups, fetchMyGroups]);
 
   // Provider value
   const value: GroupContextType = {

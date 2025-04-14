@@ -17,12 +17,12 @@ interface VolunteerWithStats {
   name?: string;
   email?: string;
   role?: string;
-  profile?: any; // TODO: Define proper type based on Prisma schema
+  profiles?: any; // TODO: Define proper type based on Prisma schema
   stats: VolunteerStats;
   _count?: {
-    shifts: number;
-    checkIns: number;
-    volunteerLogs: number;
+    shift_volunteers: number;
+    check_ins: number;
+    volunteer_logs: number;
   };
 }
 
@@ -58,9 +58,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   } catch (error) {
     console.error('Volunteers API error:', error);
-    return res.status(500).json({ 
-      message: 'Internal server error', 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    return res.status(500).json({
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 }
@@ -68,11 +68,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 // Get all volunteers with optional filtering
 async function getVolunteers(req: NextApiRequest, res: NextApiResponse) {
   const { search, status, group } = req.query;
-  
+
   let where: any = {
     role: 'VOLUNTEER'
   };
-  
+
   // Apply search filter
   if (search && typeof search === 'string') {
     where.OR = [
@@ -80,7 +80,7 @@ async function getVolunteers(req: NextApiRequest, res: NextApiResponse) {
       { email: { contains: search, mode: 'insensitive' } }
     ];
   }
-  
+
   // Filter by group if provided
   if (group && typeof group === 'string') {
     where.memberGroups = {
@@ -89,17 +89,17 @@ async function getVolunteers(req: NextApiRequest, res: NextApiResponse) {
       }
     };
   }
-  
+
   try {
     const volunteers = await prisma.users.findMany({
       where,
       include: {
-        profile: true,
+        profiles: true,
         _count: {
           select: {
-            shifts: true,
-            checkIns: true,
-            volunteerLogs: true
+            shift_volunteers: true,
+            check_ins: true,
+            volunteer_logs: true
           }
         }
       },
@@ -107,10 +107,10 @@ async function getVolunteers(req: NextApiRequest, res: NextApiResponse) {
         name: 'asc'
       }
     });
-    
+
     // Calculate volunteer statistics
     const volunteersWithStats = await Promise.all(
-      volunteers.map(async (volunteer: { id: string; _count: { shifts: number; checkIns: number; volunteerLogs: number } }) => {
+      volunteers.map(async (volunteer: { id: string; _count: { shift_volunteers: number; check_ins: number; volunteer_logs: number } }) => {
         // Get total hours from volunteer logs
         const logs = await prisma.volunteer_logs.aggregate({
           where: {
@@ -121,36 +121,36 @@ async function getVolunteers(req: NextApiRequest, res: NextApiResponse) {
             minutes: true
           }
         });
-        
+
         // Calculate total hours
         let totalHours = logs._sum.hours || 0;
         let totalMinutes = logs._sum.minutes || 0;
-        
+
         // Normalize minutes
         totalHours += Math.floor(totalMinutes / 60);
         totalMinutes = totalMinutes % 60;
-        
+
         const volunteerWithStats: VolunteerWithStats = {
           ...volunteer,
           stats: {
             totalHours,
             totalMinutes,
-            shiftsCount: volunteer._count.shifts,
-            checkInsCount: volunteer._count.checkIns,
-            logsCount: volunteer._count.volunteerLogs
+            shiftsCount: volunteer._count.shift_volunteers,
+            checkInsCount: volunteer._count.check_ins,
+            logsCount: volunteer._count.volunteer_logs
           }
         };
-        
+
         return volunteerWithStats;
       })
     );
-    
+
     return res.status(200).json(mapSnakeToCamel(volunteersWithStats));
   } catch (error) {
     console.error('Error fetching volunteers:', error);
-    return res.status(500).json({ 
-      message: 'Failed to fetch volunteers', 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    return res.status(500).json({
+      message: 'Failed to fetch volunteers',
+      error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 } 

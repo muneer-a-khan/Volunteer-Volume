@@ -7,11 +7,11 @@ const PrivacyPolicy: React.FC = () => {
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-3xl mx-auto bg-white p-8 rounded-lg shadow-md">
         <h1 className="text-3xl font-bold text-gray-900 mb-4">Privacy Policy</h1>
-        
+
         <p className="text-gray-700 mb-4">
           Volunteer Volume is committed to protecting your privacy and ensuring the security of your personal information. By accessing or using our website, you agree to the practices described in this Privacy Policy.
         </p>
-        
+
         <h2 className="text-2xl font-semibold text-gray-800 mt-6">1. Information We Collect</h2>
         <p className="text-gray-700 mb-4">
           We collect personal information that you voluntarily provide to us when you use our services or interact with our website. The types of personal information we collect include:
@@ -47,7 +47,7 @@ const PrivacyPolicy: React.FC = () => {
           <li><strong>Opt-Out:</strong> If you no longer wish to receive communications from us, you can unsubscribe from our emails or contact us to request that we stop sending you informational materials.</li>
         </ul>
 
-        <h2 className="text-2xl font-semibold text-gray-800 mt-6">5. Children’s Privacy</h2>
+        <h2 className="text-2xl font-semibold text-gray-800 mt-6">5. Children&apos;s Privacy</h2>
         <p className="text-gray-700 mb-4">
           Our website is not intended for children under the age of 12, and we do not knowingly collect personal information from children. If we become aware that we have inadvertently collected personal information from a child under 12, we will take steps to delete that information. If you are a parent or guardian and believe we may have collected such information, please contact us immediately.
         </p>
@@ -62,7 +62,7 @@ const PrivacyPolicy: React.FC = () => {
 
         <h2 className="text-2xl font-semibold text-gray-800 mt-6">7. Changes to This Privacy Policy</h2>
         <p className="text-gray-700 mb-4">
-          We may update this Privacy Policy from time to time to reflect changes in our practices or legal requirements. When we make changes, we will post the revised policy on this page and update the "Effective Date" at the top of the policy. We encourage you to review this Privacy Policy periodically to stay informed about how we are protecting your information.
+          We may update this Privacy Policy from time to time to reflect changes in our practices or legal requirements. When we make changes, we will post the revised policy on this page and update the &quot;Effective Date&quot; at the top of the policy. We encourage you to review this Privacy Policy periodically to stay informed about how we are protecting your information.
         </p>
 
         <h2 className="text-2xl font-semibold text-gray-800 mt-6">8. Contact Us</h2>

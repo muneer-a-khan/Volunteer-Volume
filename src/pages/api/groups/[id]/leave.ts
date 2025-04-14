@@ -19,7 +19,7 @@ export default async function handler(
 
   try {
     const session = await getServerSession(req, res, authOptions);
-    
+
     if (!session) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
@@ -30,7 +30,7 @@ export default async function handler(
     }
 
     // Check if user is a member of the group
-    const member = await prisma.groupsMember.findFirst({
+    const member = await prisma.user_groups.findFirst({
       where: {
         group_id: id,
         user_id: session.user.id
@@ -38,29 +38,29 @@ export default async function handler(
     });
 
     if (!member) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'You are not a member of this group' 
+      return res.status(404).json({
+        success: false,
+        message: 'You are not a member of this group'
       });
     }
 
     // Remove user from group
-    await prisma.groupsMember.delete({
+    await prisma.user_groups.delete({
       where: {
         id: member.id
       }
     });
 
-    return res.status(200).json({ 
-      success: true, 
-      message: 'Successfully left group' 
+    return res.status(200).json({
+      success: true,
+      message: 'Successfully left group'
     });
 
   } catch (error) {
     console.error('Error leaving group:', error);
-    return res.status(500).json({ 
-      success: false, 
-      message: 'Internal server error' 
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error'
     });
   }
 } 

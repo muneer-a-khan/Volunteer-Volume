@@ -56,12 +56,12 @@ export default function ShadcnNavbar({ isAuthenticated, isAdmin }: ShadcnNavbarP
   const router = useRouter();
   const pathname = usePathname();
   const { data: session, status } = useSession();
-  
+
   // Use the props if provided, otherwise fall back to the session data
   const isUserAuthenticated = isAuthenticated !== undefined ? isAuthenticated : status === "authenticated";
   const isUserAdmin = isAdmin !== undefined ? isAdmin : (session?.user?.role === "ADMIN" || session?.user?.role === "GROUP_ADMIN");
   const isPending = session?.user?.role === "PENDING";
-  
+
   let userRole = "guest";
   if (isUserAuthenticated) {
     if (isUserAdmin) {
@@ -74,11 +74,11 @@ export default function ShadcnNavbar({ isAuthenticated, isAdmin }: ShadcnNavbarP
   }
 
   // For debugging purposes
-  console.log("User auth status:", { 
-    isUserAuthenticated, 
-    status, 
-    userRole, 
-    role: session?.user?.role 
+  console.log("User auth status:", {
+    isUserAuthenticated,
+    status,
+    userRole,
+    role: session?.user?.role
   });
 
   const navLinks = NAV_LINKS[userRole as keyof typeof NAV_LINKS];
@@ -88,9 +88,11 @@ export default function ShadcnNavbar({ isAuthenticated, isAdmin }: ShadcnNavbarP
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center space-x-2">
-            <img 
-              src="https://www.visitcharlottesville.org/imager/files_idss_com/C406/images/listings/original_VDM_Logo_Primary-RGB-_600x350_e45adf5f6bc0c5c2a30a39868f44eab6.png" 
-              alt="Virginia Discovery Museum" 
+            <Image
+              src="https://www.visitcharlottesville.org/imager/files_idss_com/C406/images/listings/original_VDM_Logo_Primary-RGB-_600x350_e45adf5f6bc0c5c2a30a39868f44eab6.png"
+              alt="Virginia Discovery Museum"
+              width={100}
+              height={48}
               className="inline-block h-12"
             />
           </Link>
@@ -136,7 +138,7 @@ export default function ShadcnNavbar({ isAuthenticated, isAdmin }: ShadcnNavbarP
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </DropdownMenuItem>
-                
+
                 {/* Only show these options for regular volunteers and admins */}
                 {!isPending && (
                   <>
@@ -150,7 +152,7 @@ export default function ShadcnNavbar({ isAuthenticated, isAdmin }: ShadcnNavbarP
                     </DropdownMenuItem>
                   </>
                 )}
-                
+
                 {/* Show application link for pending users */}
                 {isPending && (
                   <DropdownMenuItem onClick={() => router.push("/my-applications")}>
@@ -158,7 +160,7 @@ export default function ShadcnNavbar({ isAuthenticated, isAdmin }: ShadcnNavbarP
                     <span>My Application</span>
                   </DropdownMenuItem>
                 )}
-                
+
                 {isUserAdmin && (
                   <>
                     <DropdownMenuSeparator />
