@@ -57,6 +57,7 @@ export default function VolunteerDashboard() {
   }, [dbUser?.id, fetchMyShifts]);
 
   // Sort shifts into categories
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (myShifts?.length > 0) {
       const now = new Date();
