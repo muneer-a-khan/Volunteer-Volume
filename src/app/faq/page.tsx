@@ -31,19 +31,19 @@ const faqs = [
   {
     question: "Can I delete my account?",
     answer:
-      "Yes, to do so, please contact our support team through the 'Contact' page, and we’ll assist you in closing your account. Please note that once your account is deleted, it cannot be recovered.",
+      "Yes, to do so, please contact our support team through the 'Contact' page, and we'll assist you in closing your account. Please note that once your account is deleted, it cannot be recovered.",
   },
   {
-    question: "I’m having trouble signing up. What should I do?",
+    question: "I'm having trouble signing up. What should I do?",
     answer:
       "If you're having trouble signing up, please double-check the information you've entered for any errors, especially your email address and password. If the issue persists, try refreshing the page or clearing your browser's cache. For further assistance, feel free to reach out to our support team at vadmvolunteersystem@gmail.com.",
   },
 ];
 
 export default function FAQ() {
-  const [openIndex, setOpenIndex] = useState(null);
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
 
-  const toggleFAQ = (index) => {
+  const toggleFAQ = (index: number) => {
     setOpenIndex(openIndex === index ? null : index);
   };
 
