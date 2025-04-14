@@ -434,4 +434,4 @@ export default function CheckInPage() {
       </DialogContent>
     </Dialog>
   );
-} 
+}

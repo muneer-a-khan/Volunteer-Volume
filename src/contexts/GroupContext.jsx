@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { useAuth } from './AuthContext';
@@ -12,7 +12,7 @@ export const GroupProvider = ({ children }) => {
   const { isAuthenticated, dbUser } = useAuth();
 
   // Fetch all groups
-  const fetchGroups = async () => {
+  const fetchGroups = useCallback(async () => {
     try {
       setLoading(true);
       const response = await axios.get('/api/groups');
@@ -25,10 +25,10 @@ export const GroupProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Fetch groups for current user
-  const fetchMyGroups = async () => {
+  const fetchMyGroups = useCallback(async () => {
     if (!isAuthenticated || !dbUser) return [];
 
     try {
@@ -43,7 +43,7 @@ export const GroupProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAuthenticated, dbUser]);
 
   // Get a specific group
   const getGroup = async (id) => {

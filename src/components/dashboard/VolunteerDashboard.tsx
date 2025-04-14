@@ -89,7 +89,7 @@ export default function VolunteerDashboard() {
       setPastShifts(past);
       setTodayShifts(today_shifts);
     }
-  }, [myShifts]);
+  }, [myShifts, myShifts.length]);
   
   // Format shift time
   const formatShiftTime = (start: string, end: string) => {

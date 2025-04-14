@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useContext, useEffect, ReactNode, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { useAuth } from './AuthContext';
@@ -83,7 +83,7 @@ export const GroupProvider: React.FC<GroupProviderProps> = ({ children }) => {
   const { isAuthenticated, dbUser } = useAuth();
 
   // Fetch all groups
-  const fetchGroups = async (): Promise<Group[]> => {
+  const fetchGroups = useCallback(async (): Promise<Group[]> => {
     try {
       setLoading(true);
       const response = await axios.get('/api/groups');
@@ -96,10 +96,10 @@ export const GroupProvider: React.FC<GroupProviderProps> = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Fetch groups for current user
-  const fetchMyGroups = async (): Promise<Group[]> => {
+  const fetchMyGroups = useCallback(async (): Promise<Group[]> => {
     if (!isAuthenticated || !dbUser) return [];
 
     try {
@@ -114,7 +114,7 @@ export const GroupProvider: React.FC<GroupProviderProps> = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAuthenticated, dbUser]);
 
   // Get a specific group
   const getGroup = async (id: string): Promise<Group | null> => {

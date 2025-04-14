@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { useAuth } from './AuthContext';
@@ -12,7 +12,7 @@ export const ShiftProvider = ({ children }) => {
   const { isAuthenticated, dbUser } = useAuth();
 
   // Fetch all shifts
-  const fetchShifts = async () => {
+  const fetchShifts = useCallback(async () => {
     try {
       setLoading(true);
       const response = await axios.get('/api/shifts');
@@ -25,10 +25,10 @@ export const ShiftProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Fetch shifts for current user
-  const fetchMyShifts = async () => {
+  const fetchMyShifts = useCallback(async () => {
     if (!isAuthenticated || !dbUser) return [];
 
     try {
@@ -43,7 +43,7 @@ export const ShiftProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAuthenticated, dbUser]);
 
   // Create a new shift
   const createShift = async (shiftData) => {
