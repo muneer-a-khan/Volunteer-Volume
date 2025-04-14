@@ -32,7 +32,7 @@ export default function AboutPage() {
               </p>
               
               <p>
-                Whether you're looking to make a difference in your community, gain experience, or meet 
+                Whether you&apos;re looking to make a difference in your community, gain experience, or meet 
                 like-minded individuals, Volunteer Volume is your gateway to meaningful engagement.
               </p>
             </div>

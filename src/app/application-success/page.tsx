@@ -59,8 +59,8 @@ export default function ApplicationSuccessPage() {
               <h3 className="font-medium text-lg mb-2">What happens next?</h3>
               <ul className="space-y-2 text-sm list-disc pl-5">
                 <li>Our team is reviewing your information</li>
-                <li>We'll check your references</li>
-                <li>If approved, you'll be invited to a volunteer orientation</li>
+                <li>We&apos;ll check your references</li>
+                <li>If approved, you&apos;ll be invited to a volunteer orientation</li>
                 <li>After orientation, you can begin signing up for volunteer shifts</li>
               </ul>
             </div>
