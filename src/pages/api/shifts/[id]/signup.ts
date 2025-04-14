@@ -12,6 +12,7 @@ interface ResponseData {
 
 interface Volunteer {
   id: string;
+  name: string;
   email: string;
 }
 
@@ -39,7 +40,7 @@ export default async function handler(
     const shift = await prisma.shifts.findUnique({
       where: { id },
       include: {
-        volunteers: true
+        shift_volunteers: true
       }
     });
 
@@ -47,23 +48,21 @@ export default async function handler(
       return res.status(404).json({ success: false, message: 'Shift not found' });
     }
 
-    if (shift.volunteers.length >= shift.capacity) {
+    if (shift.shift_volunteers.length >= (shift.capacity || 1)) {
       return res.status(400).json({ success: false, message: 'Shift is full' });
     }
 
     // Check if user is already signed up
-    const isAlreadySignedUp = shift.volunteers.some((v: Volunteer) => v.id === session.user.id);
+    const isAlreadySignedUp = shift.shift_volunteers.some(sv => sv.user_id === session.user.id);
     if (isAlreadySignedUp) {
       return res.status(400).json({ success: false, message: 'Already signed up for this shift' });
     }
 
-    // Add volunteer to shift
-    await prisma.shifts.update({
-      where: { id },
+    // Add volunteer to shift using the shift_volunteers junction table
+    await prisma.shift_volunteers.create({
       data: {
-        volunteers: {
-          connect: { id: session.user.id }
-        }
+        shift_id: id,
+        user_id: session.user.id
       }
     });
 
@@ -82,7 +81,6 @@ export default async function handler(
       success: true, 
       message: 'Successfully signed up for shift' 
     });
-
   } catch (error) {
     console.error('Error signing up for shift:', error);
     return res.status(500).json({ 
