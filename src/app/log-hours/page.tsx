@@ -53,7 +53,7 @@ export default function LogHours() {
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Important Note</AlertTitle>
             <AlertDescription>
-              Only use this form to log hours that weren't tracked through the check-in/check-out system. 
+              Only use this form to log hours that weren&apos;t tracked through the check-in/check-out system. 
               Hours logged manually require approval from an administrator.
             </AlertDescription>
           </Alert>

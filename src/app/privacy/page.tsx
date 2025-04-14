@@ -47,7 +47,7 @@ const PrivacyPolicy: React.FC = () => {
           <li><strong>Opt-Out:</strong> If you no longer wish to receive communications from us, you can unsubscribe from our emails or contact us to request that we stop sending you informational materials.</li>
         </ul>
 
-        <h2 className="text-2xl font-semibold text-gray-800 mt-6">5. Children’s Privacy</h2>
+        <h2 className="text-2xl font-semibold text-gray-800 mt-6">5. Children's Privacy</h2>
         <p className="text-gray-700 mb-4">
           Our website is not intended for children under the age of 12, and we do not knowingly collect personal information from children. If we become aware that we have inadvertently collected personal information from a child under 12, we will take steps to delete that information. If you are a parent or guardian and believe we may have collected such information, please contact us immediately.
         </p>

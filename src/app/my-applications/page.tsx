@@ -170,7 +170,7 @@ export default function MyApplicationsPage() {
         <Card>
           <CardHeader>
             <CardTitle>No Applications Found</CardTitle>
-            <CardDescription>You haven't submitted any applications yet</CardDescription>
+            <CardDescription>You haven&apos;t submitted any applications yet</CardDescription>
           </CardHeader>
           <CardContent>
             <p>Ready to volunteer? Complete your application now!</p>
