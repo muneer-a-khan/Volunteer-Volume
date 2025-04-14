@@ -301,7 +301,7 @@ export const GroupProvider: React.FC<GroupProviderProps> = ({ children }) => {
       fetchGroups();
       fetchMyGroups();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchGroups, fetchMyGroups]);
 
   // Provider value
   const value: GroupContextType = {
