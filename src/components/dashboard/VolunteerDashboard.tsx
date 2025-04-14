@@ -5,30 +5,18 @@ import Link from 'next/link';
 import { format, parseISO, isAfter, isBefore, addDays } from 'date-fns';
 import { Calendar, Clock, MapPin } from 'lucide-react';
 import axios from 'axios';
+import { useShifts, Shift } from '@/contexts/ShiftContext';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
-import { useShifts } from '@/contexts/ShiftContext';
 
 interface VolunteerStats {
   totalHours: number;
   shiftsCompleted: number;
   upcomingShifts: number;
-}
-
-interface Shift {
-  id: string;
-  title: string;
-  description: string;
-  startTime: string;
-  endTime: string;
-  location: string;
-  capacity: number;
-  status: 'OPEN' | 'FILLED' | 'CANCELLED' | 'COMPLETED';
-  volunteers: any[];
 }
 
 export default function VolunteerDashboard() {
@@ -79,7 +67,7 @@ export default function VolunteerDashboard() {
       const past: Shift[] = [];
       const today_shifts: Shift[] = [];
       
-      myShifts.forEach((shift: Shift) => {
+      myShifts.forEach((shift) => {
         const shiftStart = parseISO(shift.startTime);
         
         if (isAfter(shiftStart, tomorrow)) {
@@ -100,7 +88,7 @@ export default function VolunteerDashboard() {
       setPastShifts(past);
       setTodayShifts(today_shifts);
     }
-  }, [myShifts, myShifts.length]);
+  }, [myShifts]);
   
   // Format shift time
   const formatShiftTime = (start: string, end: string) => {
