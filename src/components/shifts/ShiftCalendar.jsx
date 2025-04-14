@@ -11,7 +11,7 @@ export default function ShiftCalendar() {
   // Fetch shifts on component mount
   useEffect(() => {
     fetchShifts();
-  }, []);
+  }, [fetchShifts]);
 
   // Organize shifts by date when shifts data changes
   useEffect(() => {
