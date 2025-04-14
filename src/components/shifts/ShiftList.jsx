@@ -16,7 +16,7 @@ export default function ShiftList({ initialFilter = 'upcoming' }) {
   // Fetch shifts on component mount
   useEffect(() => {
     fetchShifts();
-  }, []);
+  }, [fetchShifts]);
 
   // Filter shifts based on user selection
   useEffect(() => {
