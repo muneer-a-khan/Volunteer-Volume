@@ -137,7 +137,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       });
     }
-
+    //Update row in user table to add phone number if it is not already there
+    if (validatedData.phone) {
+      await prisma.users.update({
+        where: { id: existingUser.id },
+        data: { phone: validatedData.phone }
+      });
+    }
     // Notify admin about new application
     try {
       const admins = await prisma.users.findMany({
