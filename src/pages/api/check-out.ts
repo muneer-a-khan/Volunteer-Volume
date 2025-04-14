@@ -41,7 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         id: checkInId
       },
       include: {
-        shift: true
+        shifts: true
       }
     });
 
@@ -50,18 +50,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Verify the check-in belongs to the user
-    if (checkIn.userId !== user.id && user.role !== 'ADMIN') {
+    if (checkIn.user_id !== user.id && user.role !== 'ADMIN') {
       return res.status(403).json({ message: 'You are not authorized to check out for this check-in' });
     }
 
     // Verify the user hasn't already checked out
-    if (checkIn.checkOutTime) {
+    if (checkIn.check_out_time) {
       return res.status(409).json({ message: 'You have already checked out for this shift' });
     }
 
     // Calculate duration in minutes
     const checkOutTime = new Date();
-    const durationMs = checkOutTime.getTime() - new Date(checkIn.checkInTime).getTime();
+    const durationMs = checkOutTime.getTime() - new Date(checkIn.check_in_time).getTime();
     const durationMinutes = Math.floor(durationMs / 60000);
 
     // Update check-in record with check-out time and duration
@@ -70,7 +70,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         id: checkInId
       },
       data: {
-        check_out_time: check_out_time,
+        check_out_time: checkOutTime,
         duration: durationMinutes,
         notes: notes ? `${checkIn.notes || ''}\n\nCheck-out notes: ${notes}` : checkIn.notes
       }
@@ -78,7 +78,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // If this was the last volunteer to check out and shift is over, update shift status
     const now = new Date();
-    if (now > new Date(checkIn.shift.endTime)) {
+    if (now > new Date(checkIn.shifts.end_time)) {
       const otherActiveCheckIns = await prisma.check_ins.count({
         where: {
           shift_id: checkIn.shift_id,
@@ -107,8 +107,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         user_id: user.id,
         hours: hours,
         minutes: minutes,
-        description: `Shift: ${checkIn.shift.title} at ${checkIn.shift.location}`,
-        date: checkIn.checkInTime,
+        description: `Shift: ${checkIn.shifts.title} at ${checkIn.shifts.location}`,
+        date: checkIn.check_in_time,
         approved: false
       }
     });

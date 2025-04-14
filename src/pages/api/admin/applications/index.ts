@@ -30,9 +30,9 @@ export default async function handler(
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const applications = await prisma.volunteerApplication.findMany({
+    const applications = await prisma.applications.findMany({
       include: {
-        user: {
+        users: {
           select: {
             name: true,
             email: true,
@@ -41,19 +41,20 @@ export default async function handler(
         }
       },
       orderBy: {
-        created_at: 'desc'
+        application_date: 'desc'
       }
     });
 
     const formattedApplications = applications.map(app => ({
       id: app.id,
-      userId: app.userId,
-      name: app.user.name,
-      email: app.user.email,
-      phone: app.user.phone,
+      userId: app.user_id,
+      name: app.name,
+      email: app.email,
+      phone: app.phone,
       status: app.status,
-      createdAt: app.createdAt.toISOString(),
-      updatedAt: app.updatedAt.toISOString()
+      createdAt: app.application_date ? new Date(app.application_date).toISOString() : '',
+      updatedAt: app.approved_at || app.rejected_at ? 
+        new Date(app.approved_at || app.rejected_at || '').toISOString() : ''
     }));
 
     return res.status(200).json(mapSnakeToCamel(formattedApplications));

@@ -38,7 +38,7 @@ export default async function handler(
     // Get the application
     const application = await prisma.applications.findUnique({
       where: { id },
-      include: { user: true }
+      include: { users: true }
     });
 
     if (!application) {
@@ -52,7 +52,7 @@ export default async function handler(
         status: 'REJECTED',
         rejected_by: session.user.id,
         rejected_at: new Date(),
-        rejectionReason: reason
+        rejection_reason: reason
       }
     });
 

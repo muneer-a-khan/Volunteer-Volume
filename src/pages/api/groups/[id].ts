@@ -45,9 +45,9 @@ export default async function handler(
         const group = await prisma.groups.findUnique({
           where: { id },
           include: {
-            members: {
+            user_groups: {
               include: {
-                user: true
+                users: true
               }
             }
           }
@@ -63,14 +63,14 @@ export default async function handler(
         const formattedGroup = {
           id: group.id,
           name: group.name,
-          description: group.description,
-          members: group.members.map(member => ({
-            id: member.userId,
-            name: member.user.name,
-            role: member.role
+          description: group.description || '',
+          members: group.user_groups.map(member => ({
+            id: member.user_id,
+            name: member.users.name,
+            role: member.role || 'MEMBER'
           })),
-          createdAt: group.createdAt.toISOString(),
-          updatedAt: group.updatedAt.toISOString()
+          createdAt: group.created_at ? group.created_at.toISOString() : new Date().toISOString(),
+          updatedAt: group.updated_at ? group.updated_at.toISOString() : new Date().toISOString()
         };
 
         return res.status(200).json({ 
@@ -102,10 +102,10 @@ export default async function handler(
           data: {
             id: updatedGroup.id,
             name: updatedGroup.name,
-            description: updatedGroup.description,
+            description: updatedGroup.description || '',
             members: [], // This would need to be fetched separately
-            created_at: updatedGroup.created_at.toISOString(),
-            updated_at: updatedGroup.updated_at.toISOString()
+            createdAt: updatedGroup.created_at ? updatedGroup.created_at.toISOString() : new Date().toISOString(),
+            updatedAt: updatedGroup.updated_at ? updatedGroup.updated_at.toISOString() : new Date().toISOString()
           }
         });
       }

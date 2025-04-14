@@ -67,9 +67,12 @@ export default async function handler(
         status: 'OPEN'
       },
       include: {
-        volunteers: true,
-        location: true, // Include location details if available
-        group: true // Include group details if available
+        shift_volunteers: {
+          include: {
+            users: true
+          }
+        },
+        groups: true
       }
     });
 
@@ -79,12 +82,12 @@ export default async function handler(
 
     // Send reminders for each shift
     for (const shift of upcomingShifts) {
-      console.log(`Processing shift: ${shift.id}, starting at ${shift.start_time}, with ${shift.volunteers.length} volunteers`);
+      console.log(`Processing shift: ${shift.id}, starting at ${shift.start_time}, with ${shift.shift_volunteers.length} volunteers`);
       
-      for (const volunteer of shift.volunteers) {
+      for (const volunteer of shift.shift_volunteers) {
         try {
           await sendEmail({
-            to: volunteer.email,
+            to: volunteer.users.email,
             ...emailTemplates.shiftReminder({
               ...shift,
               // Format the datetime for display
@@ -98,14 +101,14 @@ export default async function handler(
                 minute: 'numeric',
                 hour12: true
               }),
-              // Include location name if available
-              location: shift.location?.name || shift.location || 'TBD'
+              // Include location name or just the location string
+              location: shift.location
             })
           });
           remindersSent++;
-          console.log(`Sent reminder to ${volunteer.email} for shift at ${shift.start_time}`);
+          console.log(`Sent reminder to ${volunteer.users.email} for shift at ${shift.start_time}`);
         } catch (emailError) {
-          console.error(`Error sending reminder to ${volunteer.email}:`, emailError);
+          console.error(`Error sending reminder to ${volunteer.users.email}:`, emailError);
         }
       }
     }

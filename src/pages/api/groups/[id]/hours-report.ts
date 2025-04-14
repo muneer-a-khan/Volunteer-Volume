@@ -43,12 +43,12 @@ export default async function handler(
     }
 
     // Get all members of the group
-    const members = await prisma.groupsMember.findMany({
+    const members = await prisma.user_groups.findMany({
       where: {
         group_id: id
       },
       include: {
-        user: true
+        users: true
       }
     });
 
@@ -57,7 +57,7 @@ export default async function handler(
       members.map(async (member) => {
         const shifts = await prisma.shifts.findMany({
           where: {
-            volunteers: {
+            shift_volunteers: {
               some: {
                 user_id: member.user_id
               }
@@ -74,15 +74,15 @@ export default async function handler(
         const shiftsWithHours = shifts.map(shift => ({
           id: shift.id,
           title: shift.title,
-          date: shift.startTime.toISOString().split('T')[0],
-          hours: (new Date(shift.endTime).getTime() - new Date(shift.startTime).getTime()) / (1000 * 60 * 60)
+          date: shift.start_time.toISOString().split('T')[0],
+          hours: (new Date(shift.end_time).getTime() - new Date(shift.start_time).getTime()) / (1000 * 60 * 60)
         }));
 
         const totalHours = shiftsWithHours.reduce((sum, shift) => sum + shift.hours, 0);
 
         return {
-          userId: member.userId,
-          name: member.user.name,
+          userId: member.user_id,
+          name: member.users.name,
           totalHours,
           shifts: shiftsWithHours
         };

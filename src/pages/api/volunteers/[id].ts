@@ -219,7 +219,7 @@ async function updateVolunteer(req: NextApiRequest, res: NextApiResponse, curren
     const volunteer = await prisma.users.findUnique({
       where: { id: id as string },
       include: {
-        profile: true
+        profiles: true
       }
     });
     
@@ -251,7 +251,7 @@ async function updateVolunteer(req: NextApiRequest, res: NextApiResponse, curren
     };
     
     let updatedProfile;
-    if (volunteer.profile) {
+    if (volunteer.profiles) {
       updatedProfile = await prisma.profiles.update({
         where: { user_id: id as string },
         data: profileData

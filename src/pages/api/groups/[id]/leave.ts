@@ -30,7 +30,7 @@ export default async function handler(
     }
 
     // Check if user is a member of the group
-    const member = await prisma.groupsMember.findFirst({
+    const member = await prisma.user_groups.findFirst({
       where: {
         group_id: id,
         user_id: session.user.id
@@ -45,7 +45,7 @@ export default async function handler(
     }
 
     // Remove user from group
-    await prisma.groupsMember.delete({
+    await prisma.user_groups.delete({
       where: {
         id: member.id
       }

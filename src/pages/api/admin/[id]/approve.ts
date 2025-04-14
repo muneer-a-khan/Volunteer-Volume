@@ -33,7 +33,7 @@ export default async function handler(
     // Get the application
     const application = await prisma.applications.findUnique({
       where: { id },
-      include: { user: true }
+      include: { users: true }
     });
 
     if (!application) {

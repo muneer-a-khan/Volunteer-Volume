@@ -30,7 +30,7 @@ export default async function handler(
     }
 
     // Check if user is already in the group
-    const existingMember = await prisma.groupsMember.findFirst({
+    const existingMember = await prisma.user_groups.findFirst({
       where: {
         group_id: id,
         user_id: session.user.id
@@ -45,7 +45,7 @@ export default async function handler(
     }
 
     // Add user to group
-    await prisma.groupsMember.create({
+    await prisma.user_groups.create({
       data: {
         group_id: id,
         user_id: session.user.id,

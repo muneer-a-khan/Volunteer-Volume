@@ -49,43 +49,46 @@ async function handler(req: NextApiRequest, res: NextApiResponse, session: any) 
         }
       });
 
-      // Update user role from PENDING to VOLUNTEER
-      await tx.users.update({
-        where: { id: application.user_id },
-        data: { role: 'VOLUNTEER' }
-      });
-
-      // Create or update user profile with application data
-      const existingProfile = await tx.profiles.findUnique({
-        where: { user_id: application.user_id }
-      });
-
-      if (existingProfile) {
-        await tx.profiles.update({
-          where: { user_id: application.user_id },
-          data: {
-            address: application.address || "",
-            city: application.city || "",
-            state: application.state || "",
-            zip_code: application.zip_code || "",
-            birthdate: application.birthdate,
-            interests: application.interests || "",
-            // Add any other relevant fields from application to profile
-          }
+      // Make sure user_id is not null
+      if (application.user_id) {
+        // Update user role from PENDING to VOLUNTEER
+        await tx.users.update({
+          where: { id: application.user_id },
+          data: { role: 'VOLUNTEER' }
         });
-      } else {
-        await tx.profiles.create({
-          data: {
-            user_id: application.user_id,
-            address: application.address || "",
-            city: application.city || "",
-            state: application.state || "",
-            zip_code: application.zip_code || "",
-            birthdate: application.birthdate,
-            interests: application.interests || "",
-            // Add any other relevant fields from application to profile
-          }
+
+        // Create or update user profile with application data
+        const existingProfile = await tx.profiles.findUnique({
+          where: { user_id: application.user_id }
         });
+
+        if (existingProfile) {
+          await tx.profiles.update({
+            where: { user_id: application.user_id },
+            data: {
+              address: application.address || "",
+              city: application.city || "",
+              state: application.state || "",
+              zip_code: application.zip_code || "",
+              birthdate: application.birthdate,
+              interests: application.interests || "",
+              // Add any other relevant fields from application to profile
+            }
+          });
+        } else {
+          await tx.profiles.create({
+            data: {
+              user_id: application.user_id,
+              address: application.address || "",
+              city: application.city || "",
+              state: application.state || "",
+              zip_code: application.zip_code || "",
+              birthdate: application.birthdate,
+              interests: application.interests || "",
+              // Add any other relevant fields from application to profile
+            }
+          });
+        }
       }
     });
 
