@@ -1,5 +1,7 @@
+require('dotenv').config();
 const axios = require("axios");
 const cheerio = require("cheerio");
+
 
 const BASE_URL = "https://www.vadm.org";
 
@@ -31,7 +33,7 @@ const puppeteer = require('puppeteer');
 
 // Supabase client setup
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 // Function to scrape the image URL and upsert it in Supabase
 async function scrapeAndStoreImageUrl() {
