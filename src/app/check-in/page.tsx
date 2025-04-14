@@ -411,7 +411,7 @@ export default function CheckInPage() {
         <DialogHeader>
           <DialogTitle>Confirm Check-out</DialogTitle>
           <DialogDescription>
-            You're about to check out of your current volunteer shift. Would you like to add any notes?
+            You&apos;re about to check out of your current volunteer shift. Would you like to add any notes?
           </DialogDescription>
         </DialogHeader>
         
