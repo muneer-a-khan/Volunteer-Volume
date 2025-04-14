@@ -60,12 +60,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const now = new Date();
     const upcomingShifts = await prisma.shifts.count({
       where: {
-        volunteers: {
+        shift_volunteers: {
           some: {
-            id: user.id
+            user_id: user.id
           }
         },
-        startTime: {
+        start_time: {
           gt: now
         },
         status: {
