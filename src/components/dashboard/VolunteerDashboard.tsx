@@ -88,7 +88,7 @@ export default function VolunteerDashboard() {
       setPastShifts(past);
       setTodayShifts(today_shifts);
     }
-  }, [myShifts]);
+  }, [myShifts, myShifts.length]);
   
   // Format shift time
   const formatShiftTime = (start: string, end: string) => {
@@ -149,7 +149,7 @@ export default function VolunteerDashboard() {
             Welcome, {dbUser?.name || 'Volunteer'}!
           </CardTitle>
           <CardDescription>
-            Here's an overview of your volunteer activity and upcoming shifts.
+            Here&apos;s an overview of your volunteer activity and upcoming shifts.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -328,7 +328,7 @@ export default function VolunteerDashboard() {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">
-              You don't have any upcoming shifts scheduled. Browse available shifts to sign up!
+              You don&apos;t have any upcoming shifts scheduled. Browse available shifts to sign up!
             </p>
             <Button asChild>
               <Link href="/shifts">

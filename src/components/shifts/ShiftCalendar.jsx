@@ -18,18 +18,18 @@ export default function ShiftCalendar() {
     if (shifts) {
       // Create a map of dates to shifts
       const shiftsByDate = {};
-      
+
       shifts.forEach(shift => {
         const startDate = parseISO(shift.startTime);
         const dateKey = format(startDate, 'yyyy-MM-dd');
-        
+
         if (!shiftsByDate[dateKey]) {
           shiftsByDate[dateKey] = [];
         }
-        
+
         shiftsByDate[dateKey].push(shift);
       });
-      
+
       setCalendarShifts(shiftsByDate);
     }
   }, [shifts]);
@@ -40,11 +40,11 @@ export default function ShiftCalendar() {
     const monthEnd = endOfMonth(monthStart);
     const startDate = startOfWeek(monthStart);
     const endDate = endOfWeek(monthEnd);
-    
+
     const rows = [];
     let days = [];
     let day = startDate;
-    
+
     // Generate header row with day names
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const header = dayNames.map(dayName => (
@@ -52,7 +52,7 @@ export default function ShiftCalendar() {
         {dayName}
       </div>
     ));
-    
+
     // Generate calendar days
     while (day <= endDate) {
       for (let i = 0; i < 7; i++) {
@@ -60,19 +60,18 @@ export default function ShiftCalendar() {
         const dayShifts = calendarShifts[formattedDate] || [];
         const inCurrentMonth = isSameMonth(day, monthStart);
         const isCurrentDay = isToday(day);
-        
+
         days.push(
           <div
             key={formattedDate}
-            className={`min-h-[120px] p-2 border border-gray-200 ${
-              !inCurrentMonth ? 'bg-gray-50 text-gray-400' : ''
-            } ${isCurrentDay ? 'bg-blue-50' : ''}`}
+            className={`min-h-[120px] p-2 border border-gray-200 ${!inCurrentMonth ? 'bg-gray-50 text-gray-400' : ''
+              } ${isCurrentDay ? 'bg-blue-50' : ''}`}
           >
             <div className="flex justify-between items-center mb-1">
               <span className={`text-sm ${isCurrentDay ? 'font-bold' : ''}`}>
                 {format(day, 'd')}
               </span>
-              
+
               {inCurrentMonth && (
                 <Link
                   href={`/shifts?date=${formattedDate}`}
@@ -82,7 +81,7 @@ export default function ShiftCalendar() {
                 </Link>
               )}
             </div>
-            
+
             {dayShifts.length > 0 && inCurrentMonth && (
               <div className="space-y-1 mt-1">
                 {dayShifts.slice(0, 3).map(shift => (
@@ -91,16 +90,15 @@ export default function ShiftCalendar() {
                     href={`/shifts/${shift.id}`}
                     className="block text-xs p-1 rounded truncate hover:bg-gray-100"
                   >
-                    <span className={`inline-block w-2 h-2 rounded-full mr-1 ${
-                      shift.status === 'OPEN' ? 'bg-blue-500' :
-                      shift.status === 'FILLED' ? 'bg-green-500' :
-                      shift.status === 'CANCELLED' ? 'bg-red-500' :
-                      'bg-gray-500'
-                    }`}></span>
+                    <span className={`inline-block w-2 h-2 rounded-full mr-1 ${shift.status === 'OPEN' ? 'bg-blue-500' :
+                        shift.status === 'FILLED' ? 'bg-green-500' :
+                          shift.status === 'CANCELLED' ? 'bg-red-500' :
+                            'bg-gray-500'
+                      }`}></span>
                     {format(parseISO(shift.startTime), 'h:mm a')} {shift.title}
                   </Link>
                 ))}
-                
+
                 {dayShifts.length > 3 && (
                   <div className="text-xs text-gray-500 pl-1">
                     + {dayShifts.length - 3} more
@@ -110,14 +108,14 @@ export default function ShiftCalendar() {
             )}
           </div>
         );
-        
+
         day = addDays(day, 1);
       }
-      
+
       rows.push(days);
       days = [];
     }
-    
+
     return { header, rows };
   };
 
@@ -164,7 +162,7 @@ export default function ShiftCalendar() {
         <h2 className="text-lg font-semibold text-gray-900">
           {format(currentDate, 'MMMM yyyy')}
         </h2>
-        
+
         <div className="flex space-x-2">
           <button
             onClick={goToToday}
@@ -172,7 +170,7 @@ export default function ShiftCalendar() {
           >
             Today
           </button>
-          
+
           <button
             onClick={previousMonth}
             className="p-1 border border-gray-300 rounded hover:bg-gray-50"
@@ -181,7 +179,7 @@ export default function ShiftCalendar() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          
+
           <button
             onClick={nextMonth}
             className="p-1 border border-gray-300 rounded hover:bg-gray-50"
@@ -192,18 +190,18 @@ export default function ShiftCalendar() {
           </button>
         </div>
       </div>
-      
+
       {/* Calendar grid */}
       <div className="grid grid-cols-7 border-b border-gray-200">
         {header}
       </div>
-      
+
       {rows.map((row, rowIndex) => (
         <div key={`row-${rowIndex}`} className="grid grid-cols-7">
           {row}
         </div>
       ))}
-      
+
       {/* Legend */}
       <div className="p-4 bg-gray-50 border-t border-gray-200">
         <div className="text-sm font-medium mb-2">Legend:</div>
