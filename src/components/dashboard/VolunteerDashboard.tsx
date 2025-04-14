@@ -75,11 +75,11 @@ export default function VolunteerDashboard() {
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const tomorrow = addDays(today, 1);
       
-      const upcoming: Shift[] = [];
-      const past: Shift[] = [];
-      const today_shifts: Shift[] = [];
+      const upcoming = [];
+      const past = [];
+      const today_shifts = [];
       
-      myShifts.forEach((shift: Shift) => {
+      myShifts.forEach((shift) => {
         const shiftStart = parseISO(shift.startTime);
         
         if (isAfter(shiftStart, tomorrow)) {
@@ -92,15 +92,15 @@ export default function VolunteerDashboard() {
       });
       
       // Sort by start time
-      upcoming.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
-      past.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()); // Most recent first
-      today_shifts.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+      upcoming.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+      past.sort((a, b) => new Date(b.startTime) - new Date(a.startTime)); // Most recent first
+      today_shifts.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
       
       setUpcomingShifts(upcoming);
       setPastShifts(past);
       setTodayShifts(today_shifts);
     }
-  }, [myShifts]);
+  }, [myShifts, myShifts.length]);
   
   // Format shift time
   const formatShiftTime = (start: string, end: string) => {
