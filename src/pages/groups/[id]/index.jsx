@@ -483,7 +483,7 @@ export default function GroupDetail() {
                       </svg>
                       <h3 className="mt-2 text-sm font-medium text-gray-900">No members</h3>
                       <p className="mt-1 text-sm text-gray-500">
-                        This group doesn't have any members yet.
+                        This group doesn&apos;t have any members yet.
                       </p>
                     </div>
                   )}
@@ -632,7 +632,7 @@ export default function GroupDetail() {
                   ) : (
                     <div className="text-center py-8 bg-gray-50 rounded-lg">
                       <p className="text-gray-500">
-                        Select a date range and click "Generate Report" to view volunteer hours statistics.
+                        Select a date range and click &quot;Generate Report&quot; to view volunteer hours statistics.
                       </p>
                     </div>
                   )}
