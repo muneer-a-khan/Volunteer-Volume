@@ -17,7 +17,7 @@ export function useShifts() {
           .order('start_time', { ascending: false });
 
         if (error) throw error;
-        setShifts(data || []);
+        setShifts(data ? (data as unknown as Shift[]) : []);
       } catch (err) {
         setError(err as Error);
       } finally {
@@ -37,8 +37,9 @@ export function useShifts() {
         .single();
 
       if (error) throw error;
-      setShifts(prev => [data, ...prev]);
-      return data;
+      const typedData = data as unknown as Shift;
+      setShifts(prev => [typedData, ...prev]);
+      return typedData;
     } catch (err) {
       setError(err as Error);
       throw err;
@@ -55,10 +56,11 @@ export function useShifts() {
         .single();
 
       if (error) throw error;
+      const typedData = data as unknown as Shift;
       setShifts(prev => prev.map(shift => 
-        shift.id === id ? data : shift
+        shift.id === id ? typedData : shift
       ));
-      return data;
+      return typedData;
     } catch (err) {
       setError(err as Error);
       throw err;
