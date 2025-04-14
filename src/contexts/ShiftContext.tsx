@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useContext, useEffect, ReactNode, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { useAuth } from './AuthContext';
@@ -63,8 +63,8 @@ export const ShiftProvider: React.FC<ShiftProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const { isAuthenticated, dbUser } = useAuth();
 
-  // Fetch all shifts
-  const fetchShifts = async (): Promise<Shift[]> => {
+  // Fetch all shifts - wrapped in useCallback to maintain reference stability
+  const fetchShifts = useCallback(async (): Promise<Shift[]> => {
     // Add static variable to track if error has been shown
     try {
       setLoading(true);
@@ -82,10 +82,10 @@ export const ShiftProvider: React.FC<ShiftProviderProps> = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // Fetch shifts for current user
-  const fetchMyShifts = async (): Promise<Shift[]> => {
+  // Fetch shifts for current user - wrapped in useCallback to maintain reference stability
+  const fetchMyShifts = useCallback(async (): Promise<Shift[]> => {
     if (!isAuthenticated || !dbUser) return [];
 
     try {
@@ -104,7 +104,7 @@ export const ShiftProvider: React.FC<ShiftProviderProps> = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAuthenticated, dbUser]);
 
   // Create a new shift
   const createShift = async (shiftData: Partial<Shift>): Promise<Shift> => {
