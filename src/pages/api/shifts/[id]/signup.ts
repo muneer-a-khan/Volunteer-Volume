@@ -26,7 +26,7 @@ export default async function handler(
 
   try {
     const session = await getServerSession(req, res, authOptions);
-    
+
     if (!session?.user?.email) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
@@ -77,15 +77,15 @@ export default async function handler(
       // Continue with the process even if email sending fails
     }
 
-    return res.status(200).json({ 
-      success: true, 
-      message: 'Successfully signed up for shift' 
+    return res.status(200).json({
+      success: true,
+      message: 'Successfully signed up for shift'
     });
   } catch (error) {
     console.error('Error signing up for shift:', error);
-    return res.status(500).json({ 
-      success: false, 
-      message: 'Internal server error' 
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error'
     });
   }
 } 

@@ -19,7 +19,7 @@ export default async function handler(
 
   try {
     const session = await getServerSession(req, res, authOptions);
-    
+
     if (!session?.user?.id) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
@@ -75,15 +75,15 @@ export default async function handler(
       }
     }
 
-    return res.status(200).json({ 
-      success: true, 
-      message: 'Successfully canceled shift registration' 
+    return res.status(200).json({
+      success: true,
+      message: 'Successfully canceled shift registration'
     });
   } catch (error) {
     console.error('Error canceling shift registration:', error);
-    return res.status(500).json({ 
-      success: false, 
-      message: 'Internal server error' 
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error'
     });
   }
 } 

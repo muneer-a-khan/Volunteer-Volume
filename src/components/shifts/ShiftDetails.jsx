@@ -37,7 +37,7 @@ export default function ShiftDetails({ shift }) {
   const formatShiftTime = (start, end) => {
     const startDate = parseISO(start);
     const endDate = parseISO(end);
-    
+
     return `${format(startDate, 'EEEE, MMMM d, yyyy h:mm a')} - ${format(endDate, 'h:mm a')}`;
   };
 
@@ -89,16 +89,16 @@ export default function ShiftDetails({ shift }) {
             <h2 className="text-2xl font-bold text-gray-900">{shift.title}</h2>
             <p className="text-gray-600 mt-1">{shift.location}</p>
             <p className="text-gray-500 mt-1">{formatShiftTime(shift.startTime, shift.endTime)}</p>
-            
+
             <div className="mt-4 flex flex-wrap gap-3">
               <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusClass(shift.status)}`}>
                 {shift.status}
               </span>
-              
+
               <span className="px-3 py-1 text-sm font-medium rounded-full bg-gray-100 text-gray-800">
                 {shift.currentVolunteers} / {shift.capacity} volunteers
               </span>
-              
+
               {shift.group && (
                 <Link
                   href={`/groups/${shift.group.id}`}
@@ -109,7 +109,7 @@ export default function ShiftDetails({ shift }) {
               )}
             </div>
           </div>
-          
+
           <div className="mt-6 md:mt-0 flex space-x-4">
             {isAdmin && !isShiftPast && (
               <Link
@@ -119,7 +119,7 @@ export default function ShiftDetails({ shift }) {
                 Edit Shift
               </Link>
             )}
-            
+
             {!isShiftPast && shift.status !== 'CANCELLED' && (
               <>
                 {isSignedUp ? (
@@ -143,7 +143,7 @@ export default function ShiftDetails({ shift }) {
                 )}
               </>
             )}
-            
+
             {isSignedUp && isShiftActive && (
               <Link
                 href="/check-in"
@@ -154,7 +154,7 @@ export default function ShiftDetails({ shift }) {
             )}
           </div>
         </div>
-        
+
         {shift.description && (
           <div className="mt-6">
             <h3 className="text-lg font-medium text-gray-900 mb-2">Description</h3>
@@ -163,10 +163,10 @@ export default function ShiftDetails({ shift }) {
             </div>
           </div>
         )}
-        
+
         <div className="mt-8">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Registered Volunteers</h3>
-          
+
           {shift.volunteers && shift.volunteers.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
