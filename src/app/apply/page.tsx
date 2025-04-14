@@ -47,7 +47,12 @@ interface ApplicationFormData {
 export default function ApplyPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { register, handleSubmit, watch, formState: { errors }, setValue, trigger, getValues } = useForm<ApplicationFormData>();
+  const { register, handleSubmit, watch, formState: { errors }, setValue, trigger, getValues } = useForm<ApplicationFormData>(
+    {
+    defaultValues: {
+      covidVaccinated: true,
+      criminalRecord: false
+    }});
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [step, setStep] = useState(1);
@@ -55,13 +60,6 @@ export default function ApplyPage() {
   const [applicationId, setApplicationId] = useState<string | null>(null);
 
   const totalSteps = 3;
-
-  // Initialize criminalRecord to false if not already set
-  useEffect(() => {
-    if (watch('criminalRecord') === undefined) {
-      setValue('criminalRecord', false);
-    }
-  }, [setValue, watch]);
 
   // Watch fields for conditional rendering
   const criminalRecord = watch('criminalRecord');
@@ -89,7 +87,7 @@ export default function ApplyPage() {
           // Set form values from application data
           Object.keys(app).forEach((key) => {
             // Skip id and metadata fields
-            if (!['id', 'userId', 'createdAt', 'updatedAt'].includes(key) && key in getValues()) {
+            if (!['id', 'userId', 'createdAt', 'updatedAt', 'covidVaccinated', 'criminalRecord'].includes(key) && key in getValues()) {
               setValue(key as keyof ApplicationFormData, app[key]);
             }
           });
@@ -196,7 +194,7 @@ export default function ApplyPage() {
     const step1Fields = ['name', 'email', 'phone', 'birthdate', 'address', 'city', 'state', 'zipCode', 'volunteerType', 'covidVaccinated', 'criminalRecord'];
     const step2Fields = ['employmentExperience', 'reference', 'reasonForVolunteering', 'volunteerPosition'];
     const step3Fields = ['availability'];
-    
+    if (step === 1) {console.log("Covid Vaccinated: ", watch('covidVaccinated'));}
     // Add criminalExplanation to required fields if criminalRecord is true/yes
     if (step === 1 && criminalRecord === true) {
       step1Fields.push('criminalExplanation');
@@ -506,13 +504,15 @@ export default function ApplyPage() {
 
                 <div className="space-y-2">
                   <Label>Have you been vaccinated for COVID-19? <span className="text-red-500">*</span></Label>
-                  <RadioGroup defaultValue="yes">
+                  <RadioGroup value={watch('covidVaccinated') ? "yes" : "no"}
+                              onValueChange={(value) => {
+                                console.log('RadioGroup value changed to:', value);
+                                setValue('covidVaccinated', value === "yes");
+                                }}>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem 
                         value="yes" 
                         id="covid-yes" 
-                        checked={watch('covidVaccinated') === true || watch('covidVaccinated') === undefined}
-                        onClick={() => setValue('covidVaccinated', true)}
                       />
                       <Label htmlFor="covid-yes">Yes</Label>
                     </div>
@@ -520,8 +520,6 @@ export default function ApplyPage() {
                       <RadioGroupItem 
                         value="no" 
                         id="covid-no" 
-                        checked={watch('covidVaccinated') === false}
-                        onClick={() => setValue('covidVaccinated', false)}
                       />
                       <Label htmlFor="covid-no">No</Label>
                     </div>
