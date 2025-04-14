@@ -88,8 +88,7 @@ export default function VolunteerDashboard() {
       setPastShifts(past);
       setTodayShifts(today_shifts);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [myShifts]);
+  }, [myShifts, myShifts?.length]);
   
   // Format shift time
   const formatShiftTime = (start: string, end: string) => {

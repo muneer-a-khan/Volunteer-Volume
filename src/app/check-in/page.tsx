@@ -240,198 +240,200 @@ export default function CheckInPage() {
   }
 
   return (
-    <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold text-foreground mb-8">Volunteer Check-in/Check-out</h1>
-      
-      {successMessage && (
-        <Alert variant="success" className="mb-6">
-          <CheckCircle className="h-4 w-4" />
-          <AlertDescription>{successMessage}</AlertDescription>
-        </Alert>
-      )}
-      
-      {error && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-      
-      {completedCheckout && (
-        <Alert className="mb-6 bg-green-50 border-green-200">
-          <AlertTitle>Thank you for volunteering!</AlertTitle>
-          <AlertDescription className="mt-2">
-            You volunteered for {completedCheckout.hours} hour{completedCheckout.hours !== 1 ? 's' : ''} and {completedCheckout.minutes} minute{completedCheckout.minutes !== 1 ? 's' : ''}.
-            Your volunteer hours have been logged to your profile.
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Current Check-ins */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Current Check-ins</CardTitle>
-            <CardDescription>
-              Currently active volunteer sessions
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {checkIns.length === 0 ? (
-              <div className="text-center py-8 bg-muted/20 rounded-lg">
-                <ClockIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-muted-foreground">You are not checked in to any shifts</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {checkIns.map((checkIn) => {
-                  const shift = myShifts.find((s: Shift) => s.id === checkIn.shiftId);
-                  const duration = calculateDuration(checkIn.checkInTime);
-                  
-                  return (
-                    <Card key={checkIn.id} className="overflow-hidden">
-                      <CardContent className="p-0">
-                        <div className="p-4">
-                          <div className="flex justify-between items-start mb-3">
-                            <h3 className="font-medium text-lg">
-                              {shift?.title || 'Volunteer Shift'}
-                            </h3>
-                            <Badge variant="outline" className="ml-2">
-                              Active
-                            </Badge>
-                          </div>
-                          
-                          <div className="space-y-2 text-sm text-muted-foreground mb-4">
-                            <div className="flex items-center">
-                              <Calendar className="h-4 w-4 mr-2" />
-                              <span>{formatDate(checkIn.checkInTime)}</span>
+    <>
+      <div className="container mx-auto py-10">
+        <h1 className="text-3xl font-bold text-foreground mb-8">Volunteer Check-in/Check-out</h1>
+        
+        {successMessage && (
+          <Alert variant="success" className="mb-6">
+            <CheckCircle className="h-4 w-4" />
+            <AlertDescription>{successMessage}</AlertDescription>
+          </Alert>
+        )}
+        
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
+        {completedCheckout && (
+          <Alert className="mb-6 bg-green-50 border-green-200">
+            <AlertTitle>Thank you for volunteering!</AlertTitle>
+            <AlertDescription className="mt-2">
+              You volunteered for {completedCheckout.hours} hour{completedCheckout.hours !== 1 ? 's' : ''} and {completedCheckout.minutes} minute{completedCheckout.minutes !== 1 ? 's' : ''}.
+              Your volunteer hours have been logged to your profile.
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Current Check-ins */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Current Check-ins</CardTitle>
+              <CardDescription>
+                Currently active volunteer sessions
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {checkIns.length === 0 ? (
+                <div className="text-center py-8 bg-muted/20 rounded-lg">
+                  <ClockIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-muted-foreground">You are not checked in to any shifts</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {checkIns.map((checkIn) => {
+                    const shift = myShifts.find((s: Shift) => s.id === checkIn.shiftId);
+                    const duration = calculateDuration(checkIn.checkInTime);
+                    
+                    return (
+                      <Card key={checkIn.id} className="overflow-hidden">
+                        <CardContent className="p-0">
+                          <div className="p-4">
+                            <div className="flex justify-between items-start mb-3">
+                              <h3 className="font-medium text-lg">
+                                {shift?.title || 'Volunteer Shift'}
+                              </h3>
+                              <Badge variant="outline" className="ml-2">
+                                Active
+                              </Badge>
                             </div>
-                            <div className="flex items-center">
-                              <ClockIcon className="h-4 w-4 mr-2" />
-                              <span>Checked in at {formatTime(checkIn.checkInTime)}</span>
-                            </div>
-                            {shift && (
+                            
+                            <div className="space-y-2 text-sm text-muted-foreground mb-4">
                               <div className="flex items-center">
-                                <MapPin className="h-4 w-4 mr-2" />
-                                <span>{shift.location}</span>
+                                <Calendar className="h-4 w-4 mr-2" />
+                                <span>{formatDate(checkIn.checkInTime)}</span>
                               </div>
-                            )}
-                            <div className="flex items-center">
-                              <Timer className="h-4 w-4 mr-2" />
-                              <span>
-                                Duration: {duration.hours}h {duration.minutes}m
-                              </span>
+                              <div className="flex items-center">
+                                <ClockIcon className="h-4 w-4 mr-2" />
+                                <span>Checked in at {formatTime(checkIn.checkInTime)}</span>
+                              </div>
+                              {shift && (
+                                <div className="flex items-center">
+                                  <MapPin className="h-4 w-4 mr-2" />
+                                  <span>{shift.location}</span>
+                                </div>
+                              )}
+                              <div className="flex items-center">
+                                <Timer className="h-4 w-4 mr-2" />
+                                <span>
+                                  Duration: {duration.hours}h {duration.minutes}m
+                                </span>
+                              </div>
                             </div>
+                            
+                            <Button 
+                              onClick={() => openCheckOutDialog(checkIn.id)}
+                              variant="default"
+                              className="w-full"
+                            >
+                              Check Out
+                            </Button>
                           </div>
-                          
-                          <Button 
-                            onClick={() => openCheckOutDialog(checkIn.id)}
-                            variant="default"
-                            className="w-full"
-                          >
-                            Check Out
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-        
-        {/* Check-in Form */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Check in to a Shift</CardTitle>
-            <CardDescription>
-              Select an active shift to check in
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {activeShifts.length === 0 ? (
-              <div className="text-center py-8 bg-muted/20 rounded-lg">
-                <ClockIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-muted-foreground">No active shifts found</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  You don't have any shifts scheduled for right now
-                </p>
-              </div>
-            ) : (
-              <form onSubmit={handleCheckIn} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="shift">Select Shift</Label>
-                  <Select 
-                    value={selectedShift} 
-                    onValueChange={setSelectedShift}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          
+          {/* Check-in Form */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Check in to a Shift</CardTitle>
+              <CardDescription>
+                Select an active shift to check in
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {activeShifts.length === 0 ? (
+                <div className="text-center py-8 bg-muted/20 rounded-lg">
+                  <ClockIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-muted-foreground">No active shifts found</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    You don&apos;t have any shifts scheduled for right now
+                  </p>
+                </div>
+              ) : (
+                <form onSubmit={handleCheckIn} className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="shift">Select Shift</Label>
+                    <Select 
+                      value={selectedShift} 
+                      onValueChange={setSelectedShift}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a shift" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {activeShifts.map((shift) => (
+                          <SelectItem key={shift.id} value={shift.id}>
+                            {shift.title} - {formatTime(shift.startTime)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">Notes (optional)</Label>
+                    <Textarea
+                      id="notes"
+                      placeholder="Add any additional information about your check-in"
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      className="resize-none"
+                      rows={3}
+                    />
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting || !selectedShift}
+                    className="w-full"
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a shift" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {activeShifts.map((shift) => (
-                        <SelectItem key={shift.id} value={shift.id}>
-                          {shift.title} - {formatTime(shift.startTime)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Notes (optional)</Label>
-                  <Textarea
-                    id="notes"
-                    placeholder="Add any additional information about your check-in"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    className="resize-none"
-                    rows={3}
-                  />
-                </div>
-                
-                <Button 
-                  type="submit" 
-                  disabled={isSubmitting || !selectedShift}
-                  className="w-full"
-                >
-                  {isSubmitting ? "Processing..." : "Check In"}
-                </Button>
-              </form>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-    
-    {/* Check-out Dialog */}
-    <Dialog open={checkoutDialogOpen} onOpenChange={setCheckoutDialogOpen}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Confirm Check-out</DialogTitle>
-          <DialogDescription>
-            You&apos;re about to check out of your current volunteer shift. Would you like to add any notes?
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="py-4">
-          <Textarea
-            placeholder="Add any notes about your volunteer experience (optional)"
-            value={checkOutNotes}
-            onChange={(e) => setCheckOutNotes(e.target.value)}
-            className="resize-none"
-            rows={4}
-          />
+                    {isSubmitting ? "Processing..." : "Check In"}
+                  </Button>
+                </form>
+              )}
+            </CardContent>
+          </Card>
         </div>
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setCheckoutDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleCheckOut} disabled={isSubmitting}>
-            {isSubmitting ? "Processing..." : "Complete Check-out"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </div>
+      
+      {/* Check-out Dialog */}
+      <Dialog open={checkoutDialogOpen} onOpenChange={setCheckoutDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Check-out</DialogTitle>
+            <DialogDescription>
+              You&apos;re about to check out of your current volunteer shift. Would you like to add any notes?
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <Textarea
+              placeholder="Add any notes about your volunteer experience (optional)"
+              value={checkOutNotes}
+              onChange={(e) => setCheckOutNotes(e.target.value)}
+              className="resize-none"
+              rows={4}
+            />
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCheckoutDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleCheckOut} disabled={isSubmitting}>
+              {isSubmitting ? "Processing..." : "Complete Check-out"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
