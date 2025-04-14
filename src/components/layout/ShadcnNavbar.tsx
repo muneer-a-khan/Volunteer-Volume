@@ -88,9 +88,11 @@ export default function ShadcnNavbar({ isAuthenticated, isAdmin }: ShadcnNavbarP
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center space-x-2">
-            <img 
+            <Image 
               src="https://www.visitcharlottesville.org/imager/files_idss_com/C406/images/listings/original_VDM_Logo_Primary-RGB-_600x350_e45adf5f6bc0c5c2a30a39868f44eab6.png" 
               alt="Virginia Discovery Museum" 
+              width={100}
+              height={48}
               className="inline-block h-12"
             />
           </Link>

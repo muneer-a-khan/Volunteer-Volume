@@ -121,33 +121,35 @@ export function useSlowRenderWarning(
   componentName: string,
   threshold = 50 // threshold in ms
 ): void {
-  // Only enable in development
-  if (process.env.NODE_ENV !== 'development') {
-    return;
-  }
-  
+  // Define refs outside of any conditional
   const startTimeRef = useRef<number>(0);
   const renderCountRef = useRef<number>(0);
   
-  // Start timing at the beginning of render
-  startTimeRef.current = performance.now();
-  renderCountRef.current += 1;
-  
-  useEffect(() => {
-    const endTime = performance.now();
-    const renderTime = endTime - startTimeRef.current;
+  // Only proceed with the timing logic in development
+  if (process.env.NODE_ENV === 'development') {
+    // Start timing at the beginning of render
+    startTimeRef.current = performance.now();
+    renderCountRef.current += 1;
     
-    if (renderTime > threshold) {
-      console.warn(
-        `[Performance Warning] ${componentName} took ${renderTime.toFixed(2)}ms to render ` +
-        `(render #${renderCountRef.current}). Consider optimizing this component.`
-      );
-    }
-    
-    return () => {
-      // Cleanup if needed
-    };
-  });
+    useEffect(() => {
+      const endTime = performance.now();
+      const renderTime = endTime - startTimeRef.current;
+      
+      if (renderTime > threshold) {
+        console.warn(
+          `[Performance Warning] ${componentName} took ${renderTime.toFixed(2)}ms to render ` +
+          `(render #${renderCountRef.current}). Consider optimizing this component.`
+        );
+      }
+      
+      return () => {
+        // Cleanup if needed
+      };
+    });
+  } else {
+    // Empty useEffect to ensure consistent hook call order in production
+    useEffect(() => {});
+  }
 }
 
 /**
