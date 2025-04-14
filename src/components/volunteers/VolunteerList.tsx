@@ -6,6 +6,7 @@ import Link from 'next/link';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { X } from 'lucide-react';
+import Image from 'next/image';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -211,10 +212,12 @@ export default function VolunteerList({ initialFilter = 'active', groupId = null
                     <div className="flex items-center">
                       <div className="flex-shrink-0">
                         {volunteer.profile?.photoUrl ? (
-                          <img
-                            className="h-12 w-12 rounded-full"
+                          <Image
+                            className="h-12 w-12 rounded-full object-cover"
                             src={volunteer.profile.photoUrl}
                             alt={volunteer.name}
+                            width={48}
+                            height={48}
                           />
                         ) : (
                           <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-lg font-bold">

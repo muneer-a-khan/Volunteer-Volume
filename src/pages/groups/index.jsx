@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useGroups } from '../../contexts/GroupContext';
@@ -138,10 +139,12 @@ export default function Groups() {
                     <div className="flex items-start justify-between">
                       <div className="flex-shrink-0">
                         {group.logoUrl ? (
-                          <img
+                          <Image
                             className="h-16 w-16 rounded-full object-cover"
                             src={group.logoUrl}
                             alt={group.name}
+                            width={64}
+                            height={64}
                           />
                         ) : (
                           <div className="h-16 w-16 rounded-full bg-vadm-blue flex items-center justify-center text-white font-bold text-2xl">

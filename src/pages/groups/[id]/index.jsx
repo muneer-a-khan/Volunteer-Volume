@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import Image from 'next/image';
 import { format, parseISO } from 'date-fns';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useGroups } from '../../../contexts/GroupContext';
@@ -172,10 +173,12 @@ export default function GroupDetail() {
               <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                 <div className="flex items-center">
                   {group.logoUrl ? (
-                    <img
+                    <Image
                       className="h-20 w-20 rounded-full object-cover"
                       src={group.logoUrl}
                       alt={group.name}
+                      width={80}
+                      height={80}
                     />
                   ) : (
                     <div className="h-20 w-20 rounded-full bg-vadm-blue flex items-center justify-center text-white font-bold text-3xl">
