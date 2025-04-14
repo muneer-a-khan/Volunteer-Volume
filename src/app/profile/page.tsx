@@ -60,6 +60,7 @@ export default function ProfilePage() {
     if (status === 'authenticated') {
       fetchVolunteerData();
     }
+    console.log(formData);
   }, [status, router]);
 
   const fetchVolunteerData = async () => {
@@ -157,7 +158,7 @@ export default function ProfilePage() {
       };
       
       const response = await axios.put(`/api/profile`, profileData);
-      setVolunteer(response.data.volunteer);
+      setVolunteer(response.data);
       setSuccess('Profile updated successfully');
       setIsEditing(false);
       
