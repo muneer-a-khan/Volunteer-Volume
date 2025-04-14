@@ -186,13 +186,13 @@ export const ShiftProvider = ({ children }) => {
     }
   };
 
-  // Load shifts on mount if authenticated
+  // Load shifts and my shifts on mount if authenticated
   useEffect(() => {
     if (isAuthenticated) {
       fetchShifts();
       fetchMyShifts();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchShifts, fetchMyShifts]);
 
   // Provider value
   const value = {
