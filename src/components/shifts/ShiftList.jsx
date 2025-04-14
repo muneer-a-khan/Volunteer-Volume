@@ -31,13 +31,12 @@ export default function ShiftList({ initialFilter = 'upcoming' }) {
     } else if (filter === 'past') {
       filtered = filtered.filter(shift => isBefore(parseISO(shift.endTime), now));
     } else if (filter === 'my') {
-      filtered = filtered.filter(shift => 
-        shift.volunteers.some(volunteer => volunteer.id === dbUser?.id)
-      );
+      // This needs to be handled differently, as we need to fetch my-shifts specifically
+      // For now, this won't work correctly just by client-side filtering
+      // Should use fetchMyShifts() instead in a different component
     } else if (filter === 'available') {
-      filtered = filtered.filter(shift => 
-        isAfter(parseISO(shift.startTime), now) && 
-        // shift.volunteers.length < shift.capacity
+      filtered = filtered.filter(shift =>
+        isAfter(parseISO(shift.startTime), now) &&
         shift.currentVolunteers < shift.maxVolunteers
       );
     }
@@ -51,7 +50,7 @@ export default function ShiftList({ initialFilter = 'upcoming' }) {
       filtered = filtered.filter(shift => {
         const shiftDate = parseISO(shift.startTime);
         return (
-          shiftDate >= selectedDate && 
+          shiftDate >= selectedDate &&
           shiftDate < nextDay
         );
       });
@@ -93,7 +92,7 @@ export default function ShiftList({ initialFilter = 'upcoming' }) {
   const formatShiftTime = (start, end) => {
     const startDate = parseISO(start);
     const endDate = parseISO(end);
-    
+
     return `${format(startDate, 'MMM d, yyyy h:mm a')} - ${format(endDate, 'h:mm a')}`;
   };
 
@@ -114,14 +113,14 @@ export default function ShiftList({ initialFilter = 'upcoming' }) {
   };
 
   // Check if user is signed up for a shift
+  // This can't be reliably determined from the shifts data
+  // Will require a dedicated API call or state
   const isSignedUp = (shift) => {
-    // return shift.volunteers.some(volunteer => volunteer.id === dbUser?.id);
-    return false;
+    return false; // This needs to be implemented with proper API data
   };
 
   // Check if shift has available spots
   const hasAvailableSpots = (shift) => {
-    // return shift.volunteers.length < shift.capacity;
     return shift.currentVolunteers < shift.maxVolunteers;
   };
 
@@ -161,7 +160,7 @@ export default function ShiftList({ initialFilter = 'upcoming' }) {
               <option value="all">All Shifts</option>
             </select>
           </div>
-          
+
           <div>
             <label htmlFor="dateFilter" className="block text-sm font-medium text-gray-700 mb-1">
               Filter by date
@@ -174,7 +173,7 @@ export default function ShiftList({ initialFilter = 'upcoming' }) {
               className="block w-full rounded-md border-gray-300 shadow-sm focus:border-vadm-blue focus:ring-vadm-blue sm:text-sm"
             />
           </div>
-          
+
           {dateFilter && (
             <div className="flex items-end">
               <button
@@ -220,52 +219,40 @@ export default function ShiftList({ initialFilter = 'upcoming' }) {
                       {formatShiftTime(shift.startTime, shift.endTime)}
                     </p>
                   </div>
-                  
+
                   <div className="mt-4 sm:mt-0">
                     <div className="flex items-center space-x-3">
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusClass(shift.status)}`}>
                         {shift.status}
                       </span>
-                      
+
                       <span className="text-sm text-gray-500">
-                        {/* {shift.volunteers.length} / {shift.capacity} volunteers */}
                         {shift.currentVolunteers} / {shift.maxVolunteers} volunteers
                       </span>
-                      
-                      {isAfter(parseISO(shift.startTime), new Date()) && shift.status !== 'CANCELLED' && (
-                        <>
-                          {isSignedUp(shift) ? (
-                            <button
-                              onClick={() => handleCancel(shift.id)}
-                              disabled={isCanceling}
-                              className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
-                            >
-                              {isCanceling ? 'Canceling...' : 'Cancel Registration'}
-                            </button>
-                          ) : (
-                            hasAvailableSpots(shift) && (
-                              <button
-                                onClick={() => handleSignUp(shift.id)}
-                                disabled={isSigningUp}
-                                className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-vadm-green hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-vadm-green disabled:opacity-50"
-                              >
-                                {isSigningUp ? 'Signing Up...' : 'Sign Up'}
-                              </button>
-                            )
-                          )}
-                        </>
-                      )}
-                      
-                      <Link
-                        href={`/shifts/${shift.id}`}
-                        className="inline-flex items-center px-3 py-1 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-vadm-blue"
-                      >
-                        Details
-                      </Link>
                     </div>
+
+                    {!isSignedUp(shift) && hasAvailableSpots(shift) && (
+                      <button
+                        onClick={() => handleSignUp(shift.id)}
+                        disabled={isSigningUp}
+                        className="mt-2 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-vadm-blue hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-vadm-blue"
+                      >
+                        {isSigningUp ? 'Signing Up...' : 'Sign Up'}
+                      </button>
+                    )}
+
+                    {isSignedUp(shift) && (
+                      <button
+                        onClick={() => handleCancel(shift.id)}
+                        disabled={isCanceling}
+                        className="mt-2 inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-vadm-blue"
+                      >
+                        {isCanceling ? 'Canceling...' : 'Cancel'}
+                      </button>
+                    )}
                   </div>
                 </div>
-                
+
                 {shift.description && (
                   <div className="mt-4 border-t border-gray-100 pt-4">
                     <p className="text-sm text-gray-600 line-clamp-2">{shift.description}</p>
@@ -296,33 +283,13 @@ export default function ShiftList({ initialFilter = 'upcoming' }) {
             {filter === 'upcoming'
               ? 'There are no upcoming shifts at this time.'
               : filter === 'past'
-              ? 'You have no past shifts.'
-              : filter === 'my'
-              ? 'You haven\'t signed up for any shifts yet.'
-              : filter === 'available'
-              ? 'There are no available shifts at this time.'
-              : 'No shifts match your filters.'}
+                ? 'You have no past shifts.'
+                : filter === 'my'
+                  ? 'You haven\'t signed up for any shifts yet.'
+                  : filter === 'available'
+                    ? 'There are no available shifts at this time.'
+                    : 'No shifts match your filters.'}
           </p>
-          {(filter === 'my' || dateFilter) && (
-            <div className="mt-6">
-              {dateFilter && (
-                <button
-                  onClick={() => setDateFilter('')}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-vadm-blue"
-                >
-                  Clear Date Filter
-                </button>
-              )}
-              {filter === 'my' && (
-                <button
-                  onClick={() => setFilter('available')}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-vadm-blue hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-vadm-blue ml-3"
-                >
-                  Find Available Shifts
-                </button>
-              )}
-            </div>
-          )}
         </div>
       )}
     </div>
