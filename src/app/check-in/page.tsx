@@ -5,11 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { format, parseISO, differenceInMinutes } from 'date-fns';
 import axios, { AxiosError } from 'axios';
-import { ClockIcon, CheckCircle, AlertCircle, Timer, MapPin, Calendar } from 'lucide-react';
+import { ClockIcon, CheckCircle, AlertCircle, Timer, MapPin, Calendar } from 'lucide-react'
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -25,16 +24,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useShifts } from '@/contexts/ShiftContext';
