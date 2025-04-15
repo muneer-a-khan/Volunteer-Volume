@@ -4,6 +4,7 @@ const nextConfig = {
   images: {
     domains: [
       "lkhbikpgumxmdbwfcyjy.supabase.co",
+      "www.visitcharlottesville.org",
     ],
   },
   async headers() {
