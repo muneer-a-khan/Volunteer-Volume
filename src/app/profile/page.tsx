@@ -103,7 +103,7 @@ export default function ProfilePage() {
     e.preventDefault();
     setError(null);
     setSuccess(null);
-    
+
     try {
       const response = await axios.put(`/api/profile`, formData);
       setVolunteer(response.data);
@@ -146,13 +146,13 @@ export default function ProfilePage() {
   return (
     <div className="container mx-auto py-10">
       <h1 className="text-3xl font-bold mb-6">Profile</h1>
-      
+
       {error && (
         <Alert variant="destructive" className="mb-4">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-      
+
       {success && (
         <Alert className="mb-4 border-green-500 text-green-700">
           <AlertDescription>{success}</AlertDescription>
@@ -166,7 +166,7 @@ export default function ProfilePage() {
             View and manage your volunteer profile information
           </CardDescription>
         </CardHeader>
-        
+
         {isEditing ? (
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
