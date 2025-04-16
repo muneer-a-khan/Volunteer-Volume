@@ -6,6 +6,9 @@ import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import fs from 'fs';
 
+// Specify Node.js runtime for this API route
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
   try {
     // Check authentication
