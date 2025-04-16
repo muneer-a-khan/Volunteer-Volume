@@ -81,14 +81,14 @@ export default function Login() {
       // Check if user is pending
       try {
         const userResponse = await axios.get('/api/profile');
-        
+
         // If admin login was attempted, but user is not an admin
         if (data.isAdminLogin && userResponse.data.role !== 'ADMIN') {
           setError('You do not have administrator access. Please use the standard login.');
           setIsLoading(false);
           return;
         }
-        
+
         if (userResponse.data.role === 'PENDING') {
           toast.success('Successfully logged in!');
           router.push('/my-applications');
@@ -240,12 +240,12 @@ export default function Login() {
                 </Button>
               </form>
             </Form>
-            
+
             <div className="mt-4 text-center">
               {isAdminLogin ? (
-                <Button 
-                  variant="link" 
-                  className="text-sm text-primary" 
+                <Button
+                  variant="link"
+                  className="text-sm text-primary"
                   onClick={() => {
                     setIsAdminLogin(false);
                     router.push('/login');
@@ -254,9 +254,9 @@ export default function Login() {
                   Switch to standard login
                 </Button>
               ) : (
-                <Button 
-                  variant="outline" 
-                  className="w-full mt-2 text-sm" 
+                <Button
+                  variant="outline"
+                  className="w-full mt-2 text-sm"
                   onClick={() => {
                     setIsAdminLogin(true);
                     router.push('/login?admin=true');

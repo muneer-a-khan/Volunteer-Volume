@@ -12,14 +12,14 @@ const prismaClientSingleton = () => {
   // Create new PrismaClient with connection pooling and timeout settings
   return new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
-    
+
     // Use datasources to ensure we have correct connection URL
     datasources: {
       db: {
         url: process.env.DATABASE_URL,
       },
     },
-    
+
     // Configure better connection handling options
     // See: https://www.prisma.io/docs/orm/prisma-client/setup-and-configuration/databases-connections
     errorFormat: 'pretty',
@@ -56,9 +56,9 @@ export async function queryWithRetry<T>(
       if (attempts <= 1) {
         throw error;
       }
-      
+
       console.error(`Database query failed (attempts left: ${attempts - 1}):`, error.message);
-      
+
       // Attempt to reset the connection
       try {
         await prisma.$disconnect();
@@ -66,11 +66,11 @@ export async function queryWithRetry<T>(
       } catch (disconnectError) {
         console.error('Error while disconnecting:', disconnectError);
       }
-      
+
       // Retry the query with one less attempt
       return queryWithRetry(queryFn, attempts - 1);
     }
-    
+
     // For other errors, just throw
     throw error;
   }

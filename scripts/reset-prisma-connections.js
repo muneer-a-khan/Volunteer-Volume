@@ -11,7 +11,7 @@ const prisma = new PrismaClient();
 async function resetConnections() {
   try {
     console.log('🔄 Resetting Prisma database connections...');
-    
+
     // Execute a simple query to test the connection
     console.log('🔍 Testing initial connection...');
     try {
@@ -20,15 +20,15 @@ async function resetConnections() {
     } catch (error) {
       console.log('❌ Initial connection failed:', error.message);
     }
-    
+
     // Explicitly disconnect
     console.log('🔌 Disconnecting from database...');
     await prisma.$disconnect();
     console.log('✅ Disconnected successfully');
-    
+
     // Small delay to ensure connection is fully closed
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
+
     // Reconnect and test
     console.log('🔌 Reconnecting to database...');
     try {
@@ -38,7 +38,7 @@ async function resetConnections() {
       console.error('❌ Reconnection failed:', error.message);
       process.exit(1);
     }
-    
+
     console.log('🎉 Database connections reset successfully');
   } catch (error) {
     console.error('❌ Error resetting connections:', error.message);

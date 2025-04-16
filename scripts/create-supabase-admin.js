@@ -86,13 +86,13 @@ async function createRootAdmin() {
 
     if (existingUser) {
       console.log('ℹ️ User with this email already exists');
-      
+
       if (existingUser.role === 'ADMIN') {
         console.log('✅ User already has ADMIN role. No changes needed.');
         console.log(`User ID: ${existingUser.id}`);
         return;
       }
-      
+
       // Update existing user to ADMIN role
       console.log('⏳ Upgrading user to ADMIN role...');
       const { data: updatedUser, error: updateError } = await supabase
@@ -101,12 +101,12 @@ async function createRootAdmin() {
         .eq('id', existingUser.id)
         .select()
         .single();
-        
+
       if (updateError) {
         console.error('❌ Error updating user role:', updateError.message);
         return;
       }
-      
+
       console.log('✅ User role updated to ADMIN successfully');
       console.log(`User ID: ${updatedUser.id}`);
       return;
@@ -142,7 +142,7 @@ async function createRootAdmin() {
     console.log(`User ID: ${userId}`);
     console.log('');
     console.log('You can now log in to the application with these admin credentials.');
-    
+
   } catch (error) {
     console.error('❌ Error:', error.message);
   } finally {
