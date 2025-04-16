@@ -14,7 +14,9 @@
     "lint": "next lint",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
-    "test": "jest"
+    "test": "jest",
+    "create-admin": "node scripts/create-root-admin.js",
+    "create-supabase-admin": "node scripts/create-supabase-admin.js"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.17",
