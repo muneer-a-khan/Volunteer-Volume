@@ -120,15 +120,11 @@ export default function ShadcnNavbar({ isAuthenticated, isAdmin }: ShadcnNavbarP
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Avatar className="cursor-pointer hover:ring-2 hover:ring-primary/50 ring-1 ring-gray-300">
-                  {session.user.image ? (
-                    <AvatarImage src={session.user.image} alt={session.user.name || "User"} />
-                  ) : (
-                    <AvatarFallback className="bg-indigo-600 text-white font-medium">
-                      {session.user.name
-                        ? session.user.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
-                        : "U"}
-                    </AvatarFallback>
-                  )}
+                  <AvatarFallback className="bg-indigo-600 text-white font-medium">
+                    {session.user.name
+                      ? session.user.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+                      : "U"}
+                  </AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
