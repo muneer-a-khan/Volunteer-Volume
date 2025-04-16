@@ -2,7 +2,17 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
 import prisma from '@/lib/prisma';
-import { isAdmin } from '@/utils/auth-helpers';
+
+// Helper function to check if user is admin
+async function isAdmin(session: any) {
+  if (!session?.user?.email) return false;
+  
+  const user = await prisma.users.findUnique({
+    where: { email: session.user.email },
+  });
+  
+  return user?.role === 'ADMIN';
+}
 
 export default async function handler(
   req: NextApiRequest,
@@ -30,14 +40,14 @@ export default async function handler(
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     
     // Get total volunteers
-    const totalVolunteers = await prisma.user.count({
+    const totalVolunteers = await prisma.users.count({
       where: {
         role: 'VOLUNTEER'
       }
     });
     
     // Get active volunteers this month
-    const activeVolunteers = await prisma.user.count({
+    const activeVolunteers = await prisma.users.count({
       where: {
         role: 'VOLUNTEER',
         OR: [
@@ -64,10 +74,10 @@ export default async function handler(
     });
     
     // Get total shifts
-    const totalShifts = await prisma.shift.count();
+    const totalShifts = await prisma.shifts.count();
     
     // Get upcoming shifts
-    const upcomingShifts = await prisma.shift.count({
+    const upcomingShifts = await prisma.shifts.count({
       where: {
         startTime: {
           gte: now
@@ -76,7 +86,7 @@ export default async function handler(
     });
     
     // Get total volunteer hours
-    const hoursResult = await prisma.hoursLog.aggregate({
+    const hoursResult = await prisma.hoursLogs.aggregate({
       _sum: {
         hours: true
       },
@@ -87,14 +97,14 @@ export default async function handler(
     const totalHours = hoursResult._sum.hours || 0;
     
     // Get pending approvals
-    const pendingApprovals = await prisma.hoursLog.count({
+    const pendingApprovals = await prisma.hoursLogs.count({
       where: {
         status: 'PENDING'
       }
     });
     
     // Get vacant shifts (shifts with available capacity)
-    const vacantShiftsCount = await prisma.shift.count({
+    const vacantShiftsCount = await prisma.shifts.count({
       where: {
         startTime: {
           gte: now
