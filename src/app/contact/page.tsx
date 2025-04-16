@@ -1,17 +1,45 @@
 'use client';
 import Head from 'next/head';
 import { useState } from 'react';
+import emailjs from '@emailjs/browser';
 
+const MAX_MESSAGE_LENGTH = 500; // Set maximum character limit
 const ContactUs: React.FC = () => {
   const [form, setForm] = useState({ name: '', email: '', message: '' });
-
+  const [status, setStatus] = useState({ success: false, error: false });
+  const [isSending, setIsSending] = useState(false);
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', form);
+    setStatus({ success: false, error: false });
+    try {
+        const templateParams = {
+          from_name: form.name,
+          title: form.name,
+          from_email: form.email,
+          message: form.message.substring(0,MAX_MESSAGE_LENGTH),
+          to_name: 'Volunteer Volume', // Recipient name
+          to_email: 'vadmvolunteersystem@gmail.com'
+        };
+        const result = await emailjs.send(
+          process.env.NEXT_PUBLIC_EMAIL_JS_SERVICE_ID!, // Email JS service ID
+          process.env.NEXT_PUBLIC_EMAIL_JS_TEMPLATE_ID!, // Email JS template ID
+          templateParams,
+          process.env.NEXT_PUBLIC_EMAIL_JS_PUBLIC_KEY!
+        );
+  
+        if (result.status === 200) {
+          setStatus({ success: true, error: false });
+          setForm({ name: '', email: '', message: '' }); // Clear form
+        }
+      } catch (error) {
+        console.error('Failed to send email:', error);
+        setStatus({ success: false, error: true });
+        setIsSending(false);
+      }
   };
 
   return (
@@ -21,6 +49,11 @@ const ContactUs: React.FC = () => {
       </Head>
       <div className="flex flex-col items-center justify-center min-h-screen bg-white p-6">
         <h2 className="text-[#111418] text-3xl font-bold mb-4">Contact Us</h2>
+        {status.success && (
+          <div className="w-full max-w-lg mb-4 p-4 bg-green-100 text-green-700 rounded-lg">
+            Message sent successfully!
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="w-full max-w-lg space-y-4">
           <label className="block">
             <span className="text-[#111418] font-medium">Full name</span>
