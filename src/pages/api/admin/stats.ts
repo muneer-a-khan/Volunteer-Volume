@@ -52,16 +52,18 @@ export default async function handler(
         role: 'VOLUNTEER',
         OR: [
           {
-            shifts: {
+            shift_volunteers: {
               some: {
-                startTime: {
-                  gte: firstDayOfMonth
+                shifts: {
+                  start_time: {
+                    gte: firstDayOfMonth
+                  }
                 }
               }
             }
           },
           {
-            hoursLogs: {
+            volunteer_logs: {
               some: {
                 date: {
                   gte: firstDayOfMonth
@@ -79,37 +81,49 @@ export default async function handler(
     // Get upcoming shifts
     const upcomingShifts = await prisma.shifts.count({
       where: {
-        startTime: {
+        start_time: {
           gte: now
         }
       }
     });
     
     // Get total volunteer hours
-    const hoursResult = await prisma.hoursLogs.aggregate({
+    const hoursResult = await prisma.volunteer_logs.aggregate({
       _sum: {
         hours: true
       },
       where: {
-        status: 'APPROVED'
+        approved: true
       }
     });
-    const totalHours = hoursResult._sum.hours || 0;
+    
+    // Calculate total hours including minutes
+    const minutesResult = await prisma.volunteer_logs.aggregate({
+      _sum: {
+        minutes: true
+      },
+      where: {
+        approved: true
+      }
+    });
+    
+    const totalMinutes = (minutesResult._sum.minutes || 0);
+    const totalHours = (hoursResult._sum.hours || 0) + (totalMinutes / 60);
     
     // Get pending approvals
-    const pendingApprovals = await prisma.hoursLogs.count({
+    const pendingApprovals = await prisma.volunteer_logs.count({
       where: {
-        status: 'PENDING'
+        approved: false
       }
     });
     
     // Get vacant shifts (shifts with available capacity)
     const vacantShiftsCount = await prisma.shifts.count({
       where: {
-        startTime: {
+        start_time: {
           gte: now
         },
-        volunteers: {
+        shift_volunteers: {
           none: {}
         }
       }
