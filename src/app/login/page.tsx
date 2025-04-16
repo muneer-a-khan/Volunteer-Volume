@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
@@ -30,6 +30,7 @@ const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
   password: z.string().min(6, { message: 'Password must be at least 8 characters long and include uppercase, lowercase, a number, and a special character' }),
   rememberMe: z.boolean().optional(),
+  isAdminLogin: z.boolean().optional(),
 });
 
 export default function Login() {
@@ -38,6 +39,9 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [isAdminLogin, setIsAdminLogin] = useState<boolean>(
+    searchParams?.get('admin') === 'true'
+  );
 
   // Initialize form
   const form = useForm<z.infer<typeof formSchema>>({
@@ -46,8 +50,14 @@ export default function Login() {
       email: '',
       password: '',
       rememberMe: true,
+      isAdminLogin: isAdminLogin,
     },
   });
+
+  // Update form value when isAdminLogin changes
+  useEffect(() => {
+    form.setValue('isAdminLogin', isAdminLogin);
+  }, [isAdminLogin, form]);
 
   // Form submission handler
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
@@ -71,9 +81,24 @@ export default function Login() {
       // Check if user is pending
       try {
         const userResponse = await axios.get('/api/profile');
+        
+        // If admin login was attempted, but user is not an admin
+        if (data.isAdminLogin && userResponse.data.role !== 'ADMIN') {
+          setError('You do not have administrator access. Please use the standard login.');
+          setIsLoading(false);
+          return;
+        }
+        
         if (userResponse.data.role === 'PENDING') {
           toast.success('Successfully logged in!');
           router.push('/my-applications');
+          return;
+        }
+
+        // For admin users, redirect to admin dashboard
+        if (userResponse.data.role === 'ADMIN') {
+          toast.success('Successfully logged in as administrator!');
+          router.push('/admin/dashboard');
           return;
         }
 
@@ -211,10 +236,36 @@ export default function Login() {
                   className="w-full"
                   disabled={isLoading}
                 >
-                  {isLoading ? "Signing in..." : "Sign in"}
+                  {isLoading ? "Signing in..." : isAdminLogin ? "Sign in as Administrator" : "Sign in"}
                 </Button>
               </form>
             </Form>
+            
+            <div className="mt-4 text-center">
+              {isAdminLogin ? (
+                <Button 
+                  variant="link" 
+                  className="text-sm text-primary" 
+                  onClick={() => {
+                    setIsAdminLogin(false);
+                    router.push('/login');
+                  }}
+                >
+                  Switch to standard login
+                </Button>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  className="w-full mt-2 text-sm" 
+                  onClick={() => {
+                    setIsAdminLogin(true);
+                    router.push('/login?admin=true');
+                  }}
+                >
+                  Admin Login
+                </Button>
+              )}
+            </div>
           </CardContent>
           <CardFooter className="flex justify-center">
             <p className="text-sm text-center text-muted-foreground">
