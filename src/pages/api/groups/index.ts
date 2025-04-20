@@ -45,7 +45,7 @@ import { format } from 'path';
              description: groups.description,
              logoUrl: groups.logo_url
          }));
-         console.log(formattedGroups);
+         
          return res.status(200).json(mapSnakeToCamel(formattedGroups));
      } catch (error) {
          console.error('Error fetching groups:', error);
