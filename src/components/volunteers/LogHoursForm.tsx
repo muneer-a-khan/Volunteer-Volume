@@ -67,7 +67,7 @@ export default function LogHoursForm() {
         minutes: parseInt(data.minutes.toString() || '0'),
         description: data.description,
         date: data.date,
-        groupId: data.groupId === '' ? null : data.groupId
+        groupId: data.groupId === 'none' ? null : data.groupId
       });
 
       toast.success('Hours logged successfully');
@@ -132,7 +132,7 @@ export default function LogHoursForm() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">No specific group</SelectItem>
+                        <SelectItem value="none">No specific group</SelectItem>
                         {myGroups?.map((group: Group) => (
                           <SelectItem key={group.id} value={group.id}>
                             {group.name}
