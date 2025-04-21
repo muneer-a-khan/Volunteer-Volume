@@ -62,6 +62,13 @@ export default async function handler(
       }
     });
 
+    // Modify status to OPEN
+    if (shift.status === 'FILLED') {
+        await prisma.shifts.update({
+            where: { id },
+            data: { status: 'OPEN' }
+        });
+    }
     // Send cancellation confirmation email if we have the user's email
     if (session.user.email) {
       try {
