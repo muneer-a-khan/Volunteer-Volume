@@ -78,7 +78,9 @@ export default async function handler(
     // });
     const shifts = await prisma.shifts.findMany({
         where: {
-            status: 'OPEN',
+            status: {
+                in: ['OPEN', 'FILLED']
+              },
             start_time: {
                 gte: new Date()
             }
@@ -118,7 +120,7 @@ export default async function handler(
         email: sv.users.email
       }))
     }));
-    
+
     return res.status(200).json(formattedShifts);
   } catch (error) {
     console.error('Error fetching shifts:', error);
