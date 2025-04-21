@@ -66,6 +66,14 @@ export default async function handler(
       }
     });
 
+    // Modify status to FILLED if number of sign ups matches capacity
+    if (shift.shift_volunteers.length === (shift.capacity || 1)) {
+        await prisma.shifts.update({
+        where: { id },
+        data: { status: 'FILLED' }
+      });
+    }
+
     // Send confirmation email
     try {
       await sendEmail({
