@@ -14,6 +14,11 @@ interface ShiftResponse {
   maxVolunteers: number;
   currentVolunteers: number;
   status: string;
+  volunteers: Array<{
+    id: string;
+    name: string;
+    email: string;
+  }>;
 }
 
 // Define types for the shift object from database
@@ -47,22 +52,54 @@ export default async function handler(
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
+    // const shifts = await prisma.shifts.findMany({
+    //   where: {
+    //     status: 'OPEN',
+    //     start_time: {
+    //       gte: new Date()
+    //     }
+    //   },
+    //   include: {
+    //     _count: {
+    //       select: { shift_volunteers: true }
+    //     }
+    //     ,
+    //     volunteers: {
+    //       select: {
+    //         id: true,
+    //         name: true,
+    //         email: true
+    //       }
+    //     }
+    //   },
+    //   orderBy: {
+    //     start_time: 'asc'
+    //   }
+    // });
     const shifts = await prisma.shifts.findMany({
-      where: {
-        status: 'OPEN',
-        start_time: {
-          gte: new Date()
+        where: {
+            status: 'OPEN',
+            start_time: {
+                gte: new Date()
+            }
+        },
+        include: {
+          shift_volunteers: {
+            include: {
+              users: {  // Join with the users table
+                select: {
+                  id: true,
+                  name: true,
+                  email: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: {
+            start_time: 'asc'
         }
-      },
-      include: {
-        _count: {
-          select: { shift_volunteers: true }
-        }
-      },
-      orderBy: {
-        start_time: 'asc'
-      }
-    });
+      });
 
     // Map snake_case fields to camelCase
     const formattedShifts = shifts.map((shift) => ({
@@ -73,10 +110,15 @@ export default async function handler(
       endTime: shift.end_time.toISOString(),
       location: shift.location,
       maxVolunteers: shift.capacity || 1,
-      currentVolunteers: shift._count.shift_volunteers,
-      status: shift.status || 'UNKNOWN'
+      currentVolunteers: shift.shift_volunteers.length,
+      status: shift.status || 'UNKNOWN',
+      volunteers: shift.shift_volunteers.map(sv => ({
+        id: sv.users.id,
+        name: sv.users.name,
+        email: sv.users.email
+      }))
     }));
-
+    
     return res.status(200).json(formattedShifts);
   } catch (error) {
     console.error('Error fetching shifts:', error);
