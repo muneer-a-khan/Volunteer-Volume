@@ -65,9 +65,11 @@ export default async function handler(
         user_id: session.user.id
       }
     });
-
+    console.log("Shift volunteers length: ", shift.shift_volunteers.length);
+    console.log("Shift capacity: ", shift.capacity);
     // Modify status to FILLED if number of sign ups matches capacity
-    if (shift.shift_volunteers.length === (shift.capacity || 1)) {
+    if (shift.shift_volunteers.length + 1 === (shift.capacity || 1)) {
+        console.log("Shift is full");
         await prisma.shifts.update({
         where: { id },
         data: { status: 'FILLED' }
