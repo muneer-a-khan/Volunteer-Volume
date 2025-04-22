@@ -113,10 +113,11 @@ export default function ShiftList({ initialFilter = 'upcoming' }) {
   };
 
   // Check if user is signed up for a shift
-  // This can't be reliably determined from the shifts data
-  // Will require a dedicated API call or state
   const isSignedUp = (shift) => {
-    return false; // This needs to be implemented with proper API data
+    if (!dbUser || !shift.volunteers) return false;
+  
+    return shift.volunteers.some(volunteer => volunteer.id === dbUser.id);
+
   };
 
   // Check if shift has available spots
