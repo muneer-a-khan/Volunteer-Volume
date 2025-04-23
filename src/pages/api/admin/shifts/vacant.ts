@@ -1,16 +1,16 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 // Helper function to check if user is admin
 async function isAdmin(session: any) {
   if (!session?.user?.email) return false;
-  
+
   const user = await prisma.users.findUnique({
     where: { email: session.user.email },
   });
-  
+
   return user?.role === 'ADMIN';
 }
 
@@ -26,18 +26,18 @@ export default async function handler(
   try {
     // Get session and verify admin
     const session = await getServerSession(req, res, authOptions);
-    
+
     if (!session) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
-    
+
     if (!await isAdmin(session)) {
       return res.status(403).json({ message: 'Forbidden: Admin access required' });
     }
 
     // Get current date
     const now = new Date();
-    
+
     // First get all shifts with start time in the future
     const shifts = await prisma.shifts.findMany({
       where: {
@@ -68,7 +68,7 @@ export default async function handler(
         start_time: 'asc'
       }
     });
-    
+
     // Filter shifts that have fewer volunteers than capacity
     const vacantShifts = shifts.filter(shift => {
       return shift.shift_volunteers.length < (shift.capacity || 1);
