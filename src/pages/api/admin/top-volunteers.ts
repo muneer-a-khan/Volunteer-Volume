@@ -1,8 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
-import prisma from '@/lib/prisma';
-import { startOfMonth } from 'date-fns';
+import { authOptions } from '@/pages/api/auth/[...nextauth]';
+import { prisma } from '@/lib/prisma';
+import { startOfMonth, subMonths, startOfQuarter, subQuarters, startOfYear, subYears, endOfMonth, endOfQuarter, endOfYear } from 'date-fns';
 
 // Helper function to check if user is admin
 async function isAdmin(session: any) {

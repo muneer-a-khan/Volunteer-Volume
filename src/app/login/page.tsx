@@ -24,6 +24,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import AuthErrorHandler from '@/components/auth/AuthErrorHandler';
 
 // Schema for form validation
 const formSchema = z.object({
@@ -65,6 +66,17 @@ export default function Login() {
     setError(null);
 
     try {
+      // Track additional login context for debugging
+      const loginContext = {
+        isAdminLogin: data.isAdminLogin,
+        timestamp: new Date().toISOString(),
+      };
+
+      // Store the context temporarily to help with debugging
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('loginAttemptContext', JSON.stringify(loginContext));
+      }
+
       const result = await signIn('credentials', {
         redirect: false,
         email: data.email,
@@ -73,8 +85,15 @@ export default function Login() {
       });
 
       if (result?.error) {
+        // Add more detailed error logging
+        console.error('Login error details:', {
+          error: result.error,
+          status: result.status,
+          ok: result.ok,
+          url: result.url,
+        });
+
         setError(result.error);
-        console.error('Login error:', result.error);
         return;
       }
 
@@ -106,14 +125,14 @@ export default function Login() {
         const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard';
         toast.success('Successfully logged in!');
         router.push(callbackUrl);
-      } catch (profileError) {
-        console.error('Error fetching profile:', profileError);
-        // If we can't get the profile, still try to redirect
-        toast.success('Successfully logged in! Redirecting...');
-        router.push('/dashboard');
+      } catch (profileError: any) {
+        console.error('Error fetching profile:', profileError?.response?.data || profileError);
+        // If we can't get the profile, show an error with more detail
+        setError('Unable to retrieve your user profile. Please try again later.');
+        setIsLoading(false);
       }
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('Login error details:', error?.response?.data || error);
       setError(error.response?.data?.message || 'Failed to login. Please check your credentials and try again.');
     } finally {
       setIsLoading(false);
@@ -143,6 +162,10 @@ export default function Login() {
             <CardDescription className="text-center">Enter your credentials to sign in</CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Use the new AuthErrorHandler for URL-based errors */}
+            <AuthErrorHandler />
+
+            {/* Keep the existing error state for form/API errors */}
             {error && (
               <Alert variant="destructive" className="mb-6">
                 <AlertDescription>{error}</AlertDescription>

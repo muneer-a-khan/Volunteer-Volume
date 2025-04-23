@@ -1,17 +1,33 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
-import prisma from '@/lib/prisma';
+import { authOptions } from '@/pages/api/auth/[...nextauth]';
+import { prisma } from '@/lib/prisma';
+import { subMonths, startOfMonth, endOfMonth } from 'date-fns';
+import { Session } from 'next-auth';
 
 // Helper function to check if user is admin
-async function isAdmin(session: any) {
-  if (!session?.user?.email) return false;
-  
-  const user = await prisma.users.findUnique({
-    where: { email: session.user.email },
-  });
-  
-  return user?.role === 'ADMIN';
+async function isAdmin(session: Session | null): Promise<boolean> {
+  // Check if session and user exist, and if the role is directly available on the session token
+  if (session?.user?.role === 'ADMIN') {
+    return true;
+  }
+
+  // Fallback: If role isn't on the token, check the database using email
+  if (session?.user?.email) {
+    try {
+      const user = await prisma.users.findUnique({
+        where: { email: session.user.email },
+        select: { role: true } // Only select the role field
+      });
+      return user?.role === 'ADMIN';
+    } catch (dbError) {
+      console.error("Database error checking admin status:", dbError);
+      return false; // Assume not admin if database check fails
+    }
+  }
+
+  // If no session, no email, or role check failed, return false
+  return false;
 }
 
 export default async function handler(
@@ -26,11 +42,11 @@ export default async function handler(
   try {
     // Get session and verify admin
     const session = await getServerSession(req, res, authOptions);
-    
+
     if (!session) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
-    
+
     if (!await isAdmin(session)) {
       return res.status(403).json({ message: 'Forbidden: Admin access required' });
     }
@@ -38,14 +54,14 @@ export default async function handler(
     // Get current date
     const now = new Date();
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    
+
     // Get total volunteers
     const totalVolunteers = await prisma.users.count({
       where: {
         role: 'VOLUNTEER'
       }
     });
-    
+
     // Get active volunteers this month
     const activeVolunteers = await prisma.users.count({
       where: {
@@ -74,10 +90,10 @@ export default async function handler(
         ]
       }
     });
-    
+
     // Get total shifts
     const totalShifts = await prisma.shifts.count();
-    
+
     // Get upcoming shifts
     const upcomingShifts = await prisma.shifts.count({
       where: {
@@ -86,7 +102,7 @@ export default async function handler(
         }
       }
     });
-    
+
     // Get total volunteer hours
     const hoursResult = await prisma.volunteer_logs.aggregate({
       _sum: {
@@ -96,7 +112,7 @@ export default async function handler(
         approved: true
       }
     });
-    
+
     // Calculate total hours including minutes
     const minutesResult = await prisma.volunteer_logs.aggregate({
       _sum: {
@@ -106,17 +122,17 @@ export default async function handler(
         approved: true
       }
     });
-    
+
     const totalMinutes = (minutesResult._sum.minutes || 0);
     const totalHours = (hoursResult._sum.hours || 0) + (totalMinutes / 60);
-    
+
     // Get pending approvals
     const pendingApprovals = await prisma.volunteer_logs.count({
       where: {
         approved: false
       }
     });
-    
+
     // Get vacant shifts (shifts with available capacity)
     const vacantShiftsCount = await prisma.shifts.count({
       where: {
