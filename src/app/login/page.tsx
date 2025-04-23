@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
@@ -24,12 +24,14 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import AuthErrorHandler from '@/components/auth/AuthErrorHandler';
 
 // Schema for form validation
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
   password: z.string().min(6, { message: 'Password must be at least 8 characters long and include uppercase, lowercase, a number, and a special character' }),
   rememberMe: z.boolean().optional(),
+  isAdminLogin: z.boolean().optional(),
 });
 
 export default function Login() {
@@ -38,6 +40,9 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [isAdminLogin, setIsAdminLogin] = useState<boolean>(
+    searchParams?.get('admin') === 'true'
+  );
 
   // Initialize form
   const form = useForm<z.infer<typeof formSchema>>({
@@ -46,8 +51,14 @@ export default function Login() {
       email: '',
       password: '',
       rememberMe: true,
+      isAdminLogin: isAdminLogin,
     },
   });
+
+  // Update form value when isAdminLogin changes
+  useEffect(() => {
+    form.setValue('isAdminLogin', isAdminLogin);
+  }, [isAdminLogin, form]);
 
   // Form submission handler
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
@@ -55,6 +66,17 @@ export default function Login() {
     setError(null);
 
     try {
+      // Track additional login context for debugging
+      const loginContext = {
+        isAdminLogin: data.isAdminLogin,
+        timestamp: new Date().toISOString(),
+      };
+
+      // Store the context temporarily to help with debugging
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('loginAttemptContext', JSON.stringify(loginContext));
+      }
+
       const result = await signIn('credentials', {
         redirect: false,
         email: data.email,
@@ -63,17 +85,39 @@ export default function Login() {
       });
 
       if (result?.error) {
+        // Add more detailed error logging
+        console.error('Login error details:', {
+          error: result.error,
+          status: result.status,
+          ok: result.ok,
+          url: result.url,
+        });
+
         setError(result.error);
-        console.error('Login error:', result.error);
         return;
       }
 
       // Check if user is pending
       try {
         const userResponse = await axios.get('/api/profile');
+
+        // If admin login was attempted, but user is not an admin
+        if (data.isAdminLogin && userResponse.data.role !== 'ADMIN') {
+          setError('You do not have administrator access. Please use the standard login.');
+          setIsLoading(false);
+          return;
+        }
+
         if (userResponse.data.role === 'PENDING') {
           toast.success('Successfully logged in!');
           router.push('/my-applications');
+          return;
+        }
+
+        // For admin users, redirect to admin dashboard
+        if (userResponse.data.role === 'ADMIN') {
+          toast.success('Successfully logged in as administrator!');
+          router.push('/admin/dashboard');
           return;
         }
 
@@ -81,14 +125,14 @@ export default function Login() {
         const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard';
         toast.success('Successfully logged in!');
         router.push(callbackUrl);
-      } catch (profileError) {
-        console.error('Error fetching profile:', profileError);
-        // If we can't get the profile, still try to redirect
-        toast.success('Successfully logged in! Redirecting...');
-        router.push('/dashboard');
+      } catch (profileError: any) {
+        console.error('Error fetching profile:', profileError?.response?.data || profileError);
+        // If we can't get the profile, show an error with more detail
+        setError('Unable to retrieve your user profile. Please try again later.');
+        setIsLoading(false);
       }
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('Login error details:', error?.response?.data || error);
       setError(error.response?.data?.message || 'Failed to login. Please check your credentials and try again.');
     } finally {
       setIsLoading(false);
@@ -118,6 +162,10 @@ export default function Login() {
             <CardDescription className="text-center">Enter your credentials to sign in</CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Use the new AuthErrorHandler for URL-based errors */}
+            <AuthErrorHandler />
+
+            {/* Keep the existing error state for form/API errors */}
             {error && (
               <Alert variant="destructive" className="mb-6">
                 <AlertDescription>{error}</AlertDescription>
@@ -211,10 +259,36 @@ export default function Login() {
                   className="w-full"
                   disabled={isLoading}
                 >
-                  {isLoading ? "Signing in..." : "Sign in"}
+                  {isLoading ? "Signing in..." : isAdminLogin ? "Sign in as Administrator" : "Sign in"}
                 </Button>
               </form>
             </Form>
+
+            <div className="mt-4 text-center">
+              {isAdminLogin ? (
+                <Button
+                  variant="link"
+                  className="text-sm text-primary"
+                  onClick={() => {
+                    setIsAdminLogin(false);
+                    router.push('/login');
+                  }}
+                >
+                  Switch to standard login
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="w-full mt-2 text-sm"
+                  onClick={() => {
+                    setIsAdminLogin(true);
+                    router.push('/login?admin=true');
+                  }}
+                >
+                  Admin Login
+                </Button>
+              )}
+            </div>
           </CardContent>
           <CardFooter className="flex justify-center">
             <p className="text-sm text-center text-muted-foreground">

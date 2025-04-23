@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { format, parseISO, startOfWeek, endOfWeek } from 'date-fns';
-import { Calendar, Clock, MapPin, UserPlus, FileText, Settings } from 'lucide-react';
+import { Calendar, Clock, MapPin, UserPlus, FileText, Settings, Users } from 'lucide-react';
 import axios from 'axios';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -447,6 +447,14 @@ export default function AdminDashboard() {
                 <UserPlus className="h-5 w-5 mb-2" />
                 <span className="font-medium">Volunteer Applications</span>
                 <span className="text-xs text-muted-foreground mt-1">Review and manage pending applications</span>
+              </Link>
+            </Button>
+            
+            <Button variant="outline" className="justify-start p-4 h-auto" asChild>
+              <Link href="/admin/users" className="flex flex-col items-start">
+                <Users className="h-5 w-5 mb-2" />
+                <span className="font-medium">User Management</span>
+                <span className="text-xs text-muted-foreground mt-1">Manage user roles and permissions</span>
               </Link>
             </Button>
             

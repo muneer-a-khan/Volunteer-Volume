@@ -40,19 +40,22 @@ interface ChartDataset {
   label: string;
   data: number[];
   backgroundColor: string | string[];
-  borderColor?: string[];
+  borderColor?: string | string[];
   borderWidth?: number;
 }
 
 interface ChartData {
   labels: string[];
   datasets: ChartDataset[];
+  stats?: {
+    total: string | number;
+    percentChange: string | number;
+  };
 }
 
-interface ReportDataType {
-  [key: string]: {
-    [key: string]: ChartData;
-  };
+// Updated ReportDataType with real API structure
+interface ReportDataType extends ChartData {
+  // The structure now matches the API response
 }
 
 export default function AdminReportsPage() {
@@ -63,133 +66,164 @@ export default function AdminReportsPage() {
   const [timeFrame, setTimeFrame] = useState('month');
   const [reportData, setReportData] = useState<ReportDataType | null>(null);
   const [loading, setLoading] = useState(true);
-  
+  const [stats, setStats] = useState({
+    volunteers: { total: 0, percentChange: 0 },
+    hours: { total: 0, percentChange: 0 },
+    shifts: { total: 0, percentChange: 0 }
+  });
+  const [topVolunteers, setTopVolunteers] = useState<Array<{
+    id: string;
+    name: string;
+    email: string;
+    totalHours: number;
+    recentShifts: number;
+  }>>([]);
+  const [recentActivity, setRecentActivity] = useState<Array<{
+    id: string;
+    type: string;
+    description: string;
+    user: {
+      id: string;
+      name: string;
+      email: string;
+    };
+    createdAt: string;
+  }>>([]);
+
   // Redirect to login if not authenticated or not admin
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login');
       return;
     }
-    
+
     if (!authLoading && isAuthenticated && !isAdmin) {
       router.push('/dashboard');
     }
   }, [isAuthenticated, isAdmin, authLoading, router, status]);
 
-  // Fetch report data (this would normally fetch from an API)
+  // Fetch report data from API
   useEffect(() => {
     if (!isAuthenticated || !isAdmin) return;
-    
-    // Mock data - in a real app, you would fetch this from an API
-    const mockData: ReportDataType = {
-      'volunteer-hours': {
-        month: {
-          labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-          datasets: [
-            {
-              label: 'Hours Logged',
-              data: [65, 59, 80, 81],
-              backgroundColor: 'rgba(79, 70, 229, 0.6)',
-            },
-          ],
-        },
-        quarter: {
-          labels: ['January', 'February', 'March'],
-          datasets: [
-            {
-              label: 'Hours Logged',
-              data: [285, 240, 305],
-              backgroundColor: 'rgba(79, 70, 229, 0.6)',
-            },
-          ],
-        },
-        year: {
-          labels: ['Q1', 'Q2', 'Q3', 'Q4'],
-          datasets: [
-            {
-              label: 'Hours Logged',
-              data: [830, 780, 690, 840],
-              backgroundColor: 'rgba(79, 70, 229, 0.6)',
-            },
-          ],
-        },
-      },
-      'volunteer-distribution': {
-        month: {
-          labels: ['Education', 'Health', 'Community', 'Environment'],
-          datasets: [
-            {
-              label: 'Volunteer Distribution',
-              data: [25, 35, 20, 20],
-              backgroundColor: [
-                'rgba(255, 99, 132, 0.6)',
-                'rgba(54, 162, 235, 0.6)',
-                'rgba(255, 206, 86, 0.6)',
-                'rgba(75, 192, 192, 0.6)',
-              ],
-              borderColor: [
-                'rgba(255, 99, 132, 1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)',
-              ],
-              borderWidth: 1,
-            },
-          ],
-        },
-        quarter: {
-          labels: ['Education', 'Health', 'Community', 'Environment'],
-          datasets: [
-            {
-              label: 'Volunteer Distribution',
-              data: [30, 30, 25, 15],
-              backgroundColor: [
-                'rgba(255, 99, 132, 0.6)',
-                'rgba(54, 162, 235, 0.6)',
-                'rgba(255, 206, 86, 0.6)',
-                'rgba(75, 192, 192, 0.6)',
-              ],
-              borderColor: [
-                'rgba(255, 99, 132, 1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)',
-              ],
-              borderWidth: 1,
-            },
-          ],
-        },
-        year: {
-          labels: ['Education', 'Health', 'Community', 'Environment'],
-          datasets: [
-            {
-              label: 'Volunteer Distribution',
-              data: [28, 32, 22, 18],
-              backgroundColor: [
-                'rgba(255, 99, 132, 0.6)',
-                'rgba(54, 162, 235, 0.6)',
-                'rgba(255, 206, 86, 0.6)',
-                'rgba(75, 192, 192, 0.6)',
-              ],
-              borderColor: [
-                'rgba(255, 99, 132, 1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)',
-              ],
-              borderWidth: 1,
-            },
-          ],
-        },
-      },
+
+    const fetchReportData = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`/api/admin/reports?type=${reportType}&timeframe=${timeFrame}`);
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch report data');
+        }
+
+        const data = await response.json();
+        setReportData(data.reportData);
+        setStats(data.stats);
+      } catch (error) {
+        console.error('Error fetching report data:', error);
+      } finally {
+        setLoading(false);
+      }
     };
-    
-    // Simulate API call
-    setTimeout(() => {
-      setReportData(mockData);
-      setLoading(false);
-    }, 1000);
+
+    fetchReportData();
   }, [isAuthenticated, isAdmin, reportType, timeFrame]);
+
+  // Fetch top volunteers
+  useEffect(() => {
+    if (!isAuthenticated || !isAdmin) return;
+
+    const fetchTopVolunteers = async () => {
+      try {
+        const response = await fetch('/api/admin/top-volunteers');
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch top volunteers');
+        }
+
+        const data = await response.json();
+        setTopVolunteers(data);
+      } catch (error) {
+        console.error('Error fetching top volunteers:', error);
+      }
+    };
+
+    fetchTopVolunteers();
+  }, [isAuthenticated, isAdmin]);
+
+  // Fetch recent activity
+  useEffect(() => {
+    if (!isAuthenticated || !isAdmin) return;
+
+    const fetchRecentActivity = async () => {
+      try {
+        const response = await fetch('/api/admin/activity?limit=3');
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch recent activity');
+        }
+
+        const data = await response.json();
+        setRecentActivity(data);
+      } catch (error) {
+        console.error('Error fetching recent activity:', error);
+      }
+    };
+
+    fetchRecentActivity();
+  }, [isAuthenticated, isAdmin]);
+
+  // Format date for display
+  const formatActivityDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) {
+      return `Today, ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return `Yesterday, ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    } else {
+      return date.toLocaleDateString([], { month: 'short', day: 'numeric' }) +
+        `, ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    }
+  };
+
+  // Get activity type styling
+  const getActivityTypeStyle = (type: string) => {
+    switch (type) {
+      case 'CHECK_IN':
+        return 'bg-blue-100 text-blue-800';
+      case 'CHECK_OUT':
+        return 'bg-indigo-100 text-indigo-800';
+      case 'HOURS_LOGGED':
+        return 'bg-purple-100 text-purple-800';
+      case 'SHIFT_SIGNUP':
+        return 'bg-green-100 text-green-800';
+      case 'SHIFT_CANCEL':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // Format activity type for display
+  const formatActivityType = (type: string) => {
+    switch (type) {
+      case 'CHECK_IN':
+        return 'Check In';
+      case 'CHECK_OUT':
+        return 'Check Out';
+      case 'HOURS_LOGGED':
+        return 'Hours Logged';
+      case 'SHIFT_SIGNUP':
+        return 'Shift Signup';
+      case 'SHIFT_CANCEL':
+        return 'Shift Cancel';
+      default:
+        return type.replace(/_/g, ' ');
+    }
+  };
 
   // Chart options
   const barOptions = {
@@ -221,16 +255,16 @@ export default function AdminReportsPage() {
   // Show loading state
   if (status === 'loading' || authLoading || loading) {
     return (
-      
-        <div className="container mx-auto py-10">
-          <Skeleton className="h-12 w-48 mb-6" />
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <Skeleton className="h-10 w-64" />
-            <Skeleton className="h-10 w-32" />
-          </div>
-          <Skeleton className="h-[500px] w-full rounded-md" />
+
+      <div className="container mx-auto py-10">
+        <Skeleton className="h-12 w-48 mb-6" />
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-10 w-32" />
         </div>
-      
+        <Skeleton className="h-[500px] w-full rounded-md" />
+      </div>
+
     );
   }
 
@@ -240,170 +274,178 @@ export default function AdminReportsPage() {
   }
 
   return (
-    
-      <div className="container mx-auto py-10">
-        <h1 className="text-3xl font-bold text-foreground mb-6">Reports & Analytics</h1>
-        
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <Select value={reportType} onValueChange={setReportType}>
-              <SelectTrigger className="w-full sm:w-[240px]">
-                <SelectValue placeholder="Report Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="volunteer-hours">Volunteer Hours</SelectItem>
-                <SelectItem value="volunteer-distribution">Volunteer Distribution</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Select value={timeFrame} onValueChange={setTimeFrame}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Time Frame" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="month">Last Month</SelectItem>
-                <SelectItem value="quarter">Last Quarter</SelectItem>
-                <SelectItem value="year">Last Year</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <Button className="w-full sm:w-auto">
-            <Download className="mr-2 h-4 w-4" />
-            Export Report
-          </Button>
+
+    <div className="container mx-auto py-10">
+      <h1 className="text-3xl font-bold text-foreground mb-6">Reports & Analytics</h1>
+
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Select value={reportType} onValueChange={setReportType}>
+            <SelectTrigger className="w-full sm:w-[240px]">
+              <SelectValue placeholder="Report Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="volunteer-hours">Volunteer Hours</SelectItem>
+              <SelectItem value="volunteer-distribution">Volunteer Distribution</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={timeFrame} onValueChange={setTimeFrame}>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="Time Frame" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="month">Last Month</SelectItem>
+              <SelectItem value="quarter">Last Quarter</SelectItem>
+              <SelectItem value="year">Last Year</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Volunteers</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">124</div>
-              <p className="text-xs text-muted-foreground">+12% from last month</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Hours Logged</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">3,240</div>
-              <p className="text-xs text-muted-foreground">+5% from last month</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Shifts</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">45</div>
-              <p className="text-xs text-muted-foreground">+8% from last month</p>
-            </CardContent>
-          </Card>
-        </div>
-        
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>
-              {reportType === 'volunteer-hours' ? 'Volunteer Hours Report' : 'Volunteer Distribution'}
-            </CardTitle>
-            <CardDescription>
-              {timeFrame === 'month' ? 'Last 4 weeks' : 
-               timeFrame === 'quarter' ? 'Last 3 months' : 'Last 12 months'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="h-[400px] w-full">
-            {reportData && (
-              reportType === 'volunteer-hours' ? (
-                <Bar 
-                  options={barOptions} 
-                  data={reportData[reportType][timeFrame]} 
-                  width={100}
-                  height={50}
-                />
-              ) : (
-                <Pie 
-                  options={pieOptions} 
-                  data={reportData[reportType][timeFrame]} 
-                />
-              )
-            )}
-          </CardContent>
-        </Card>
-        
+
+        <Button className="w-full sm:w-auto">
+          <Download className="mr-2 h-4 w-4" />
+          Export Report
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card>
-          <CardHeader>
-            <CardTitle>Volunteer Activity Summary</CardTitle>
-            <CardDescription>Overview of volunteer performance</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Volunteers</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="top-volunteers">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="top-volunteers">Top Volunteers</TabsTrigger>
-                <TabsTrigger value="recent-activity">Recent Activity</TabsTrigger>
-              </TabsList>
-              <TabsContent value="top-volunteers" className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <div className="font-medium">Sarah Johnson</div>
-                    <div className="text-sm text-muted-foreground">54 hours</div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="font-medium">Michael Chen</div>
-                    <div className="text-sm text-muted-foreground">48 hours</div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="font-medium">Jessica Martinez</div>
-                    <div className="text-sm text-muted-foreground">42 hours</div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="font-medium">David Kim</div>
-                    <div className="text-sm text-muted-foreground">36 hours</div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="font-medium">Emma Wilson</div>
-                    <div className="text-sm text-muted-foreground">32 hours</div>
-                  </div>
-                </div>
-              </TabsContent>
-              <TabsContent value="recent-activity" className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <div className="font-medium">Teaching Assistant - School Outreach</div>
-                    <div className="text-sm text-muted-foreground">2 hours ago</div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="font-medium">Food Bank Distribution</div>
-                    <div className="text-sm text-muted-foreground">5 hours ago</div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="font-medium">Community Garden Maintenance</div>
-                    <div className="text-sm text-muted-foreground">Yesterday</div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="font-medium">Senior Center Visit</div>
-                    <div className="text-sm text-muted-foreground">2 days ago</div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="font-medium">Beach Cleanup</div>
-                    <div className="text-sm text-muted-foreground">3 days ago</div>
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
+            <div className="text-2xl font-bold">{stats.volunteers.total}</div>
+            <p className="text-xs text-muted-foreground">
+              {parseFloat(stats.volunteers.percentChange.toString()) > 0 ? '+' : ''}
+              {stats.volunteers.percentChange}% from last month
+            </p>
           </CardContent>
-          <CardFooter>
-            <Button variant="outline" className="w-full">View Detailed Reports</Button>
-          </CardFooter>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Hours Logged</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.hours.total}</div>
+            <p className="text-xs text-muted-foreground">
+              {parseFloat(stats.hours.percentChange.toString()) > 0 ? '+' : ''}
+              {stats.hours.percentChange}% from last month
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Shifts</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.shifts.total}</div>
+            <p className="text-xs text-muted-foreground">
+              {parseFloat(stats.shifts.percentChange.toString()) > 0 ? '+' : ''}
+              {stats.shifts.percentChange}% from last month
+            </p>
+          </CardContent>
         </Card>
       </div>
-    
+
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>
+            {reportType === 'volunteer-hours' ? 'Volunteer Hours Report' : 'Volunteer Distribution'}
+          </CardTitle>
+          <CardDescription>
+            {timeFrame === 'month' ? 'Last 4 weeks' :
+              timeFrame === 'quarter' ? 'Last 3 months' : 'Last 12 months'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="h-[400px] w-full">
+          {reportData && (
+            reportType === 'volunteer-hours' ? (
+              <Bar
+                options={barOptions}
+                data={reportData}
+                width={100}
+                height={50}
+              />
+            ) : (
+              <Pie
+                options={pieOptions}
+                data={reportData}
+              />
+            )
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Volunteer Summary</CardTitle>
+          <CardDescription>Top volunteers and recent activity</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="top-volunteers">
+            <TabsList>
+              <TabsTrigger value="top-volunteers">Top Volunteers</TabsTrigger>
+              <TabsTrigger value="recent-activity">Recent Activity</TabsTrigger>
+            </TabsList>
+            <TabsContent value="top-volunteers" className="pt-4">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                  <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-2">Volunteer</th>
+                      <th className="px-4 py-2 text-right">Total Hours</th>
+                      <th className="px-4 py-2 text-right">Recent Shifts</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {topVolunteers.length > 0 ? (
+                      topVolunteers.map((volunteer, index) => (
+                        <tr key={volunteer.id} className={index % 2 === 0 ? 'bg-white border-b' : 'bg-gray-50 border-b'}>
+                          <td className="px-4 py-2 font-medium">{volunteer.name}</td>
+                          <td className="px-4 py-2 text-right">{volunteer.totalHours}</td>
+                          <td className="px-4 py-2 text-right">{volunteer.recentShifts}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr className="bg-white border-b">
+                        <td colSpan={3} className="px-4 py-2 text-center text-gray-500">No volunteer data available</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </TabsContent>
+            <TabsContent value="recent-activity" className="pt-4">
+              <div className="space-y-4">
+                {recentActivity.length > 0 ? (
+                  recentActivity.map((activity) => (
+                    <div key={activity.id} className="bg-white p-3 rounded border">
+                      <div className="flex items-center justify-between">
+                        <span className={`${getActivityTypeStyle(activity.type)} px-2 py-1 text-xs rounded-full`}>
+                          {formatActivityType(activity.type)}
+                        </span>
+                        <span className="text-xs text-gray-500">{formatActivityDate(activity.createdAt)}</span>
+                      </div>
+                      <p className="text-sm font-medium mt-2">{activity.user.name}</p>
+                      <p className="text-sm text-gray-600">{activity.description}</p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="bg-white p-3 rounded border text-center text-gray-500">
+                    No recent activity available
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+    </div>
+
   );
 } 

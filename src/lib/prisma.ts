@@ -1,38 +1,32 @@
 import { PrismaClient } from '@prisma/client';
 
-// PrismaClient is attached to the `global` object in development to prevent
-// exhausting your database connection limit.
-// Learn more: https://pris.ly/d/help/next-js-best-practices
+// Standard Prisma Client initialization
+// Reference: https://pris.ly/d/help/next-js-best-practices
 
-// Set up a more stable Prisma client to prevent prepared statement issues
-const prismaClientSingleton = () => {
-  return new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['error'] : ['error'],
-    // Use datasources to ensure we have correct connection URL
-    datasources: {
-      db: {
-        url: process.env.DATABASE_URL,
-      },
-    }
-  });
-};
-
-// Use type declaration merging to add PrismaClient to global
 declare global {
-  var prisma: ReturnType<typeof prismaClientSingleton> | undefined;
+  // allow global `var` declarations
+  // eslint-disable-next-line no-var
+  var prisma: PrismaClient | undefined;
 }
 
-// Create or reuse the Prisma client
-export const prisma = global.prisma ?? prismaClientSingleton();
+const prisma =
+  global.prisma ||
+  new PrismaClient({
+    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+  });
 
-// In development, attach to global to prevent multiple instances
 if (process.env.NODE_ENV !== 'production') {
   global.prisma = prisma;
 }
 
-// Attempt to flush connections before exiting
-process.on('beforeExit', async () => {
-  await prisma.$disconnect();
-});
+// Remove the queryWithRetry function as it depends on the complex setup
+// export async function queryWithRetry<T>( ... ) { ... } 
 
-export default prisma; 
+export { prisma }; // Export the simplified client instance
+
+// Remove the default export if it causes issues, or keep if needed elsewhere
+// export default prisma;
+
+// Comment out or remove process event listeners and interval pings related to the old setup
+// if (process.env.NODE_ENV !== 'production') { ... }
+// if (process.env.NODE_ENV === 'production') { ... } 
