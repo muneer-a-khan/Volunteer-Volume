@@ -7,11 +7,11 @@ import { startOfMonth, subMonths, startOfQuarter, subQuarters, startOfYear, subY
 // Helper function to check if user is admin
 async function isAdmin(session: any) {
   if (!session?.user?.email) return false;
-  
+
   const user = await prisma.users.findUnique({
     where: { email: session.user.email },
   });
-  
+
   return user?.role === 'ADMIN';
 }
 
@@ -27,11 +27,11 @@ export default async function handler(
   try {
     // Get session and verify admin
     const session = await getServerSession(req, res, authOptions);
-    
+
     if (!session) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
-    
+
     if (!await isAdmin(session)) {
       return res.status(403).json({ message: 'Forbidden: Admin access required' });
     }
@@ -39,10 +39,14 @@ export default async function handler(
     // Get report type and timeframe from query params
     const reportType = req.query.type as string || 'volunteer-hours';
     const timeFrame = req.query.timeframe as string || 'month';
-    
+
     const now = new Date();
-    let startDate, endDate, prevStartDate, prevEndDate, labels;
-    
+    let startDate: Date;
+    let endDate: Date;
+    let prevStartDate: Date;
+    let prevEndDate: Date;
+    let labels: string[] = [];
+
     // Set time ranges based on timeframe
     if (timeFrame === 'month') {
       startDate = startOfMonth(now);
@@ -55,29 +59,46 @@ export default async function handler(
       endDate = now;
       prevStartDate = startOfQuarter(subQuarters(now, 1));
       prevEndDate = startDate;
-      
+
       // Create month labels for the quarter
-      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
-                         'July', 'August', 'September', 'October', 'November', 'December'];
-      const currentQuarterMonths = [];
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'];
+      const currentQuarterMonths: string[] = [];
       const startMonth = startDate.getMonth();
-      
+
       for (let i = 0; i < 3; i++) {
         const monthIndex = (startMonth + i) % 12;
         currentQuarterMonths.push(monthNames[monthIndex]);
       }
-      
+
       labels = currentQuarterMonths;
-    } else if (timeFrame === 'year') {
+    } else {
+      // Default to year
       startDate = startOfYear(now);
       endDate = now;
       prevStartDate = startOfYear(subYears(now, 1));
       prevEndDate = startDate;
       labels = ['Q1', 'Q2', 'Q3', 'Q4'];
     }
-    
-    let reportData: any = {};
-    
+
+    let reportData: {
+      labels: string[],
+      datasets: Array<{
+        label: string,
+        data: number[],
+        backgroundColor: string | string[],
+        borderColor?: string | string[],
+        borderWidth?: number
+      }>,
+      stats?: {
+        total: string | number,
+        percentChange: string | number
+      }
+    } = {
+      labels: [],
+      datasets: []
+    };
+
     // Generate report data based on type
     if (reportType === 'volunteer-hours') {
       // Get volunteer hours for the current period
@@ -90,7 +111,7 @@ export default async function handler(
           approved: true
         }
       });
-      
+
       // Get volunteer hours for the previous period
       const prevHoursLogs = await prisma.volunteer_logs.findMany({
         where: {
@@ -101,25 +122,25 @@ export default async function handler(
           approved: true
         }
       });
-      
+
       // Calculate total hours for current period
-      const currentTotalHours = currentHoursLogs.reduce((total, log) => 
+      const currentTotalHours = currentHoursLogs.reduce((total, log) =>
         total + log.hours + (log.minutes || 0) / 60, 0);
-      
+
       // Calculate total hours for previous period
-      const prevTotalHours = prevHoursLogs.reduce((total, log) => 
+      const prevTotalHours = prevHoursLogs.reduce((total, log) =>
         total + log.hours + (log.minutes || 0) / 60, 0);
-      
+
       // Calculate percentage change
-      const percentChange = prevTotalHours ? 
+      const percentChange = prevTotalHours ?
         ((currentTotalHours - prevTotalHours) / prevTotalHours) * 100 : 0;
-      
+
       // Generate data for chart
-      let data;
+      let data: number[] = [];
       if (timeFrame === 'month') {
         // Divide the month into weeks
         data = [0, 0, 0, 0]; // 4 weeks
-        
+
         currentHoursLogs.forEach(log => {
           const day = new Date(log.date).getDate();
           const weekIndex = Math.min(3, Math.floor(day / 7));
@@ -128,11 +149,11 @@ export default async function handler(
       } else if (timeFrame === 'quarter') {
         // Divide by months in the quarter
         data = [0, 0, 0]; // 3 months
-        
+
         currentHoursLogs.forEach(log => {
           const month = new Date(log.date).getMonth();
-          const startMonth = startDate.getMonth();
-          let monthIndex = month - startMonth;
+          const startMonthIndex = startDate.getMonth();
+          let monthIndex = month - startMonthIndex;
           if (monthIndex < 0) monthIndex += 12;
           if (monthIndex < 3) {
             data[monthIndex] += log.hours + (log.minutes || 0) / 60;
@@ -141,14 +162,14 @@ export default async function handler(
       } else if (timeFrame === 'year') {
         // Divide by quarters
         data = [0, 0, 0, 0]; // 4 quarters
-        
+
         currentHoursLogs.forEach(log => {
           const month = new Date(log.date).getMonth();
           const quarterIndex = Math.floor(month / 3);
           data[quarterIndex] += log.hours + (log.minutes || 0) / 60;
         });
       }
-      
+
       reportData = {
         labels,
         datasets: [
@@ -170,7 +191,7 @@ export default async function handler(
           active: true
         }
       });
-      
+
       // Get volunteer logs for the current period by group
       const currentLogs = await prisma.volunteer_logs.findMany({
         where: {
@@ -184,45 +205,45 @@ export default async function handler(
           groups: true
         }
       });
-      
+
       const groupData: Record<string, number> = {};
       let otherHours = 0;
-      
+
       // Get top 4 groups by hours
       groups.forEach(group => {
         groupData[group.name || 'Unnamed Group'] = 0;
       });
-      
+
       // Add hours to groups
       currentLogs.forEach(log => {
         if (log.groups) {
-          groupData[log.groups.name || 'Unnamed Group'] = 
+          groupData[log.groups.name || 'Unnamed Group'] =
             (groupData[log.groups.name || 'Unnamed Group'] || 0) + log.hours + (log.minutes || 0) / 60;
         } else {
           otherHours += log.hours + (log.minutes || 0) / 60;
         }
       });
-      
+
       // Sort groups by hours
       const sortedGroups = Object.entries(groupData)
         .sort(([, hoursA], [, hoursB]) => (hoursB as number) - (hoursA as number));
-      
+
       // Take top 4 groups, combine the rest as "Other"
       const topGroups = sortedGroups.slice(0, 4);
       const otherGroups = sortedGroups.slice(4);
-      
+
       if (otherGroups.length > 0 || otherHours > 0) {
         const additionalOtherHours = otherGroups.reduce((sum, [, hours]) => sum + (hours as number), 0);
         topGroups.push(['Other', otherHours + additionalOtherHours]);
       }
-      
+
       // Generate chart data
       const labels = topGroups.map(([name]) => name);
-      const data = topGroups.map(([, hours]) => hours);
-      
+      const data = topGroups.map(([, hours]) => hours as number);
+
       // Get total hours for distribution
-      const totalHours = data.reduce((sum, hours) => sum + (hours as number), 0);
-      
+      const totalHours = data.reduce((sum, hours) => sum + hours, 0);
+
       // Get logs for previous period to calculate change
       const prevLogs = await prisma.volunteer_logs.findMany({
         where: {
@@ -233,14 +254,14 @@ export default async function handler(
           approved: true
         }
       });
-      
-      const prevTotalHours = prevLogs.reduce((total, log) => 
+
+      const prevTotalHours = prevLogs.reduce((total, log) =>
         total + log.hours + (log.minutes || 0) / 60, 0);
-      
+
       // Calculate percentage change
-      const percentChange = prevTotalHours ? 
+      const percentChange = prevTotalHours ?
         ((totalHours - prevTotalHours) / prevTotalHours) * 100 : 0;
-      
+
       reportData = {
         labels,
         datasets: [
@@ -270,7 +291,7 @@ export default async function handler(
         }
       };
     }
-    
+
     // Get additional stats for the dashboard
     // Total volunteers
     const totalVolunteers = await prisma.users.count({
@@ -278,7 +299,7 @@ export default async function handler(
         role: 'VOLUNTEER'
       }
     });
-    
+
     // Previous month volunteer count
     const prevMonthVolunteers = await prisma.users.count({
       where: {
@@ -288,10 +309,10 @@ export default async function handler(
         }
       }
     });
-    
-    const volunteersPercentChange = prevMonthVolunteers ? 
+
+    const volunteersPercentChange = prevMonthVolunteers ?
       ((totalVolunteers - prevMonthVolunteers) / prevMonthVolunteers) * 100 : 0;
-    
+
     // Get active shifts
     const activeShifts = await prisma.shifts.count({
       where: {
@@ -300,7 +321,7 @@ export default async function handler(
         }
       }
     });
-    
+
     // Get previous month active shifts count
     const prevMonthActiveShifts = await prisma.shifts.count({
       where: {
@@ -310,10 +331,10 @@ export default async function handler(
         }
       }
     });
-    
-    const shiftsPercentChange = prevMonthActiveShifts ? 
+
+    const shiftsPercentChange = prevMonthActiveShifts ?
       ((activeShifts - prevMonthActiveShifts) / prevMonthActiveShifts) * 100 : 0;
-    
+
     // Return report data with additional stats
     return res.status(200).json({
       reportData,
@@ -332,7 +353,7 @@ export default async function handler(
         }
       }
     });
-    
+
   } catch (error) {
     console.error('Error generating report data:', error);
     return res.status(500).json({ message: 'Internal server error' });
