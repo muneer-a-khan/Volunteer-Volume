@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from './useAuth';
+import { getSupabaseBrowser } from '@/lib/supabase-browser';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Volunteer } from '@/types/volunteer';
 
 export function useVolunteers() {
-  const { supabase } = useAuth();
+  const supabase = getSupabaseBrowser();
+  const queryClient = useQueryClient();
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);

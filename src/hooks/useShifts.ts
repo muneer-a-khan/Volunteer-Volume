@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from './useAuth';
+import { getSupabaseBrowser } from '@/lib/supabase-browser';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Shift } from '@/types/shift';
 
 export function useShifts() {
-  const { supabase } = useAuth();
+  const supabase = getSupabaseBrowser();
+  const queryClient = useQueryClient();
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);

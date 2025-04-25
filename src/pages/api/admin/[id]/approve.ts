@@ -1,6 +1,4 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
 import { sendEmail, emailTemplates } from '@/lib/email';
@@ -8,27 +6,21 @@ import { sendEmail, emailTemplates } from '@/lib/email';
 interface ResponseData {
   success: boolean;
   message: string;
+  application?: any;
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<ResponseData>
-) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse<ResponseData>) {
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, message: 'Method not allowed' });
   }
 
+  const { id } = req.query;
+  if (!id || typeof id !== 'string') {
+    return res.status(400).json({ success: false, message: 'Invalid application ID' });
+  }
+
   try {
-    const session = await getServerSession(req, res, authOptions);
-
-    if (!session || session.user.role !== 'ADMIN') {
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
-    }
-
-    const { id } = req.query;
-    if (!id || typeof id !== 'string') {
-      return res.status(400).json({ success: false, message: 'Invalid application ID' });
-    }
+    await prisma.$connect();
 
     // Get the application
     const application = await prisma.applications.findUnique({
@@ -36,19 +28,31 @@ export default async function handler(
       include: { users: true }
     });
 
-    if (!application) {
-      return res.status(404).json({ success: false, message: 'Application not found' });
+    if (!application || !application.users) {
+      return res.status(404).json({ success: false, message: 'Application or associated user not found' });
+    }
+
+    if (application.status !== 'PENDING') {
+      return res.status(400).json({ success: false, message: `Application status is ${application.status}, not PENDING` });
     }
 
     // Update application status
-    await prisma.applications.update({
+    const updatedApplication = await prisma.applications.update({
       where: { id },
       data: {
         status: 'APPROVED',
-        approved_by: session.user.id,
+        approved_by: application.users.id,
         approved_at: new Date()
       }
     });
+
+    // Update user role (if not already VOLUNTEER or ADMIN)
+    if (application.users.role !== 'VOLUNTEER' && application.users.role !== 'ADMIN') {
+      await prisma.users.update({
+        where: { id: application.users.id },
+        data: { role: 'VOLUNTEER' },
+      });
+    }
 
     // Send approval email
     try {
@@ -61,17 +65,20 @@ export default async function handler(
       // Continue with the process even if email sending fails
     }
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
-      message: 'Application approved successfully'
+      message: 'Application approved successfully',
+      application: updatedApplication
     });
 
   } catch (error) {
     console.error('Error approving application:', error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Internal Server Error'
     });
+  } finally {
+    await prisma.$disconnect();
   }
 }
 

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useSession } from 'next-auth/react';
+import { SessionProvider, useSession } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import { Montserrat } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
@@ -17,7 +17,8 @@ interface RootLayoutProps {
   children: React.ReactNode;
 }
 
-export default function RootLayout({ children }: RootLayoutProps) {
+// Create a client component that uses the session
+function LayoutContent({ children }: RootLayoutProps) {
   const { data: session, status } = useSession();
   const pathname = usePathname() || '';
   
@@ -42,4 +43,13 @@ export default function RootLayout({ children }: RootLayoutProps) {
       {!shouldHideFooter && <ShadcnFooter />}
     </div>
   );
-} 
+}
+
+// Export the main layout component wrapped with SessionProvider
+export default function RootLayout({ children }: RootLayoutProps) {
+  return (
+    <SessionProvider>
+      <LayoutContent>{children}</LayoutContent>
+    </SessionProvider>
+  );
+}

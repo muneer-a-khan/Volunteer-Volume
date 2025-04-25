@@ -7,6 +7,11 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useGroups } from '../../contexts/GroupContext';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
+import axios from 'axios';
+import LoadingSpinner from '../ui/LoadingSpinner';
+import { Button } from '../ui/button';
+import ShiftList from '../shifts/ShiftList';
+import MemberList from './MemberList';
 
 export default function GroupDetailPage() {
   const router = useRouter();
@@ -34,6 +39,7 @@ export default function GroupDetailPage() {
   const [isGroupAdmin, setIsGroupAdmin] = useState(false);
   const [isMember, setIsMember] = useState(false);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [error, setError] = useState(null);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -67,6 +73,7 @@ export default function GroupDetailPage() {
           }
         } catch (error) {
           console.error("Error loading group data:", error);
+          setError(error.response?.data?.message || 'Failed to load group');
         }
       }
     };
@@ -95,6 +102,8 @@ export default function GroupDetailPage() {
       </>
     );
   }
+
+  if (error) return <div className="text-center py-10 text-red-600">Error: {error}</div>;
 
   return (
     <>

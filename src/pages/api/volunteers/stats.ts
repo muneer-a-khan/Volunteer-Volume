@@ -1,8 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
-import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/pages/api/auth/[...nextauth]';
+import { mapSnakeToCamel } from '@/lib/map-utils';
 
 interface VolunteerStats {
   totalHours: number;
@@ -11,90 +9,52 @@ interface VolunteerStats {
   upcomingShifts: number;
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Only allow GET requests
+export default async function handler(req: NextApiRequest, res: NextApiResponse<VolunteerStats | { message: string }>) {
   if (req.method !== 'GET') {
-    return res.status(405).json({ message: 'Method not allowed' });
-  }
-
-  // Verify authentication
-  const session = await getServerSession(req, res, authOptions);
-  if (!session?.user?.id) {
-    return res.status(401).json({ message: 'Unauthorized' });
+    return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
   try {
-    // Get user from our database
-    const user = await prisma.users.findUnique({
-      where: {
-        id: session.user.id
-      }
-    });
+    await prisma.$connect();
+    
+    // Need a userId to fetch stats for.
+    // Cannot proceed without authentication to identify the user.
+    return res.status(501).json({ message: 'Volunteer Stats requires authentication (currently disabled)' });
 
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // Calculate volunteer statistics for the authenticated user
+    /* Original logic requiring userId:
     const logs = await prisma.volunteer_logs.aggregate({
-      where: {
-        user_id: user.id
-      },
-      _sum: {
-        hours: true,
-        minutes: true
-      }
+      where: { user_id: userId }, // Needs userId
+      _sum: { hours: true, minutes: true },
+      _count: { _all: true },
     });
 
-    // Get completed shifts count
-    const shiftsCompleted = await prisma.check_ins.count({
-      where: {
-        user_id: user.id,
-        check_out_time: {
-          not: null
-        }
-      }
+    const shifts = await prisma.shifts.count({
+      where: { shift_volunteers: { some: { user_id: userId } } }, // Needs userId
+    });
+    
+    const checkIns = await prisma.check_ins.count({
+      where: { user_id: userId }, // Needs userId
     });
 
-    // Get upcoming shifts count
-    const now = new Date();
-    const upcomingShifts = await prisma.shifts.count({
-      where: {
-        shift_volunteers: {
-          some: {
-            user_id: user.id
-          }
-        },
-        start_time: {
-          gt: now
-        },
-        status: {
-          not: 'CANCELLED'
-        }
-      }
-    });
-
-    // Calculate total hours
     let totalHours = logs._sum.hours || 0;
     let totalMinutes = logs._sum.minutes || 0;
-
-    // Normalize minutes
     totalHours += Math.floor(totalMinutes / 60);
     totalMinutes = totalMinutes % 60;
 
     const stats: VolunteerStats = {
       totalHours,
       totalMinutes,
-      shiftsCompleted,
-      upcomingShifts
+      shiftsCount: shifts || 0,
+      checkInsCount: checkIns || 0,
+      logsCount: logs._count._all || 0,
     };
 
-    return res.status(200).json(mapSnakeToCamel(stats));
+    res.status(200).json(stats);
+    */
   } catch (error) {
     console.error('Error fetching volunteer stats:', error);
-    return res.status(500).json({
-      message: 'Failed to fetch volunteer statistics',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
+    res.status(500).json({ message: 'Internal Server Error' });
+  } finally {
+    await prisma.$disconnect();
   }
 } 

@@ -1,208 +1,109 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import Link from 'next/link';
 import { format, parseISO, isAfter, isPast } from 'date-fns';
-import { useAuth } from '../../contexts/AuthContext';
 import { useShifts } from '../../contexts/ShiftContext';
+import { useAuth } from '../../contexts/AuthContext';
+import LoadingSpinner from '../ui/LoadingSpinner';
+import { Button } from '../ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { MapPin, Clock, Users, Calendar, Info, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
-export default function ShiftDetails({ shift }) {
-  const { isAdmin, dbUser } = useAuth();
+export default function ShiftDetails({ shift: initialShift = null, shiftId = null }) {
   const { signUpForShift, cancelShiftSignup } = useShifts();
+  const { isAdmin, dbUser } = useAuth();
+  const [shift, setShift] = useState(initialShift);
+  const [loading, setLoading] = useState(!initialShift && !!shiftId);
+  const [error, setError] = useState(null);
   const [isSigningUp, setIsSigningUp] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
 
-  if (!shift) {
-    return (
-      <div className="animate-pulse">
-        <div className="h-10 bg-gray-200 rounded mb-6"></div>
-        <div className="h-32 bg-gray-200 rounded mb-6"></div>
-        <div className="h-10 bg-gray-200 rounded w-1/2 mb-4"></div>
-        <div className="h-24 bg-gray-200 rounded mb-6"></div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    const fetchShiftDetails = async () => {
+      if (!shiftId || initialShift) return;
+      setLoading(true);
+      try {
+        const response = await axios.get(`/api/shifts/${shiftId}`);
+        setShift(response.data);
+      } catch (err) {
+        setError(err.response?.data?.message || 'Failed to load shift details');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchShiftDetails();
+  }, [shiftId, initialShift]);
 
-  // Check if user is signed up for this shift
-  const isSignedUp = shift.volunteers && shift.volunteers.some(volunteer => volunteer.id === dbUser?.id);
+  if (loading) return <div className="flex justify-center py-10"><LoadingSpinner /></div>;
+  if (error) return <div className="text-center py-10 text-red-600">Error loading shift details: {error}</div>;
+  if (!shift) return <div className="text-center py-10">Shift data not available.</div>;
 
-  // Check if shift has available spots
-  const hasAvailableSpots = shift.currentVolunteers < shift.capacity;
-
-  // Check if shift is in the past
-  const isShiftPast = isPast(parseISO(shift.endTime));
-
-  // Check if shift is currently active
-  const isShiftActive = !isPast(parseISO(shift.startTime)) && !isPast(parseISO(shift.endTime));
-
-  // Format shift time for display
-  const formatShiftTime = (start, end) => {
-    const startDate = parseISO(start);
-    const endDate = parseISO(end);
-
-    return `${format(startDate, 'EEEE, MMMM d, yyyy h:mm a')} - ${format(endDate, 'h:mm a')}`;
-  };
-
-  // Get status class for styling
-  const getStatusClass = (status) => {
-    switch (status) {
-      case 'OPEN':
-        return 'bg-blue-100 text-blue-800';
-      case 'FILLED':
-        return 'bg-green-100 text-green-800';
-      case 'CANCELLED':
-        return 'bg-red-100 text-red-800';
-      case 'COMPLETED':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-600';
-    }
-  };
-
-  // Handle signing up for a shift
-  const handleSignUp = async () => {
-    setIsSigningUp(true);
-    try {
-      await signUpForShift(shift.id);
-    } catch (error) {
-      console.error('Error signing up for shift:', error);
-    } finally {
-      setIsSigningUp(false);
-    }
-  };
-
-  // Handle canceling a shift registration
-  const handleCancel = async () => {
-    setIsCanceling(true);
-    try {
-      await cancelShiftSignup(shift.id);
-    } catch (error) {
-      console.error('Error canceling shift registration:', error);
-    } finally {
-      setIsCanceling(false);
-    }
-  };
+  const statusMap = {
+     OPEN: { text: 'Open', icon: CheckCircle, color: 'text-green-600' },
+     FILLED: { text: 'Filled', icon: XCircle, color: 'text-red-600' },
+     CANCELLED: { text: 'Cancelled', icon: AlertTriangle, color: 'text-yellow-600' },
+     COMPLETED: { text: 'Completed', icon: CheckCircle, color: 'text-gray-500' }
+   };
+   const statusInfo = statusMap[shift.status] || { text: shift.status, icon: Info, color: 'text-gray-500' };
+   const StatusIcon = statusInfo.icon;
 
   return (
-    <div className="bg-white shadow rounded-lg overflow-hidden">
-      <div className="p-6">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-start">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">{shift.title}</h2>
-            <p className="text-gray-600 mt-1">{shift.location}</p>
-            <p className="text-gray-500 mt-1">{formatShiftTime(shift.startTime, shift.endTime)}</p>
-
-            <div className="mt-4 flex flex-wrap gap-3">
-              <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusClass(shift.status)}`}>
-                {shift.status}
-              </span>
-
-              <span className="px-3 py-1 text-sm font-medium rounded-full bg-gray-100 text-gray-800">
-                {shift.currentVolunteers} / {shift.capacity} volunteers
-              </span>
-
-              {shift.group && (
-                <Link
-                  href={`/groups/${shift.group.id}`}
-                  className="px-3 py-1 text-sm font-medium rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200"
-                >
-                  {shift.group.name}
-                </Link>
-              )}
-            </div>
-          </div>
-
-          <div className="mt-6 md:mt-0 flex space-x-4">
-            {isAdmin && !isShiftPast && (
-              <Link
-                href={`/admin/shifts/${shift.id}/edit`}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-vadm-blue"
-              >
-                Edit Shift
-              </Link>
-            )}
-
-            {!isShiftPast && shift.status !== 'CANCELLED' && (
-              <>
-                {isSignedUp ? (
-                  <button
-                    onClick={handleCancel}
-                    disabled={isCanceling}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
-                  >
-                    {isCanceling ? 'Canceling...' : 'Cancel Registration'}
-                  </button>
-                ) : (
-                  hasAvailableSpots && (
-                    <button
-                      onClick={handleSignUp}
-                      disabled={isSigningUp}
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-vadm-green hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-vadm-green disabled:opacity-50"
-                    >
-                      {isSigningUp ? 'Signing Up...' : 'Sign Up for Shift'}
-                    </button>
-                  )
-                )}
-              </>
-            )}
-
-            {isSignedUp && isShiftActive && (
-              <Link
-                href="/check-in"
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-vadm-blue hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-vadm-blue"
-              >
-                Check In/Out
-              </Link>
-            )}
-          </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-2xl font-bold">{shift.title}</CardTitle>
+        <div className={`flex items-center text-sm mt-1 ${statusInfo.color}`}>
+           <StatusIcon className="w-4 h-4 mr-1" />
+           <span>{statusInfo.text}</span>
         </div>
-
+      </CardHeader>
+      <CardContent className="space-y-4">
         {shift.description && (
-          <div className="mt-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Description</h3>
-            <div className="prose prose-sm max-w-none text-gray-600">
-              <p>{shift.description}</p>
-            </div>
+          <div className="flex items-start">
+            <Info className="w-5 h-5 mr-3 mt-1 text-gray-500 flex-shrink-0" />
+            <p className="text-gray-700">{shift.description}</p>
+          </div>
+        )}
+        <div className="flex items-center">
+          <MapPin className="w-5 h-5 mr-3 text-gray-500" />
+          <span className="text-gray-700">{shift.location || 'Location not specified'}</span>
+        </div>
+        <div className="flex items-center">
+          <Calendar className="w-5 h-5 mr-3 text-gray-500" />
+          <span className="text-gray-700">{format(new Date(shift.startTime), 'PPP')}</span> 
+        </div>
+        <div className="flex items-center">
+          <Clock className="w-5 h-5 mr-3 text-gray-500" />
+          <span className="text-gray-700">
+             {format(new Date(shift.startTime), 'p')} - {format(new Date(shift.endTime), 'p')} 
+          </span>
+        </div>
+        <div className="flex items-center">
+          <Users className="w-5 h-5 mr-3 text-gray-500" />
+          <span className="text-gray-700">
+            {shift.currentVolunteers} / {shift.capacity} volunteers signed up
+          </span>
+        </div>
+        
+        {shift.status === 'OPEN' && (
+          <div className="mt-6 pt-4 border-t">
+             {!isAdmin && !isPast(parseISO(shift.endTime)) && (
+               <Button onClick={() => signUpForShift(shift.id)} disabled={isSigningUp}>
+                 {isSigningUp ? 'Signing Up...' : 'Sign Up for this Shift'}
+               </Button>
+             )}
+             {!isAdmin && isPast(parseISO(shift.endTime)) && (
+                 <p className="text-sm text-red-600">This shift is full.</p>
+             )}
+             {isAdmin && !isPast(parseISO(shift.endTime)) && (
+               <Button variant="outline" onClick={() => cancelShiftSignup(shift.id)} disabled={isCanceling}>
+                 {isCanceling ? 'Canceling...' : 'Cancel Signup'}
+               </Button>
+             )}
           </div>
         )}
 
-        <div className="mt-8">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Registered Volunteers</h3>
-
-          {shift.volunteers && shift.volunteers.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Volunteer Name
-                    </th>
-                    {isAdmin && (
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Email
-                      </th>
-                    )}
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {shift.volunteers.map((volunteer) => (
-                    <tr key={volunteer.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {volunteer.name}
-                      </td>
-                      {isAdmin && (
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {volunteer.email}
-                        </td>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="text-gray-500">No volunteers have signed up for this shift yet.</p>
-          )}
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

@@ -7,25 +7,23 @@ import axios from 'axios';
 import { format } from 'date-fns';
 import { X } from 'lucide-react';
 import Image from 'next/image';
-
-import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Badge } from "@/components/ui/badge"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { MoreHorizontal } from "lucide-react"
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { toast } from 'react-hot-toast';
 
 interface Volunteer {
   id: string;
   name: string;
   email: string;
-  lastActive?: string;
-  profile?: {
-    photoUrl?: string;
-  };
-  stats?: {
-    totalHours: number;
-    totalMinutes: number;
-  };
+  phone?: string;
+  role: string;
+  created_at: string;
+  active: boolean;
 }
 
 interface VolunteerListProps {
@@ -34,7 +32,6 @@ interface VolunteerListProps {
 }
 
 export default function VolunteerList({ initialFilter = 'active', groupId = null }: VolunteerListProps) {
-  const { isAdmin } = useAuth();
   const router = useRouter();
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [filteredVolunteers, setFilteredVolunteers] = useState<Volunteer[]>([]);
@@ -42,6 +39,8 @@ export default function VolunteerList({ initialFilter = 'active', groupId = null
   const [filter, setFilter] = useState(initialFilter);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'ascending' });
+  const [error, setError] = useState<string | null>(null);
+  const isAdmin = true; // Placeholder
 
   // Fetch volunteers data
   useEffect(() => {
@@ -55,8 +54,8 @@ export default function VolunteerList({ initialFilter = 'active', groupId = null
 
         const response = await axios.get(url);
         setVolunteers(response.data);
-      } catch (error) {
-        console.error('Error fetching volunteers:', error);
+      } catch (err: any) {
+        setError(err.message || 'Failed to load volunteers');
       } finally {
         setLoading(false);
       }
@@ -76,7 +75,7 @@ export default function VolunteerList({ initialFilter = 'active', groupId = null
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
       result = result.filter(volunteer =>
-        volunteer.lastActive && new Date(volunteer.lastActive) >= thirtyDaysAgo
+        volunteer.active && new Date(volunteer.created_at) >= thirtyDaysAgo
       );
     }
 
@@ -120,31 +119,57 @@ export default function VolunteerList({ initialFilter = 'active', groupId = null
     return format(new Date(dateString), 'MMM d, yyyy');
   };
 
+  // Actions (Deactivate, Promote, etc.) - needs API endpoints
+  const handleDeactivate = async (userId: string) => {
+    if (!window.confirm('Are you sure you want to deactivate this volunteer?')) return;
+    try {
+      // await axios.put(`/api/admin/users/${userId}/deactivate`);
+      toast.success('Volunteer deactivated (API call commented out)');
+      // Refresh list or update state locally
+      setVolunteers(prev => prev.map(v => v.id === userId ? { ...v, active: false } : v));
+    } catch (err) { toast.error('Failed to deactivate'); }
+  };
+  
+  const handleActivate = async (userId: string) => {
+     if (!window.confirm('Are you sure you want to reactivate this volunteer?')) return;
+     try {
+       // await axios.put(`/api/admin/users/${userId}/activate`);
+       toast.success('Volunteer reactivated (API call commented out)');
+       setVolunteers(prev => prev.map(v => v.id === userId ? { ...v, active: true } : v));
+     } catch (err) { toast.error('Failed to reactivate'); }
+   };
+
+  const handlePromoteAdmin = async (userId: string) => {
+     if (!window.confirm('Promote this user to ADMIN?')) return;
+     try {
+       // await axios.put(`/api/admin/users/${userId}/promote`, { role: 'ADMIN' });
+       toast.success('Volunteer promoted (API call commented out)');
+       setVolunteers(prev => prev.map(v => v.id === userId ? { ...v, role: 'ADMIN' } : v));
+     } catch (err) { toast.error('Failed to promote'); }
+   };
+   
+   const handleDemoteVolunteer = async (userId: string) => {
+     if (!window.confirm('Demote this user to VOLUNTEER?')) return;
+     try {
+       // await axios.put(`/api/admin/users/${userId}/demote`, { role: 'VOLUNTEER' });
+       toast.success('Admin demoted (API call commented out)');
+       setVolunteers(prev => prev.map(v => v.id === userId ? { ...v, role: 'VOLUNTEER' } : v));
+     } catch (err) { toast.error('Failed to demote'); }
+   };
+
   // Render loading state
   if (loading) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-10 w-48" />
-          <Skeleton className="h-10 w-32" />
-        </div>
-        {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="p-4 border rounded-md">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <Skeleton className="h-12 w-12 rounded-full" />
-                <div className="ml-4 space-y-2">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-3 w-32" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Skeleton className="h-3 w-20" />
-                <Skeleton className="h-3 w-28" />
-              </div>
-            </div>
-          </div>
-        ))}
+      <div className="flex justify-center py-10">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-10 text-red-600">
+        Error: {error}
       </div>
     );
   }
@@ -187,7 +212,7 @@ export default function VolunteerList({ initialFilter = 'active', groupId = null
               </SelectContent>
             </Select>
 
-            {isAdmin && !groupId && (
+            {groupId && (
               <Button
                 onClick={() => router.push('/admin/volunteers/new')}
               >
@@ -199,100 +224,83 @@ export default function VolunteerList({ initialFilter = 'active', groupId = null
       </div>
 
       {/* Volunteers list */}
-      {filteredVolunteers.length > 0 ? (
-        <div className="bg-card rounded-md border shadow-sm overflow-hidden">
-          <ul className="divide-y">
-            {filteredVolunteers.map((volunteer) => (
-              <li key={volunteer.id}>
-                <Link
-                  href={`/volunteers/${volunteer.id}`}
-                  className="block hover:bg-muted/50 p-4"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0">
-                        {volunteer.profile?.photoUrl ? (
-                          <Image
-                            className="h-12 w-12 rounded-full object-cover"
-                            src={volunteer.profile.photoUrl}
-                            alt={volunteer.name}
-                            width={48}
-                            height={48}
-                          />
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Phone</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Joined</TableHead>
+              <TableHead><span className="sr-only">Actions</span></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredVolunteers.length > 0 ? (
+              filteredVolunteers.map((volunteer) => (
+                <TableRow key={volunteer.id}>
+                  <TableCell className="font-medium">{volunteer.name}</TableCell>
+                  <TableCell>{volunteer.email}</TableCell>
+                  <TableCell>{volunteer.phone || 'N/A'}</TableCell>
+                  <TableCell>
+                    <Badge variant={volunteer.role === 'ADMIN' ? 'default' : 'secondary'}>
+                      {volunteer.role}
+                    </Badge>
+                  </TableCell>
+                   <TableCell>
+                     <Badge variant={volunteer.active ? "outline-green" : "outline-red"}>
+                       {volunteer.active ? 'Active' : 'Inactive'}
+                     </Badge>
+                   </TableCell>
+                  <TableCell>{new Date(volunteer.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                           <Link href={`/admin/volunteers/${volunteer.id}`}>View Profile</Link>
+                        </DropdownMenuItem>
+                        {volunteer.active ? (
+                           <DropdownMenuItem onClick={() => handleDeactivate(volunteer.id)} className="text-yellow-600">
+                              Deactivate
+                           </DropdownMenuItem>
                         ) : (
-                          <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-lg font-bold">
-                            {volunteer.name.charAt(0)}
-                          </div>
+                           <DropdownMenuItem onClick={() => handleActivate(volunteer.id)} className="text-green-600">
+                              Reactivate
+                           </DropdownMenuItem>
                         )}
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium">
-                          {volunteer.name}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {volunteer.email}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end">
-                      <div className="text-sm text-muted-foreground">
-                        {volunteer.stats ? (
-                          <span>
-                            {volunteer.stats.totalHours} hours{' '}
-                            {volunteer.stats.totalMinutes > 0 && `${volunteer.stats.totalMinutes} min`}
-                          </span>
-                        ) : (
-                          <span>No hours logged</span>
-                        )}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Last active: {formatDate(volunteer.lastActive)}
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : (
-        <div className="bg-card border rounded-md p-6 text-center">
-          <div className="mx-auto h-12 w-12 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-            <svg
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-              />
-            </svg>
-          </div>
-          <h3 className="mt-2 text-sm font-medium">No volunteers found</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {searchTerm
-              ? `No volunteers match your search "${searchTerm}"`
-              : filter === 'active'
-                ? 'There are no active volunteers'
-                : 'There are no volunteers yet'}
-          </p>
-          {isAdmin && !groupId && searchTerm && (
-            <div className="mt-6">
-              <Button
-                variant="outline"
-                onClick={() => setSearchTerm('')}
-              >
-                Clear search
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
+                         {volunteer.role === 'VOLUNTEER' && (
+                            <DropdownMenuItem onClick={() => handlePromoteAdmin(volunteer.id)}>
+                              Promote to Admin
+                            </DropdownMenuItem>
+                         )}
+                         {volunteer.role === 'ADMIN' && (
+                            <DropdownMenuItem onClick={() => handleDemoteVolunteer(volunteer.id)} className="text-red-600">
+                              Demote to Volunteer
+                            </DropdownMenuItem>
+                         )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={7} className="h-24 text-center">
+                  No volunteers found.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 } 

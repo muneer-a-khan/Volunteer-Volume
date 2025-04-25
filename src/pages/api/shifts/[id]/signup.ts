@@ -1,8 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { prisma } from '@/lib/prisma';
-import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
+import { Prisma } from '@prisma/client';
+import { mapSnakeToCamel } from '@/lib/map-utils';
 import { sendEmail, emailTemplates } from '@/lib/email';
 
 interface ResponseData {
@@ -16,84 +15,55 @@ interface Volunteer {
   email: string;
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<ResponseData>
-) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse<ResponseData>) {
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, message: 'Method not allowed' });
   }
 
+  const { id } = req.query;
+  if (!id || typeof id !== 'string') {
+    return res.status(400).json({ success: false, message: 'Invalid shift ID' });
+  }
+
   try {
-    const session = await getServerSession(req, res, authOptions);
+    await prisma.$connect();
+    // Need a way to identify the user signing up without auth.
+    // For now, this will fail without a userId. 
+    // Option 1: Pass userId in request body (insecure).
+    // Option 2: Have a default/placeholder user for signups.
+    // Option 3: Redesign signup logic.
+    // Choosing Option 3 for now: Cannot sign up without auth implemented.
+    return res.status(501).json({ success: false, message: 'Signup requires authentication (currently disabled)' });
 
-    if (!session?.user?.email) {
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
-    }
-
-    const { id } = req.query;
-    if (!id || typeof id !== 'string') {
-      return res.status(400).json({ success: false, message: 'Invalid shift ID' });
-    }
-
-    // Get the shift and check availability
-    const shift = await prisma.shifts.findUnique({
-      where: { id },
-      include: {
-        shift_volunteers: true
-      }
+    /* Original logic requiring userId:
+    const existingSignup = await prisma.shift_volunteers.findUnique({
+      where: {
+        shift_id_user_id: {
+          shift_id: id,
+          user_id: userId, // Needs userId
+        },
+      },
     });
 
-    if (!shift) {
-      return res.status(404).json({ success: false, message: 'Shift not found' });
+    if (existingSignup) {
+      return res.status(409).json({ message: 'Already signed up for this shift' });
     }
 
-    if (shift.shift_volunteers.length >= (shift.capacity || 1)) {
-      return res.status(400).json({ success: false, message: 'Shift is full' });
-    }
-
-    // Check if user is already signed up
-    const isAlreadySignedUp = shift.shift_volunteers.some(sv => sv.user_id === session.user.id);
-    if (isAlreadySignedUp) {
-      return res.status(400).json({ success: false, message: 'Already signed up for this shift' });
-    }
-
-    // Add volunteer to shift using the shift_volunteers junction table
     await prisma.shift_volunteers.create({
       data: {
         shift_id: id,
-        user_id: session.user.id
-      }
+        user_id: userId, // Needs userId
+      },
     });
-    
-    // Modify status to FILLED if number of sign ups matches capacity
-    if (shift.shift_volunteers.length + 1 === (shift.capacity || 1)) {
-        await prisma.shifts.update({
-        where: { id },
-        data: { status: 'FILLED' }
-      });
-    }
-
-    // Send confirmation email
-    try {
-      await sendEmail({
-        to: session.user.email,
-        ...emailTemplates.shiftConfirmation(shift)
-      });
-    } catch (emailError) {
-      console.error('Error sending shift confirmation email:', emailError);
-      // Continue with the process even if email sending fails
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: 'Successfully signed up for shift'
-    });
+    res.status(201).json({ message: 'Successfully signed up' });
+    */
   } catch (error) {
     console.error('Error signing up for shift:', error);
     return res.status(500).json({
       success: false,
       message: 'Internal server error'
     });
+  } finally {
+    await prisma.$disconnect();
   }
 } 

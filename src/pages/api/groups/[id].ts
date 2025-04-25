@@ -1,8 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
 import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/pages/api/auth/[...nextauth]';
+// import { getServerSession } from 'next-auth'; // Removed
+// import { authOptions } from '@/lib/auth'; // Removed
 
 interface GroupResponse {
   id: string;
@@ -23,119 +23,57 @@ interface ResponseData {
   message?: string;
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<ResponseData>
-) {
-  const { id } = req.query;
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ message: 'Method Not Allowed' });
+  }
 
-  if (!id || typeof id !== 'string') {
-    return res.status(400).json({ success: false, message: 'Invalid group ID' });
+  // const session = await getServerSession(req, res, authOptions); // Removed
+  // if (!session || !session.user) { // Removed
+  //     return res.status(401).json({ message: 'Unauthorized' }); // Removed
+  // }
+  // const requestingUserId = session.user.id; // Removed
+  // const isAdmin = session.user.role === 'ADMIN'; // Removed
+
+  const { id } = req.query; // Group ID
+
+  if (typeof id !== 'string') {
+    return res.status(400).json({ message: 'Invalid group ID' });
   }
 
   try {
-    const session = await getServerSession(req, res, authOptions);
-
-    if (!session) {
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
-    }
-
-    switch (req.method) {
-      case 'GET': {
-        const group = await prisma.groups.findUnique({
-          where: { id },
+    await prisma.$connect();
+    const group = await prisma.groups.findUnique({
+      where: { id: id },
+      include: {
+        user_groups: { // Changed from 'users' to 'user_groups' (common join table name)
           include: {
-            user_groups: {
-              include: {
-                users: true
-              }
-            }
+            users: true // Include user details via the join table
           }
-        });
-
-        if (!group) {
-          return res.status(404).json({
-            success: false,
-            message: 'Group not found'
-          });
-        }
-
-        const formattedGroup = {
-          id: group.id,
-          name: group.name,
-          description: group.description || '',
-          members: group.user_groups.map(member => ({
-            id: member.user_id,
-            name: member.users.name,
-            role: member.role || 'MEMBER'
-          })),
-          createdAt: group.created_at ? group.created_at.toISOString() : new Date().toISOString(),
-          updatedAt: group.updated_at ? group.updated_at.toISOString() : new Date().toISOString()
-        };
-
-        return res.status(200).json({
-          success: true,
-          data: formattedGroup
-        });
-      }
-
-      case 'PATCH': {
-        if (session.user.role !== 'ADMIN') {
-          return res.status(403).json({
-            success: false,
-            message: 'Forbidden'
-          });
-        }
-
-        const { name, description } = req.body;
-
-        const updatedGroup = await prisma.groups.update({
-          where: { id },
-          data: {
-            name,
-            description
-          }
-        });
-
-        return res.status(200).json({
-          success: true,
-          data: {
-            id: updatedGroup.id,
-            name: updatedGroup.name,
-            description: updatedGroup.description || '',
-            members: [], // This would need to be fetched separately
-            createdAt: updatedGroup.created_at ? updatedGroup.created_at.toISOString() : new Date().toISOString(),
-            updatedAt: updatedGroup.updated_at ? updatedGroup.updated_at.toISOString() : new Date().toISOString()
-          }
-        });
-      }
-
-      case 'DELETE': {
-        if (session.user.role !== 'ADMIN') {
-          return res.status(403).json({
-            success: false,
-            message: 'Forbidden'
-          });
-        }
-
-        await prisma.groups.delete({
-          where: { id }
-        });
-
-        return res.status(204).end();
-      }
-
-      default:
-        return res.status(405).json({
-          success: false,
-          message: 'Method not allowed'
-        });
-    }
-  } catch (error) {
-    console.error('Error handling group:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Internal server error'
+        },
+        shifts: { // Include shifts for this group
+          orderBy: { start_time: 'asc' },
+          // Optionally add filters, e.g., only upcoming shifts
+          where: { start_time: { gte: new Date() } }
+        },
+      },
     });
+
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+    
+    // Authorization removed - group details are now public
+    // if (!isAdmin && !group.users.some(user => user.id === requestingUserId)) {
+    //     return res.status(403).json({ message: 'Forbidden' });
+    // }
+
+    res.status(200).json(group);
+
+  } catch (error) {
+    console.error('Error fetching group details:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  } finally {
+    await prisma.$disconnect();
   }
 } 

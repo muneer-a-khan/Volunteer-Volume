@@ -2,9 +2,12 @@
 
 import React, { ReactElement } from 'react';
 import { render, RenderOptions } from '@testing-library/react';
-import { AuthProvider } from '@/contexts/AuthContext';
 import { ShiftProvider } from '@/contexts/ShiftContext';
 import { GroupProvider } from '@/contexts/GroupContext';
+import { SessionProvider } from 'next-auth/react';
+import { ThemeProvider } from 'next-themes';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from 'react-hot-toast';
 
 /**
  * Custom renderer that wraps components with necessary providers for testing
@@ -27,17 +30,6 @@ interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
   mockGroupValue?: any;
 }
 
-// Mock context values to be used in tests
-const mockAuthContextValue = {
-  currentUser: null,
-  isAuthenticated: false,
-  isLoading: false,
-  isAdmin: false,
-  login: jest.fn().mockResolvedValue({}),
-  logout: jest.fn().mockResolvedValue(undefined),
-  register: jest.fn().mockResolvedValue({}),
-};
-
 // Mock context for ShiftContext
 jest.mock('@/contexts/ShiftContext', () => ({
   ...jest.requireActual('@/contexts/ShiftContext'),
@@ -54,18 +46,6 @@ jest.mock('@/contexts/GroupContext', () => ({
   useGroup: jest.fn().mockReturnValue({}),
 }));
 
-// Mock context for AuthContext
-jest.mock('@/contexts/AuthContext', () => {
-  const originalModule = jest.requireActual('@/contexts/AuthContext');
-  
-  return {
-    ...originalModule,
-    // Override the AuthProvider to accept our mock values for testing
-    AuthProvider: ({ children }: { children: React.ReactNode }) => children,
-    useAuth: jest.fn().mockReturnValue(mockAuthContextValue),
-  };
-});
-
 /**
  * Custom renderer for testing components with necessary providers
  */
@@ -77,7 +57,7 @@ export function renderWithProviders(
     withAuth = true,
     withShifts = false,
     withGroups = false,
-    mockAuthValue = mockAuthContextValue,
+    mockAuthValue = {},
     mockShiftValue = {},
     mockGroupValue = {},
     ...renderOptions
@@ -86,7 +66,7 @@ export function renderWithProviders(
   // Update mock implementations based on provided values
   if (withAuth) {
     const { useAuth } = require('@/contexts/AuthContext');
-    useAuth.mockReturnValue({ ...mockAuthContextValue, ...mockAuthValue });
+    useAuth.mockReturnValue({ ...mockAuthValue });
   }
 
   if (withShifts) {
@@ -211,4 +191,85 @@ export function createTestShift(overrides = {}) {
     updatedAt: now.toISOString(),
     ...overrides,
   };
-} 
+}
+
+// Mock next/navigation
+jest.mock('next/navigation', () => ({
+  useRouter: jest.fn(() => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn(),
+    back: jest.fn(),
+    forward: jest.fn(),
+  })),
+  usePathname: jest.fn(() => '/mock-path'),
+  useSearchParams: jest.fn(() => new URLSearchParams()),
+}));
+
+// Mock next/config
+jest.mock('next/config', () => () => ({
+  publicRuntimeConfig: {
+    // Add any public runtime config variables needed for tests
+  },
+}));
+
+// Mock next-auth/react
+jest.mock('next-auth/react', () => ({
+  useSession: jest.fn(() => ({
+    data: { user: { id: 'test-user-id', name: 'Test User', email: 'test@example.com', role: 'VOLUNTEER' } },
+    status: 'authenticated',
+  })),
+  signIn: jest.fn(),
+  signOut: jest.fn(),
+  SessionProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
+// Mock react-hot-toast
+jest.mock('react-hot-toast', () => ({
+  toast: {
+    success: jest.fn(),
+    error: jest.fn(),
+    loading: jest.fn(),
+    dismiss: jest.fn(),
+  },
+  Toaster: () => <div data-testid="toaster-mock" />,
+}));
+
+// Mock @tanstack/react-query
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false, // Disable retries for tests
+    },
+  },
+});
+
+const AllProviders = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <SessionProvider session={null}>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          {children}
+          <Toaster />
+        </ThemeProvider>
+      </QueryClientProvider>
+    </SessionProvider>
+  );
+};
+
+const customRender = (
+  ui: React.ReactElement,
+  options?: Omit<RenderOptions, 'wrapper'>
+) => render(ui, { wrapper: AllProviders, ...options });
+
+// Re-export everything from testing-library
+export * from '@testing-library/react';
+
+// Override render method
+export { customRender as render };
+
+// Ensure mocks are cleared between tests
+beforeEach(() => {
+  jest.clearAllMocks();
+  queryClient.clear();
+}); 

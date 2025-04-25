@@ -1,7 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/pages/api/auth/[...nextauth]';
+import { mapSnakeToCamel } from '@/lib/map-utils';
 
 interface ShiftResponse {
     id: string;
@@ -20,55 +19,41 @@ export default async function handler(
     res: NextApiResponse<ShiftResponse[] | { message: string }>
 ) {
     if (req.method !== 'GET') {
-        return res.status(405).json({ message: 'Method not allowed' });
+        return res.status(405).json({ message: 'Method Not Allowed' });
     }
 
     try {
         await prisma.$connect();
-        const session = await getServerSession(req, res, authOptions);
-
-        if (!session?.user?.id) {
-            return res.status(401).json({ message: 'Unauthorized' });
-        }
-
-        // Find all shifts where the current user is a volunteer through the shift_volunteers junction table
-        const shifts = await prisma.shifts.findMany({
+        // Need a userId to fetch specific user shifts.
+        // Cannot proceed without authentication.
+        return res.status(501).json({ message: 'My Shifts requires authentication (currently disabled)' });
+        
+        /* Original logic requiring userId:
+        const userShifts = await prisma.shifts.findMany({
             where: {
                 shift_volunteers: {
                     some: {
-                        user_id: session.user.id
-                    }
-                }
+                        user_id: userId, // Needs userId
+                    },
+                },
+                // Optionally filter further, e.g., by date
+                 start_time: {
+                   gte: new Date(), // Example: only upcoming shifts
+                 },
             },
             include: {
-                _count: {
-                    select: { shift_volunteers: true }
-                }
+                groups: true,
             },
             orderBy: {
-                start_time: 'asc'
-            }
+                start_time: 'asc',
+            },
         });
-
-        // Map snake_case fields to camelCase
-        const formattedShifts = shifts.map((shift) => ({
-            id: shift.id,
-            title: shift.title,
-            description: shift.description || '',
-            startTime: shift.start_time.toISOString(),
-            endTime: shift.end_time.toISOString(),
-            location: shift.location,
-            maxVolunteers: shift.capacity || 1,
-            currentVolunteers: shift._count.shift_volunteers,
-            status: shift.status || 'UNKNOWN'
-        }));
-
-        return res.status(200).json(formattedShifts);
+        res.status(200).json(mapSnakeToCamel(userShifts));
+        */
     } catch (error) {
         console.error('Error fetching my shifts:', error);
-        return res.status(500).json({ message: 'Internal server error' });
-    }
-    finally {
+        res.status(500).json({ message: 'Internal Server Error' });
+    } finally {
         await prisma.$disconnect();
     }
 } 

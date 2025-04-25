@@ -1,8 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
-import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/pages/api/auth/[...nextauth]';
+import { mapSnakeToCamel } from '@/lib/map-utils';
 
 interface ShiftResponse {
   id: string;
@@ -36,97 +34,50 @@ interface DBShift {
   };
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<ShiftResponse[] | { message: string }>
-) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
-    return res.status(405).json({ message: 'Method not allowed' });
+    return res.status(405).json({ message: 'Method Not Allowed' });
   }
+
+  const { filter, groupId } = req.query;
 
   try {
     await prisma.$connect();
-    const session = await getServerSession(req, res, authOptions);
-    
-    if (!session) {
-      return res.status(401).json({ message: 'Unauthorized' });
+    let whereClause: any = { active: true };
+
+    // Filter logic remains, but doesn't depend on userId directly
+    if (filter === 'upcoming') {
+      whereClause.start_time = { gte: new Date() };
+    } else if (filter === 'past') {
+      whereClause.end_time = { lt: new Date() };
     }
 
-    // const shifts = await prisma.shifts.findMany({
-    //   where: {
-    //     status: 'OPEN',
-    //     start_time: {
-    //       gte: new Date()
-    //     }
-    //   },
-    //   include: {
-    //     _count: {
-    //       select: { shift_volunteers: true }
-    //     }
-    //     ,
-    //     volunteers: {
-    //       select: {
-    //         id: true,
-    //         name: true,
-    //         email: true
-    //       }
-    //     }
-    //   },
-    //   orderBy: {
-    //     start_time: 'asc'
-    //   }
-    // });
+    if (groupId && typeof groupId === 'string') {
+      whereClause.group_id = groupId;
+    }
+
     const shifts = await prisma.shifts.findMany({
-        where: {
-            status: {
-                in: ['OPEN', 'FILLED']
-              },
-            start_time: {
-                gte: new Date()
-            }
-        },
-        include: {
-          shift_volunteers: {
-            include: {
-              users: {  // Join with the users table
-                select: {
-                  id: true,
-                  name: true,
-                  email: true
-                }
-              }
-            }
+      where: whereClause,
+      include: {
+        groups: true, // Include group info
+        shift_volunteers: { // Include volunteer signups
+          include: {
+            users: true // Include user info for each signup
           }
-        },
-        orderBy: {
-            start_time: 'asc'
         }
-      });
+      },
+      orderBy: {
+        start_time: 'asc',
+      },
+    });
 
-    // Map snake_case fields to camelCase
-    const formattedShifts = shifts.map((shift) => ({
-      id: shift.id,
-      title: shift.title,
-      description: shift.description || '',
-      startTime: shift.start_time.toISOString(),
-      endTime: shift.end_time.toISOString(),
-      location: shift.location,
-      maxVolunteers: shift.capacity || 1,
-      currentVolunteers: shift.shift_volunteers.length,
-      status: shift.status || 'UNKNOWN',
-      volunteers: shift.shift_volunteers.map(sv => ({
-        id: sv.users.id,
-        name: sv.users.name,
-        email: sv.users.email
-      }))
-    }));
+    // No need to filter by user ID anymore
+    res.status(200).json(mapSnakeToCamel(shifts));
 
-    return res.status(200).json(formattedShifts);
   } catch (error) {
     console.error('Error fetching shifts:', error);
-    return res.status(500).json({ message: 'Internal server error' });
-  }
-  finally {
+    res.status(500).json({ message: 'Internal Server Error' });
+  } finally {
     await prisma.$disconnect();
   }
 } 

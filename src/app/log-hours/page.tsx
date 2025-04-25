@@ -1,64 +1,42 @@
 'use client';
 
-import { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
-import { AlertTriangle } from 'lucide-react';
-
+import Link from 'next/link';
+import LogHoursForm from '@/components/logging/LogHoursForm';
+import HoursLogList from '@/components/logging/HoursLogList';
+import Layout from '@/components/layout/Layout';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-import { useAuth } from '@/contexts/AuthContext';
-import LogHoursForm from '@/components/volunteers/LogHoursForm';
-
-export default function LogHours() {
-  const { data: session, status } = useSession();
-  const { isAuthenticated, loading: authLoading } = useAuth();
+export default function LogHoursPage() {
   const router = useRouter();
+  const authLoading = false;
+  const isAuthenticated = true;
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (status === 'unauthenticated' || (!authLoading && !isAuthenticated)) {
-      router.push('/login');
-    }
-  }, [isAuthenticated, authLoading, router, status]);
-
-  // Show loading state
-  if (status === 'loading' || authLoading) {
+  if (authLoading) {
     return (
-
-      <div className="container mx-auto max-w-3xl py-10 px-4 sm:px-6 lg:px-8">
-        <Skeleton className="h-10 w-64 mb-8" />
-        <div className="space-y-6">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-24 w-full" />
-          <Skeleton className="h-12 w-32" />
+      <Layout>
+        <div className="flex justify-center items-center h-screen">
+          <Skeleton className="h-12 w-12 rounded-full" />
         </div>
-      </div>
-
+      </Layout>
     );
   }
-
+  
   return (
-
-    <div className="container mx-auto max-w-3xl py-10 px-4 sm:px-6 lg:px-8">
-      <h1 className="text-3xl font-bold text-foreground mb-8">Log Volunteer Hours</h1>
-
-      <LogHoursForm />
-
-      <div className="mt-8">
-        <Alert variant="warning">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Important Note</AlertTitle>
-          <AlertDescription>
-            Only use this form to log hours that weren&apos;t tracked through the check-in/check-out system.
-            Hours logged manually require approval from an administrator.
-          </AlertDescription>
-        </Alert>
+    <Layout>
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-6">Log Volunteer Hours</h1>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div>
+            <LogHoursForm />
+          </div>
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Your Logged Hours</h2>
+            <HoursLogList /> 
+          </div>
+        </div>
       </div>
-    </div>
-
+    </Layout>
   );
 } 

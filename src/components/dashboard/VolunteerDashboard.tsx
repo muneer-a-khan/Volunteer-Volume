@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { format, parseISO, isAfter, isBefore, addDays } from 'date-fns';
-import { Calendar, Clock, MapPin } from 'lucide-react';
+import { Calendar, Clock, MapPin, CheckCircle } from 'lucide-react';
 import axios from 'axios';
 import { useShifts, Shift } from '@/contexts/ShiftContext';
 
@@ -11,7 +11,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface VolunteerStats {
   totalHours: number;
@@ -19,10 +18,15 @@ interface VolunteerStats {
   upcomingShifts: number;
 }
 
+interface UpcomingShift {
+  id: string;
+  title: string;
+  startTime: string;
+}
+
 export default function VolunteerDashboard() {
-  const { dbUser } = useAuth();
   const { myShifts, fetchMyShifts } = useShifts();
-  const [upcomingShifts, setUpcomingShifts] = useState<Shift[]>([]);
+  const [upcomingShifts, setUpcomingShifts] = useState<UpcomingShift[]>([]);
   const [pastShifts, setPastShifts] = useState<Shift[]>([]);
   const [todayShifts, setTodayShifts] = useState<Shift[]>([]);
   const [volunteerStats, setVolunteerStats] = useState<VolunteerStats>({
@@ -31,30 +35,28 @@ export default function VolunteerDashboard() {
     upcomingShifts: 0
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Fetch volunteer stats and shifts
+  const localDbUserPlaceholder = { name: 'Volunteer' };
+
   useEffect(() => {
-    const loadData = async () => {
+    const fetchDashboardData = async () => {
       setLoading(true);
       try {
-        // Fetch volunteer's shifts
-        await fetchMyShifts();
-        if (myShifts.length !== 0) {
-          // Fetch volunteer's stats
-          const response = await axios.get('/api/volunteers/stats');
-          setVolunteerStats(response.data);
-        }
-      } catch (error) {
-        console.error('Error loading dashboard data:', error);
+        const [statsResponse, shiftsResponse] = await Promise.all([
+          axios.get('/api/dashboard/volunteer/stats'), 
+          axios.get('/api/dashboard/volunteer/upcoming-shifts')
+        ]);
+        setVolunteerStats(statsResponse.data);
+        setUpcomingShifts(shiftsResponse.data);
+      } catch (err: any) {
+        setError(err.response?.data?.message || 'Failed to load dashboard data');
       } finally {
         setLoading(false);
       }
     };
-
-    if (dbUser?.id) {
-      loadData();
-    }
-  }, [dbUser?.id, fetchMyShifts]);
+    fetchDashboardData();
+  }, []);
 
   // Sort shifts into categories
   useEffect(() => {
@@ -63,7 +65,7 @@ export default function VolunteerDashboard() {
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const tomorrow = addDays(today, 1);
 
-      const upcoming: Shift[] = [];
+      const upcoming: UpcomingShift[] = [];
       const past: Shift[] = [];
       const today_shifts: Shift[] = [];
 
@@ -71,7 +73,11 @@ export default function VolunteerDashboard() {
         const shiftStart = parseISO(shift.startTime);
 
         if (isAfter(shiftStart, tomorrow)) {
-          upcoming.push(shift);
+          upcoming.push({
+            id: shift.id,
+            title: shift.title,
+            startTime: shift.startTime
+          });
         } else if (isBefore(shiftStart, today)) {
           past.push(shift);
         } else {
@@ -115,230 +121,123 @@ export default function VolunteerDashboard() {
     }
   };
 
-  // Render loading state
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-[250px]" />
-          <Skeleton className="h-4 w-[400px]" />
+      <div className="space-y-8">
+        {/* Skeleton Loader */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-32 w-full" />
         </div>
+        <Skeleton className="h-64 w-full" />
+        <Skeleton className="h-48 w-full" />
+      </div>
+    );
+  }
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-[120px] w-full rounded-xl" />
-          ))}
-        </div>
-
-        <Skeleton className="h-[200px] w-full rounded-xl" />
-
-        <div className="space-y-4">
-          <Skeleton className="h-6 w-[150px]" />
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-[100px] w-full rounded-xl" />
-          ))}
-        </div>
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-center text-red-600">
+        Error loading dashboard: {error}
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">
-            Welcome, {dbUser?.name || "Volunteer"}!
-          </CardTitle>
-          <CardDescription>
-            Here&apos;s an overview of your volunteer activity and upcoming shifts.
-          </CardDescription>
-        </CardHeader>
-      </Card>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-6">Volunteer Dashboard</h1>
+      <p className="text-lg text-gray-600 mb-8">Welcome back, {localDbUserPlaceholder.name}!</p>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Total Hours</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">
-              {volunteerStats.totalHours.toFixed(1)}
-            </p>
-          </CardContent>
-        </Card>
+      <div className="grid gap-6 md:grid-cols-3 mb-8">
+         <Card>
+           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+             <CardTitle className="text-sm font-medium">Total Hours Logged</CardTitle>
+             <Clock className="h-4 w-4 text-muted-foreground" />
+           </CardHeader>
+           <CardContent>
+             <div className="text-2xl font-bold">{volunteerStats.totalHours.toFixed(1)}</div>
+             <Button variant="link" size="sm" asChild className="p-0 h-auto text-xs">
+               <Link href="/log-hours">View Log</Link>
+             </Button>
+           </CardContent>
+         </Card>
+         <Card>
+           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+             <CardTitle className="text-sm font-medium">Shifts Completed</CardTitle>
+             <CheckCircle className="h-4 w-4 text-muted-foreground" />
+           </CardHeader>
+           <CardContent>
+             <div className="text-2xl font-bold">{volunteerStats.shiftsCompleted}</div>
+             <p className="text-xs text-muted-foreground">Lifetime total</p>
+           </CardContent>
+         </Card>
+         <Card>
+           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+             <CardTitle className="text-sm font-medium">Upcoming Shifts</CardTitle>
+             <Calendar className="h-4 w-4 text-muted-foreground" />
+           </CardHeader>
+           <CardContent>
+             <div className="text-2xl font-bold">{volunteerStats.upcomingShifts}</div>
+             <Button variant="link" size="sm" asChild className="p-0 h-auto text-xs">
+               <Link href="/shifts">View Shifts</Link>
+             </Button>
+           </CardContent>
+         </Card>
+       </div>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Shifts Completed</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">
-              {volunteerStats.shiftsCompleted}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Upcoming Shifts</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">
-              {upcomingShifts.length + todayShifts.length}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Actions */}
-      <Card>
+      {/* Upcoming Shifts List */}
+      <Card className="mb-8">
         <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
+          <CardTitle>Your Upcoming Shifts</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-4">
-            <Button asChild>
-              <Link href="/shifts">
-                Browse Shifts
-              </Link>
-            </Button>
-
-            <Button variant="secondary" asChild>
-              <Link href="/check-in">
-                Check In/Out
-              </Link>
-            </Button>
-
-            <Button variant="outline" asChild>
-              <Link href="/log-hours">
-                Log Hours
-              </Link>
-            </Button>
-          </div>
+          {upcomingShifts.length > 0 ? (
+            <ul className="space-y-3">
+              {upcomingShifts.map((shift) => (
+                <li key={shift.id} className="flex justify-between items-center border-b pb-2 last:border-b-0">
+                  <div>
+                    <Link href={`/shifts/${shift.id}`} className="font-medium hover:underline">
+                      {shift.title}
+                    </Link>
+                    <p className="text-sm text-muted-foreground">
+                      {format(parseISO(shift.startTime), 'PPP p')}
+                    </p>
+                  </div>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href={`/shifts/${shift.id}`}>View Details</Link>
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-center text-muted-foreground py-4">You have no upcoming shifts scheduled.</p>
+          )}
         </CardContent>
       </Card>
 
-      {/* Today&apos;s Shifts */}
-      {todayShifts.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Today&apos;s Shifts</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {todayShifts.map((shift) => (
-              <Card key={shift.id} className="overflow-hidden">
-                <CardContent className="p-0">
-                  <Link
-                    href={`/shifts/${shift.id}`}
-                    className="block p-4 hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex flex-col md:flex-row md:items-center justify-between">
-                      <div>
-                        <h3 className="text-lg font-medium">
-                          {shift.title}
-                        </h3>
-                        <div className="flex items-center text-sm text-muted-foreground mt-1">
-                          <MapPin className="h-4 w-4 mr-1" />
-                          {shift.location}
-                        </div>
-                        <div className="flex items-center text-sm text-muted-foreground mt-1">
-                          <Clock className="h-4 w-4 mr-1" />
-                          {formatShiftTime(shift.startTime, shift.endTime)}
-                        </div>
-                      </div>
-                      <div className="mt-2 md:mt-0 flex items-center space-x-2">
-                        <Badge variant={getStatusVariant(shift.status)}>
-                          {shift.status}
-                        </Badge>
-                        {isAfter(new Date(), parseISO(shift.startTime)) &&
-                          isBefore(new Date(), parseISO(shift.endTime)) && (
-                            <Button variant="default" size="sm" asChild>
-                              <Link href="/check-in">
-                                Check In
-                              </Link>
-                            </Button>
-                          )}
-                      </div>
-                    </div>
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Upcoming Shifts */}
-      {upcomingShifts.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Upcoming Shifts</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {upcomingShifts.slice(0, 3).map((shift) => (
-              <Card key={shift.id} className="overflow-hidden">
-                <CardContent className="p-0">
-                  <Link
-                    href={`/shifts/${shift.id}`}
-                    className="block p-4 hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex flex-col md:flex-row md:items-center justify-between">
-                      <div>
-                        <h3 className="text-lg font-medium">
-                          {shift.title}
-                        </h3>
-                        <div className="flex items-center text-sm text-muted-foreground mt-1">
-                          <MapPin className="h-4 w-4 mr-1" />
-                          {shift.location}
-                        </div>
-                        <div className="flex items-center text-sm text-muted-foreground mt-1">
-                          <Calendar className="h-4 w-4 mr-1" />
-                          {formatShiftTime(shift.startTime, shift.endTime)}
-                        </div>
-                      </div>
-                      <div className="mt-2 md:mt-0">
-                        <Button variant="outline" size="sm" asChild>
-                          <Link href={`/shifts/${shift.id}`}>
-                            View Details
-                          </Link>
-                        </Button>
-                      </div>
-                    </div>
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
-
-            {upcomingShifts.length > 3 && (
-              <Button variant="ghost" className="w-full" asChild>
-                <Link href="/shifts">
-                  View All Shifts ({upcomingShifts.length})
-                </Link>
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* No Shifts */}
-      {upcomingShifts.length === 0 && todayShifts.length === 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>No Upcoming Shifts</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">
-              You don&apos;t have any upcoming shifts scheduled. Browse available shifts to sign up!
-            </p>
-            <Button asChild>
-              <Link href="/shifts">
-                Browse Shifts
-              </Link>
+      {/* Quick Actions */}
+      <div>
+        <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <Button asChild variant="outline">
+            <Link href="/shifts">Find Available Shifts</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/log-hours">Log Volunteer Hours</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/profile">Update My Profile</Link>
+          </Button>
+           <Button asChild variant="outline">
+             <Link href="/groups">View Groups</Link>
+           </Button>
+            <Button asChild variant="outline">
+              <Link href="/check-in">Check In/Out</Link>
             </Button>
-          </CardContent>
-        </Card>
-      )}
+        </div>
+      </div>
     </div>
   );
 } 

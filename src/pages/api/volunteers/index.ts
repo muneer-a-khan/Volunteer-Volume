@@ -1,8 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
 import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/pages/api/auth/[...nextauth]';
+// import { getServerSession } from 'next-auth'; // Removed
+// import { authOptions } from '@/lib/auth'; // Removed
 
 interface VolunteerStats {
   totalHours: number;
@@ -27,45 +27,45 @@ interface VolunteerWithStats {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Verify authentication
-  const session = await getServerSession(req, res, authOptions);
-  if (!session?.user?.id) {
-    return res.status(401).json({ message: 'Unauthorized' });
-  }
-
-  try {
-    // Get user from our database
-    const user = await prisma.users.findUnique({
-      where: {
-        id: session.user.id
-      }
-    });
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    if (req.method !== 'GET') {
+        return res.status(405).json({ message: 'Method Not Allowed' });
     }
 
-    // Process based on HTTP method
-    switch (req.method) {
-      case 'GET':
-        if (user.role === 'ADMIN') {
-          return await getVolunteers(req, res);
-        } else {
-          return res.status(403).json({ message: 'Forbidden - Admin access required' });
-        }
-      default:
-        return res.status(405).json({ message: 'Method not allowed' });
+    // Auth checks removed
+
+    try {
+        await prisma.$connect();
+        
+        // Fetch all volunteers regardless of auth
+        const volunteers = await prisma.users.findMany({
+            where: {
+                // Potentially add filters based on query params if needed
+                // Example: Filter by status if passed in query
+                // active: req.query.status === 'active' ? true : undefined,
+            },
+            include: {
+                profiles: true, // Include profile data
+                // Optionally include other relevant relations
+            },
+            orderBy: {
+                name: 'asc',
+            },
+        });
+
+        res.status(200).json(mapSnakeToCamel(volunteers));
+
+    } catch (error) {
+        console.error('Error fetching volunteers:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    } finally {
+        await prisma.$disconnect();
     }
-  } catch (error) {
-    console.error('Volunteers API error:', error);
-    return res.status(500).json({
-      message: 'Internal server error',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
 }
 
 // Get all volunteers with optional filtering
+// This function seems redundant or was part of the old logic. 
+// Removing it for clarity as the main handler now fetches all volunteers.
+/* 
 async function getVolunteers(req: NextApiRequest, res: NextApiResponse) {
   const { search, status, group } = req.query;
 
@@ -154,3 +154,4 @@ async function getVolunteers(req: NextApiRequest, res: NextApiResponse) {
     });
   }
 } 
+*/ 

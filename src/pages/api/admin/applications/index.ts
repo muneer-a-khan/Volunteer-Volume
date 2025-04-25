@@ -1,8 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
 import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/pages/api/auth/[...nextauth]';
 
 interface ApplicationResponse {
   id: string;
@@ -20,29 +18,22 @@ export default async function handler(
   res: NextApiResponse<ApplicationResponse[] | { message: string }>
 ) {
   if (req.method !== 'GET') {
-    return res.status(405).json({ message: 'Method not allowed' });
+    return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
   try {
-    const session = await getServerSession(req, res, authOptions);
-
-    if (!session || session.user.role !== 'ADMIN') {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-
+    await prisma.$connect();
+    
     const applications = await prisma.applications.findMany({
+      where: {
+        // Optionally add filters like status: req.query.status
+      },
       include: {
-        users: {
-          select: {
-            name: true,
-            email: true,
-            phone: true
-          }
-        }
+        users: true, // Include associated user data
       },
       orderBy: {
-        application_date: 'desc'
-      }
+        application_date: 'desc',
+      },
     });
 
     const formattedApplications = applications.map(app => ({
@@ -60,6 +51,8 @@ export default async function handler(
     return res.status(200).json(mapSnakeToCamel(formattedApplications));
   } catch (error) {
     console.error('Error fetching applications:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal Server Error' });
+  } finally {
+    await prisma.$disconnect();
   }
 } 

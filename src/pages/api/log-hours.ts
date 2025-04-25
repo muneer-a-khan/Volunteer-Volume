@@ -1,75 +1,56 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
 import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/pages/api/auth/[...nextauth]';
+// import { getServerSession } from 'next-auth'; // Removed
+// import { authOptions } from '@/pages/api/auth/[...nextauth]'; // Removed
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Only allow POST requests
   if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method not allowed' });
+    return res.status(405).json({ message: 'Method Not Allowed' });
+  }
+
+  // const session = await getServerSession(req, res, authOptions); // Removed
+  // if (!session?.user?.id) { // Removed
+  //     return res.status(401).json({ message: 'Unauthorized' }); // Removed
+  // }
+  // const userId = session.user.id; // Removed
+
+  const { hours, minutes, date, description, shiftId } = req.body;
+
+  // Basic validation
+  if (hours === undefined || minutes === undefined || !date || !description) {
+    return res.status(400).json({ message: 'Missing required fields' });
   }
 
   try {
-    // Get the authenticated user session
-    const session = await getServerSession(req, res, authOptions);
-    if (!session?.user?.id) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
+    await prisma.$connect();
+    // Need a way to associate log with a user without auth.
+    // Option 1: Add userId to request body (insecure).
+    // Option 2: Assign to a default/anonymous user.
+    // Option 3: Remove user association (log becomes general).
+    // Choosing Option 3 for now: Cannot create user-specific log.
+    
+    // Potential alternative: Log without user_id if schema allows (nullable)
+    // const logData = {
+    //     hours: parseInt(hours, 10),
+    //     minutes: parseInt(minutes, 10),
+    //     date: new Date(date),
+    //     description: description,
+    //     shift_id: shiftId || null,
+    //     // user_id: null, // If schema allows
+    // };
 
-    const { hours, minutes, description, date, groupId } = req.body;
+    // await prisma.volunteer_logs.create({ data: logData });
 
-    // Validate input
-    if (hours === undefined || !date) {
-      return res.status(400).json({ message: 'Hours and date are required' });
-    }
+    // return res.status(201).json({ message: 'Log entry created successfully (anonymously)' });
 
-    // Get user from our database
-    const user = await prisma.users.findUnique({
-      where: {
-        id: session.user.id
-      }
-    });
+    return res.status(501).json({ message: 'Log Hours requires authentication (currently disabled)' });
 
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // If groupId is provided, verify the user is a member of that group
-    if (groupId) {
-      const membership = await prisma.user_groups.findUnique({
-        where: {
-          user_id_group_id: {
-            user_id: user.id,
-            group_id: groupId
-          }
-        }
-      });
-
-      if (!membership) {
-        return res.status(403).json({ message: 'You are not a member of this group' });
-      }
-    }
-
-    // Create volunteer log entry
-    const volunteerLog = await prisma.volunteer_logs.create({
-      data: {
-        user_id: user.id,
-        hours: parseInt(hours),
-        minutes: minutes ? parseInt(minutes) : 0,
-        description: description || 'Manually logged hours',
-        date: new Date(date),
-        approved: false,
-        group_id: groupId || null
-      }
-    });
-
-    return res.status(201).json({
-      message: 'Hours logged successfully',
-      volunteerLog: volunteerLog
-    });
   } catch (error) {
-    console.error('Log hours error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    console.error('Error logging hours:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  } finally {
+    await prisma.$disconnect();
   }
 } 

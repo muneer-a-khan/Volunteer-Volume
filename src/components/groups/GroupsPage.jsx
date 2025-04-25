@@ -2,13 +2,13 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
-import { useAuth } from '../../contexts/AuthContext';
 import { useGroups } from '../../contexts/GroupContext';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 export default function GroupsPage() {
-  const { isAuthenticated, isAdmin } = useAuth();
   const { groups, myGroups, loading, fetchGroups, joinGroup } = useGroups();
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredGroups, setFilteredGroups] = useState([]);
@@ -89,41 +89,17 @@ export default function GroupsPage() {
                 Browse and join volunteer groups to track your hours for specific organizations.
               </p>
             </div>
-            {isAdmin && (
-              <div className="mt-4 md:mt-0">
-                <Link
-                  href="/groups/new"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-vadm-blue hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-vadm-blue"
-                >
-                  Create New Group
-                </Link>
-              </div>
-            )}
-          </div>
-
-          {/* Search and filter */}
-          <div className="mb-8">
-            <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-              <div className="relative flex-grow">
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search groups..."
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-vadm-blue focus:ring-vadm-blue"
-                />
-                {searchTerm && (
-                  <button
-                    onClick={() => setSearchTerm('')}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                  >
-                    <span className="sr-only">Clear search</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                )}
-              </div>
+            <div className="flex w-full md:w-auto gap-4">
+              <Input 
+                type="text"
+                placeholder="Search groups..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-xs w-full"
+              />
+              <Button asChild>
+                <Link href="/admin/groups/new">Create New Group</Link>
+              </Button>
             </div>
           </div>
 
@@ -231,14 +207,14 @@ export default function GroupsPage() {
                     Clear search
                   </button>
                 )}
-                {isAdmin && (
+                <Button asChild>
                   <Link
-                    href="/groups/new"
+                    href="/admin/groups/new"
                     className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-vadm-blue hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-vadm-blue ml-3"
                   >
                     Create Group
                   </Link>
-                )}
+                </Button>
               </div>
             </div>
           )}

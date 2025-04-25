@@ -1,82 +1,36 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { prisma } from '@/lib/prisma';
-import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
-import { sendEmail, emailTemplates } from '@/lib/email';
 
-interface ResponseData {
-  success: boolean;
-  message: string;
-}
-
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<ResponseData>
-) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ success: false, message: 'Method not allowed' });
-  }
-
-  try {
-    const session = await getServerSession(req, res, authOptions);
-
-    if (!session || session.user.role !== 'ADMIN') {
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+    if (req.method !== 'POST') {
+        return res.status(405).json({ message: 'Method Not Allowed' });
     }
 
     const { id } = req.query;
-    if (!id || typeof id !== 'string') {
-      return res.status(400).json({ success: false, message: 'Invalid application ID' });
+
+    if (typeof id !== 'string') {
+        return res.status(400).json({ message: 'Invalid application ID' });
     }
 
-    const { reason } = req.body;
-    if (!reason) {
-      return res.status(400).json({ success: false, message: 'Rejection reason is required' });
-    }
-
-    // Get the application
-    const application = await prisma.applications.findUnique({
-      where: { id },
-      include: { users: true }
-    });
-
-    if (!application) {
-      return res.status(404).json({ success: false, message: 'Application not found' });
-    }
-
-    // Update application status
-    await prisma.applications.update({
-      where: { id },
-      data: {
-        status: 'REJECTED',
-        rejected_by: session.user.id,
-        rejected_at: new Date(),
-        rejection_reason: reason
-      }
-    });
-
-    // Send rejection email
     try {
-      await sendEmail({
-        to: application.email,
-        ...emailTemplates.applicationRejected(application, reason)
-      });
-    } catch (emailError) {
-      console.error('Error sending rejection email:', emailError);
-      // Continue with the process even if email sending fails
+        await prisma.$connect();
+        const application = await prisma.applications.update({
+            where: { id: id },
+            data: {
+                status: 'REJECTED',
+                // Optionally add rejection reason or notes if available in req.body
+            },
+        });
+
+        // TODO: Add logic to notify the applicant (e.g., email)
+
+        res.status(200).json({ message: 'Application rejected successfully', application });
+
+    } catch (error) {
+        console.error('Error rejecting application:', error);
+        // Handle specific errors like application not found (P2025)
+        res.status(500).json({ message: 'Internal Server Error' });
+    } finally {
+        await prisma.$disconnect();
     }
-
-    return res.status(200).json({
-      success: true,
-      message: 'Application rejected successfully'
-    });
-
-  } catch (error) {
-    console.error('Error rejecting application:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Internal server error'
-    });
-  }
 } 
