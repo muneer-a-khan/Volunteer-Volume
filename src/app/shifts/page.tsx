@@ -6,21 +6,15 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import ShiftList from '@/components/shifts/ShiftList';
 import { Skeleton } from '@/components/ui/skeleton';
+import ShiftCalendar from '@/components/shifts/ShiftCalendar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CalendarIcon, ListIcon } from 'lucide-react';
+import { useShifts } from '@/contexts/ShiftContext';
 
 export default function ShiftsPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Simulating data loading
-  useEffect(() => {
-    // Fetch data and update loading state
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, []);
+  const { loading } = useShifts();
+  const [view, setView] = useState<string>('list');
 
   if (loading) {
     return (
@@ -31,23 +25,32 @@ export default function ShiftsPage() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold">Available Shifts</h1>
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-          {error}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Available Shifts</h1>
       </div>
-      <ShiftList />
+
+      <Tabs defaultValue="list" className="w-full" onValueChange={setView}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="list" className="flex items-center">
+            <ListIcon className="h-4 w-4 mr-2" />
+            List
+          </TabsTrigger>
+          <TabsTrigger value="calendar" className="flex items-center">
+            <CalendarIcon className="h-4 w-4 mr-2" />
+            Calendar
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="list">
+          <ShiftList />
+        </TabsContent>
+
+        <TabsContent value="calendar">
+          <ShiftCalendar />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 } 
