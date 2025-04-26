@@ -18,7 +18,7 @@ interface RootLayoutProps {
 
 export default function RootLayout({ children }: RootLayoutProps) {
   const pathname = usePathname() || '';
-  
+
   // Pages that should hide navbar and footer
   const hideNavbarFooterRoutes = ['/login', '/register', '/forgot-password'];
   const shouldHideNavbar = hideNavbarFooterRoutes.includes(pathname);
