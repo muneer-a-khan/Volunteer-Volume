@@ -23,7 +23,8 @@ export const ShiftProvider = ({ children }) => {
       setShifts(response.data);
     } catch (error) {
       console.error('Error fetching shifts:', error);
-      toast.error('Failed to load shifts');
+      // Silent fail - don't show error toast
+      setShifts([]);
     } finally {
       setLoading(false);
     }
@@ -38,7 +39,8 @@ export const ShiftProvider = ({ children }) => {
       setMyShifts(response.data);
     } catch (error) {
       console.error('Error fetching my shifts:', error);
-      toast.error('Failed to load your shifts');
+      // Silent fail - don't show error toast
+      setMyShifts([]);
     } finally {
       setLoading(false);
     }

@@ -54,7 +54,7 @@ export const ShiftProvider = ({ children }: ShiftProviderProps) => {
       setShifts(response.data);
     } catch (error) {
       console.error('Error fetching shifts:', error);
-      toast.error('Failed to load shifts');
+      setShifts([]);
     } finally {
       setLoading(false);
     }

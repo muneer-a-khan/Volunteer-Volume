@@ -22,7 +22,8 @@ export const GroupProvider = ({ children }) => {
       setGroups(response.data);
     } catch (error) {
       console.error('Error fetching groups:', error);
-      toast.error('Failed to load groups');
+      // Silent fail - don't show error toast
+      setGroups([]);
     } finally {
       setLoading(false);
     }
@@ -40,7 +41,8 @@ export const GroupProvider = ({ children }) => {
       setMyGroups(response.data);
     } catch (error) {
       console.error('Error fetching my groups:', error);
-      toast.error('Failed to load your groups');
+      // Silent fail - don't show error toast
+      setMyGroups([]);
     } finally {
       setLoading(false);
     }
@@ -53,7 +55,7 @@ export const GroupProvider = ({ children }) => {
       return response.data;
     } catch (error) { 
       console.error('Fetch group error:', error); 
-      toast.error('Failed to load group details'); 
+      // Silent fail - don't show error toast
       return null; 
     }
   };
@@ -111,13 +113,22 @@ export const GroupProvider = ({ children }) => {
     try {
       const response = await axios.get(`/api/groups/${id}/shifts`);
       return response.data;
-    } catch (error) { console.error('Fetch group shifts error:', error); toast.error('Failed to load group shifts'); return []; }
+    } catch (error) { 
+      console.error('Fetch group shifts error:', error); 
+      // Silent fail - don't show error toast
+      return []; 
+    }
   };
+  
   const getGroupVolunteers = async (id) => {
     try {
       const response = await axios.get(`/api/groups/${id}/volunteers`);
       return response.data;
-    } catch (error) { console.error('Fetch group volunteers error:', error); toast.error('Failed to load group volunteers'); return []; }
+    } catch (error) { 
+      console.error('Fetch group volunteers error:', error); 
+      // Silent fail - don't show error toast
+      return []; 
+    }
   };
 
   // Initial fetch

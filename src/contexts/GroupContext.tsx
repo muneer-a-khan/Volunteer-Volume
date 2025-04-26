@@ -86,7 +86,8 @@ export const GroupProvider = ({ children }: GroupProviderProps) => {
       setGroups(response.data);
     } catch (error) {
       console.error('Error fetching groups:', error);
-      toast.error('Failed to load groups');
+      // Don't show toast error
+      setGroups([]);
     } finally {
       setLoading(false);
     }
@@ -123,7 +124,7 @@ export const GroupProvider = ({ children }: GroupProviderProps) => {
       return response.data;
     } catch (error: any) {
       console.error('Fetch group error:', error);
-      toast.error('Failed to load group details');
+      // Don't show toast error
       return null;
     }
   };
@@ -211,7 +212,7 @@ export const GroupProvider = ({ children }: GroupProviderProps) => {
       return [];
     } catch (error: any) {
       console.error('Fetch group volunteers error:', error);
-      toast.error('Failed to load group volunteers');
+      // Don't show toast error
       return [];
     }
   };
@@ -223,7 +224,7 @@ export const GroupProvider = ({ children }: GroupProviderProps) => {
       return [];
     } catch (error: any) {
       console.error('Fetch group shifts error:', error);
-      toast.error('Failed to load group shifts');
+      // Don't show toast error
       return [];
     }
   };
