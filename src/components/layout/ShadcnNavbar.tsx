@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { signOut as nextAuthSignOut } from "next-auth/react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useToast } from "../ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -44,7 +45,7 @@ const adminNavItems: NavItem[] = [
 
 export default function ShadcnNavbar() {
   const pathname = usePathname();
-  const { isAuthenticated, isAdmin, signIn, signOut, user, isLoading } = useAuth();
+  const { isAuthenticated, isAdmin, signIn, user, isLoading } = useAuth();
   const { toast } = useToast();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -52,9 +53,8 @@ export default function ShadcnNavbar() {
   const navItems: NavItem[] = isAdmin ? [...mainNavItems, ...adminNavItems] : mainNavItems;
 
   const handleSignOut = async () => {
-    await signOut({ redirect: false });
+    await nextAuthSignOut({ callbackUrl: '/' });
     toast({ title: "Signed Out", description: "You have been successfully signed out." });
-    // Redirect handled by Providers or session status change
   };
 
   return (
@@ -94,7 +94,7 @@ export default function ShadcnNavbar() {
             <Button 
               variant={isAuthenticated ? "outline" : "default"}
               className={`rounded-full px-4 py-2 ${isAuthenticated ? '' : 'bg-purple-600 hover:bg-purple-500 text-white'}`}
-              onClick={() => isAuthenticated ? signOut() : signIn()}
+              onClick={() => isAuthenticated ? handleSignOut() : signIn()}
             >
               {isAuthenticated ? 'Sign Out' : 'Sign In'}
             </Button>
@@ -138,9 +138,7 @@ export default function ShadcnNavbar() {
                       Sign Out
                     </Button>
                   ) : (
-                    <Link href="/login" passHref>
-                      <Button className="w-full" onClick={() => setIsMobileMenuOpen(false)}>Sign In</Button>
-                    </Link>
+                    <Button className="w-full" onClick={() => { signIn(); setIsMobileMenuOpen(false); }}>Sign In</Button>
                   )}
                 </div>
               </div>

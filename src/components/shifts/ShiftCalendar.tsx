@@ -230,7 +230,7 @@ export default function ShiftCalendar() {
                 setIsAddShiftDialogOpen(false);
                 fetchShifts();
               }}
-              initialDate={selectedDate ? null : undefined}
+              initialData={selectedDate ? null : undefined}
             />
           </DialogContent>
         </Dialog>
