@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import axios from 'axios';
-import Layout from '../../components/Layout';
-import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import Layout from '../../components/layout/Layout';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import ShiftDetails from '../../components/shifts/ShiftDetails';
 
 export default function ShiftDetailsPage() {

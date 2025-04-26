@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Calendar, Clock, CheckCircle, User, LogOut } from 'lucide-react';
 import axios from 'axios';
-import LoadingSpinner from '../ui/LoadingSpinner';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { format } from 'date-fns';
 
 export default function VolunteerDashboard() {

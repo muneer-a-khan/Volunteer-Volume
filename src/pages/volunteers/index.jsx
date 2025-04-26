@@ -6,8 +6,8 @@ import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import VolunteerList from '../../components/volunteers/VolunteerList';
 import Card from '../../components/common/Card';
-import Layout from '../../components/Layout';
-import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import Layout from '../../components/layout/Layout';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
 
 export default function VolunteersPage() {

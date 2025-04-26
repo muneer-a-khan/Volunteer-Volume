@@ -3,8 +3,8 @@ import { useRouter } from 'next/router';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import VolunteerProfile from '../../components/volunteers/VolunteerProfile';
-import Layout from '../../components/Layout';
-import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import Layout from '../../components/layout/Layout';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export default function ProfilePage() {
   const router = useRouter();

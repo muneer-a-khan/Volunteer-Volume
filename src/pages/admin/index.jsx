@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import AdminDashboard from '../../components/dashboard/AdminDashboard';
-import Layout from '../../components/Layout';
-import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import Layout from '../../components/layout/Layout';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export default function AdminPage() {
   const router = useRouter();
