@@ -8,6 +8,8 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export default function ProfilePage() {
   const router = useRouter();
+  const authLoading = false; // Added placeholder
+  const isAuthenticated = true; // Added placeholder
 
   // Redirect to login if not authenticated
   useEffect(() => {
