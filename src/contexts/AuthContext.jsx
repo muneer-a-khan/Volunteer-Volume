@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useEffect } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 
 // Create the authentication context
@@ -10,8 +10,15 @@ const AuthContext = createContext(undefined);
 export function AuthProvider({ children }) {
   const { data: session, status } = useSession();
   const isLoading = status === 'loading';
-  const isAuthenticated = !!session?.user;
-
+  const isAuthenticated = status === 'authenticated' && !!session?.user;
+  
+  // For debugging purposes, log the current auth state
+  useEffect(() => {
+    console.log('AuthContext - Auth Status:', status);
+    console.log('AuthContext - Session:', session);
+    console.log('AuthContext - Is Authenticated:', isAuthenticated);
+  }, [status, session, isAuthenticated]);
+  
   // Authentication state
   const authValues = {
     user: session?.user || null,

@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { Disclosure, Menu, Transition } from '@headlessui/react';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
@@ -15,7 +15,8 @@ export default function Navbar() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const userRole = session?.user?.role;
-  const isAuthenticated = !!session?.user;
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [navItems, setNavItems] = useState<{ name: string; href: string }[]>([]);
 
   // Navigation items for unauthenticated users
   const publicNavigation = [
@@ -45,25 +46,41 @@ export default function Navbar() {
     { name: 'Pending Volunteers', href: '/admin/pending-volunteers' },
   ];
 
-  // Determine which nav items to show based on role
-  let navigationItems: { name: string; href: string }[] = [];
-  
-  if (!isAuthenticated) {
-    // Not logged in - show public navigation
-    navigationItems = [...publicNavigation];
-  } else if (userRole === 'PENDING') {
-    // Pending volunteer - show limited navigation
-    navigationItems = [...pendingNavigation];
-  } else if (userRole === 'VOLUNTEER' || userRole === 'GROUP_ADMIN') {
-    // Volunteer - show volunteer navigation
-    navigationItems = [...volunteerNavigation];
-  } else if (userRole === 'ADMIN') {
-    // Admin - show admin navigation
-    navigationItems = [...adminNavigation];
-  } else {
-    // Guest or any other role - show public navigation
-    navigationItems = [...publicNavigation];
-  }
+  // Debug session state and update navigation items accordingly
+  useEffect(() => {
+    console.log('Auth Status:', status);
+    console.log('Session:', session);
+    
+    // This works around stale session state issues
+    const authenticated = status === 'authenticated' && !!session?.user;
+    console.log('Is Authenticated:', authenticated);
+    console.log('User Role:', userRole);
+    
+    setIsAuthenticated(authenticated);
+    
+    // Determine which nav items to show based on auth status and role
+    if (!authenticated) {
+      // Not logged in - show public navigation
+      console.log('Setting public navigation (unauthenticated)');
+      setNavItems([...publicNavigation]);
+    } else if (userRole === 'PENDING') {
+      // Pending volunteer - show limited navigation
+      console.log('Setting pending navigation');
+      setNavItems([...pendingNavigation]);
+    } else if (userRole === 'VOLUNTEER' || userRole === 'GROUP_ADMIN') {
+      // Volunteer - show volunteer navigation
+      console.log('Setting volunteer navigation');
+      setNavItems([...volunteerNavigation]);
+    } else if (userRole === 'ADMIN') {
+      // Admin - show admin navigation
+      console.log('Setting admin navigation');
+      setNavItems([...adminNavigation]);
+    } else {
+      // Any other role - show public navigation
+      console.log('Setting public navigation (default)');
+      setNavItems([...publicNavigation]);
+    }
+  }, [status, session, userRole]);
 
   return (
     <Disclosure as="nav" className="bg-white shadow">
@@ -80,7 +97,7 @@ export default function Navbar() {
                   </Link>
                 </div>
                 <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-                  {navigationItems.map((item) => (
+                  {navItems.map((item) => (
                     <Link
                       key={item.name}
                       href={item.href}
@@ -98,7 +115,9 @@ export default function Navbar() {
               </div>
 
               <div className="hidden sm:ml-6 sm:flex sm:items-center">
-                {!isAuthenticated ? (
+                {status === 'loading' ? (
+                  <div className="h-8 w-8 rounded-full bg-gray-200 animate-pulse"></div>
+                ) : !isAuthenticated ? (
                   <div className="flex space-x-4">
                     <Link
                       href="/sign-in"
@@ -119,7 +138,7 @@ export default function Navbar() {
                       <Menu.Button className="flex rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
                         <span className="sr-only">Open user menu</span>
                         <div className="h-8 w-8 rounded-full bg-indigo-200 flex items-center justify-center text-indigo-600">
-                          {session.user.name?.[0] || session.user.email?.[0] || "U"}
+                          {session?.user?.name?.[0] || session?.user?.email?.[0] || "U"}
                         </div>
                       </Menu.Button>
                     </div>
@@ -136,8 +155,8 @@ export default function Navbar() {
                         <Menu.Item>
                           {({ active }) => (
                             <div className="px-4 py-2 text-sm text-gray-700 border-b">
-                              <p className="font-medium">{session.user.name}</p>
-                              <p className="text-gray-500">{session.user.email}</p>
+                              <p className="font-medium">{session?.user?.name}</p>
+                              <p className="text-gray-500">{session?.user?.email}</p>
                               <p className="text-xs mt-1 text-gray-500">Role: {userRole}</p>
                             </div>
                           )}
@@ -190,7 +209,7 @@ export default function Navbar() {
 
           <Disclosure.Panel className="sm:hidden">
             <div className="space-y-1 pb-3 pt-2">
-              {navigationItems.map((item) => (
+              {navItems.map((item) => (
                 <Disclosure.Button
                   key={item.name}
                   as="a"
@@ -207,17 +226,21 @@ export default function Navbar() {
               ))}
             </div>
 
-            {isAuthenticated ? (
+            {status === 'loading' ? (
+              <div className="flex justify-center py-4">
+                <div className="h-10 w-10 rounded-full bg-gray-200 animate-pulse"></div>
+              </div>
+            ) : isAuthenticated ? (
               <div className="border-t border-gray-200 pt-4 pb-3">
                 <div className="flex items-center px-4">
                   <div className="flex-shrink-0">
                     <div className="h-10 w-10 rounded-full bg-indigo-200 flex items-center justify-center text-indigo-600">
-                      {session.user.name?.[0] || session.user.email?.[0] || "U"}
+                      {session?.user?.name?.[0] || session?.user?.email?.[0] || "U"}
                     </div>
                   </div>
                   <div className="ml-3">
-                    <div className="text-base font-medium text-gray-800">{session.user.name}</div>
-                    <div className="text-sm font-medium text-gray-500">{session.user.email}</div>
+                    <div className="text-base font-medium text-gray-800">{session?.user?.name}</div>
+                    <div className="text-sm font-medium text-gray-500">{session?.user?.email}</div>
                     <div className="text-xs text-gray-500">Role: {userRole}</div>
                   </div>
                 </div>
