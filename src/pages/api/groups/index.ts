@@ -3,14 +3,14 @@ import { prisma } from '@/lib/prisma';
 import { mapSnakeToCamel } from '@/lib/map-utils';
 // import { getServerSession } from 'next-auth';
 // import { authOptions } from '@/lib/auth';
- 
+
 interface GroupResponse {
     id: string;
     name: string;
     description: string | null;
     logoUrl: string | null;
 }
- 
+
 export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse<GroupResponse[] | { message: string }>
@@ -29,13 +29,13 @@ export default async function handler(
 
         // Find all groups
         const groups = await prisma.groups.findMany({
-           where: {
-             active: true,
-           },
-           orderBy: {
-             name: 'asc'
-           }
-         });
+            where: {
+                active: true,
+            },
+            orderBy: {
+                name: 'asc'
+            }
+        });
 
         // Format the response
         const formattedGroups = groups.map((groups) => ({
@@ -44,7 +44,7 @@ export default async function handler(
             description: groups.description,
             logoUrl: groups.logo_url
         }));
-        
+
         return res.status(200).json(mapSnakeToCamel(formattedGroups));
     } catch (error) {
         console.error('Error fetching groups:', error);

@@ -29,11 +29,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (checkIn.check_out_time) {
       return res.status(400).json({ message: 'Already checked out' });
     }
-    
+
     const checkOutTime = checkOutTimeStr ? new Date(checkOutTimeStr) : new Date();
     const durationMs = checkOutTime.getTime() - new Date(checkIn.check_in_time).getTime();
     const durationMinutes = Math.round(durationMs / 60000);
-    
+
     const updatedCheckIn = await prisma.check_ins.update({
       where: { id: checkInId },
       data: {

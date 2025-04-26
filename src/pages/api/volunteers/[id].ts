@@ -27,10 +27,10 @@ interface VolunteerResponse {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
-  
+
   if (req.method === 'GET') {
     try {
-        await prisma.$connect();
+      await prisma.$connect();
       const volunteer = await prisma.users.findUnique({
         where: { id: id as string },
         include: {

@@ -30,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Option 2: Assign to a default/anonymous user.
     // Option 3: Remove user association (log becomes general).
     // Choosing Option 3 for now: Cannot create user-specific log.
-    
+
     // Potential alternative: Log without user_id if schema allows (nullable)
     // const logData = {
     //     hours: parseInt(hours, 10),

@@ -27,39 +27,39 @@ interface VolunteerWithStats {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    if (req.method !== 'GET') {
-        return res.status(405).json({ message: 'Method Not Allowed' });
-    }
+  if (req.method !== 'GET') {
+    return res.status(405).json({ message: 'Method Not Allowed' });
+  }
 
-    // Auth checks removed
+  // Auth checks removed
 
-    try {
-        await prisma.$connect();
-        
-        // Fetch all volunteers regardless of auth
-        const volunteers = await prisma.users.findMany({
-            where: {
-                // Potentially add filters based on query params if needed
-                // Example: Filter by status if passed in query
-                // active: req.query.status === 'active' ? true : undefined,
-            },
-            include: {
-                profiles: true, // Include profile data
-                // Optionally include other relevant relations
-            },
-            orderBy: {
-                name: 'asc',
-            },
-        });
+  try {
+    await prisma.$connect();
 
-        res.status(200).json(mapSnakeToCamel(volunteers));
+    // Fetch all volunteers regardless of auth
+    const volunteers = await prisma.users.findMany({
+      where: {
+        // Potentially add filters based on query params if needed
+        // Example: Filter by status if passed in query
+        // active: req.query.status === 'active' ? true : undefined,
+      },
+      include: {
+        profiles: true, // Include profile data
+        // Optionally include other relevant relations
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
 
-    } catch (error) {
-        console.error('Error fetching volunteers:', error);
-        res.status(500).json({ message: 'Internal Server Error' });
-    } finally {
-        await prisma.$disconnect();
-    }
+    res.status(200).json(mapSnakeToCamel(volunteers));
+
+  } catch (error) {
+    console.error('Error fetching volunteers:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  } finally {
+    await prisma.$disconnect();
+  }
 }
 
 // Get all volunteers with optional filtering
