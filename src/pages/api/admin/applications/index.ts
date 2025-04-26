@@ -23,7 +23,7 @@ export default async function handler(
 
   try {
     await prisma.$connect();
-    
+
     const applications = await prisma.applications.findMany({
       where: {
         // Optionally add filters like status: req.query.status

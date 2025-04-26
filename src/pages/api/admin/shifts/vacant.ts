@@ -17,10 +17,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 shift_volunteers: { // Where no volunteers are signed up
                     none: {},
                 },
-                 // Ensure capacity is considered (where capacity > 0)
-                 capacity: {
+                // Ensure capacity is considered (where capacity > 0)
+                capacity: {
                     gt: 0
-                 }
+                }
             },
             include: {
                 groups: true, // Include group info

@@ -9,7 +9,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     try {
         await prisma.$connect();
-        
+
         // Fetch latest activity across relevant tables
         // Example: Fetch recent logs and check-ins
         const logs = await prisma.volunteer_logs.findMany({
@@ -26,7 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 shifts: { select: { id: true, title: true } },
             },
         });
-        
+
         // Combine and format the activity feed
         const activity = [...logs, ...checkIns]
             .sort((a, b) => (b.created_at || new Date(0)).getTime() - (a.created_at || new Date(0)).getTime())
@@ -42,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                         details: `${item.hours}h ${item.minutes}m: ${item.description}`
                     };
                 } else { // It's a check-in
-                     return {
+                    return {
                         type: 'CHECK_IN',
                         id: item.id,
                         date: item.created_at,

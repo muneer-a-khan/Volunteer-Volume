@@ -62,7 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!group) {
       return res.status(404).json({ message: 'Group not found' });
     }
-    
+
     // Authorization removed - group details are now public
     // if (!isAdmin && !group.users.some(user => user.id === requestingUserId)) {
     //     return res.status(403).json({ message: 'Forbidden' });
