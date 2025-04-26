@@ -53,11 +53,17 @@ export async function POST(request: Request) {
       { message: 'Volunteer application rejected' },
       { status: 200 }
     );
-  } catch (error) {
-    console.error('Error rejecting volunteer:', error);
+  } catch (error: unknown) {
+    // Properly handle unknown error type
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('Error rejecting volunteer:', errorMessage);
+    
     return NextResponse.json(
       { message: 'Error rejecting volunteer' },
       { status: 500 }
     );
+  } finally {
+    // Ensure Prisma disconnects properly
+    await prisma.$disconnect();
   }
 } 

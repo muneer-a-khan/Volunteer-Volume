@@ -3,6 +3,14 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
+// Define a type for the pending user from the database
+type PendingUser = {
+  id: string;
+  name: string | null;
+  email: string | null;
+  created_at: Date;
+};
+
 export async function GET() {
   try {
     // Verify the user is an admin
@@ -31,7 +39,7 @@ export async function GET() {
     });
 
     // Format the data before sending
-    const formattedUsers = pendingUsers.map(user => ({
+    const formattedUsers = pendingUsers.map((user: PendingUser) => ({
       id: user.id,
       name: user.name,
       email: user.email,
@@ -39,11 +47,17 @@ export async function GET() {
     }));
 
     return NextResponse.json({ users: formattedUsers });
-  } catch (error) {
-    console.error('Error fetching pending volunteers:', error);
+  } catch (error: unknown) {
+    // Properly handle unknown error type
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('Error fetching pending volunteers:', errorMessage);
+    
     return NextResponse.json(
       { message: 'Error fetching pending volunteers' },
       { status: 500 }
     );
+  } finally {
+    // Ensure Prisma disconnects properly
+    await prisma.$disconnect();
   }
 } 

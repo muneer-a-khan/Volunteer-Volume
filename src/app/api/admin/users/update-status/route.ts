@@ -57,8 +57,9 @@ export async function POST(request: Request) {
         },
         { status: 200 }
       );
-    } catch (updateError) {
-      console.error('Error during update:', updateError);
+    } catch (updateError: unknown) {
+      const errorMessage = updateError instanceof Error ? updateError.message : 'Unknown error during update';
+      console.error('Error during update:', errorMessage);
       
       // Fallback: Create a custom query to check if active field exists and update
       try {
@@ -83,19 +84,24 @@ export async function POST(request: Request) {
             { status: 500 }
           );
         }
-      } catch (fallbackError) {
-        console.error('Fallback error:', fallbackError);
+      } catch (fallbackError: unknown) {
+        const fallbackErrorMessage = fallbackError instanceof Error ? fallbackError.message : 'Unknown fallback error';
+        console.error('Fallback error:', fallbackErrorMessage);
         return NextResponse.json(
           { message: 'Failed to update user status' },
           { status: 500 }
         );
       }
     }
-  } catch (error) {
-    console.error('Error updating user status:', error);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('Error updating user status:', errorMessage);
     return NextResponse.json(
       { message: 'Error updating user status' },
       { status: 500 }
     );
+  } finally {
+    // Ensure Prisma disconnects properly
+    await prisma.$disconnect();
   }
 } 

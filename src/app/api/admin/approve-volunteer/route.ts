@@ -55,11 +55,17 @@ export async function POST(request: Request) {
       { message: 'Volunteer approved successfully' },
       { status: 200 }
     );
-  } catch (error) {
-    console.error('Error approving volunteer:', error);
+  } catch (error: unknown) {
+    // Properly handle unknown error type
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('Error approving volunteer:', errorMessage);
+    
     return NextResponse.json(
       { message: 'Error approving volunteer' },
       { status: 500 }
     );
+  } finally {
+    // Ensure Prisma disconnects properly
+    await prisma.$disconnect();
   }
 } 
