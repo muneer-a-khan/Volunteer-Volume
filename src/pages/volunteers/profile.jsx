@@ -16,7 +16,7 @@ export default function ProfilePage() {
     if (!authLoading && !isAuthenticated) {
       router.push('/login');
     }
-  }, [router]);
+  }, [router, authLoading, isAuthenticated]);
 
   // Show loading state
   if (authLoading) {
