@@ -32,18 +32,18 @@ export default function CurrentCheckInStatus({ checkInData }: CurrentCheckInStat
               Checked In
             </Badge>
           </div>
-          
+
           <div className="flex flex-col">
             <span className="text-sm text-gray-500">Shift</span>
             <span className="font-medium">{shiftTitle}</span>
           </div>
-          
+
           <div className="flex flex-col">
             <span className="text-sm text-gray-500">Checked In</span>
             <span className="font-medium">{checkedInAt.toLocaleString()}</span>
             <span className="text-xs text-gray-500">{timeElapsed}</span>
           </div>
-          
+
           {checkInData.location && (
             <div className="flex flex-col">
               <span className="text-sm text-gray-500">Location</span>

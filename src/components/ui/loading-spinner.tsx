@@ -17,7 +17,7 @@ export const LoadingSpinner = ({
   };
 
   return (
-    <div 
+    <div
       className={cn(
         'animate-spin rounded-full border-2 border-current border-t-transparent text-primary',
         sizeClasses[size],
