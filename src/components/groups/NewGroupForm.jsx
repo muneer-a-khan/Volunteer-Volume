@@ -140,17 +140,23 @@ export default function NewGroupForm() {
                 </div>
 
                 {/* Public/Private */}
-                <div className="flex items-start space-x-2">
-                  <Checkbox
-                    id="is-public"
-                    checked={isPublic}
-                    onCheckedChange={setIsPublic}
-                  />
-                  <div className="grid gap-1.5 leading-none">
-                    <Label htmlFor="is-public" className="text-sm font-medium">
+                <div className="flex items-center space-x-3">
+                  <div className="flex h-6 items-center">
+                    <Checkbox
+                      id="is-public"
+                      checked={isPublic}
+                      onCheckedChange={setIsPublic}
+                      className="h-4 w-4 rounded-sm border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div className="ml-1">
+                    <Label 
+                      htmlFor="is-public" 
+                      className="text-sm font-medium text-gray-700"
+                    >
                       Public Group
                     </Label>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 mt-1">
                       {isPublic 
                         ? 'Anyone can see and join this group' 
                         : 'Only invited members can join this group'}
