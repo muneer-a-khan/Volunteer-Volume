@@ -5,68 +5,90 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { CalendarIcon, ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react';
 import ShiftCard from './ShiftCard';
 import AddShiftForm from './AddShiftForm';
+import { Calendar } from '@/components/ui/calendar';
+import { Shift } from '@/types/shift';
+
+// Internal representation of shift with camelCase property names
+interface ShiftDisplay {
+  id: string;
+  title: string;
+  description?: string;
+  startTime: string;
+  endTime: string;
+  location: string;
+  maxVolunteers: number;
+  currentVolunteers: number;
+  status: 'OPEN' | 'FULL' | 'COMPLETED' | 'CANCELLED';
+  createdAt: string;
+  updatedAt: string;
+  volunteers: any[];
+}
+
+// Convert snake_case Shift to camelCase ShiftDisplay
+const convertShift = (shift: Shift): ShiftDisplay => {
+  return {
+    id: shift.id,
+    title: shift.title,
+    description: shift.description,
+    startTime: shift.start_time,
+    endTime: shift.end_time,
+    location: shift.location,
+    maxVolunteers: shift.max_volunteers,
+    currentVolunteers: shift.current_volunteers,
+    status: shift.status,
+    createdAt: shift.created_at,
+    updatedAt: shift.updated_at,
+    volunteers: [], // Initialize with empty array as volunteers is not in the Shift type
+  };
+};
 
 export default function ShiftCalendar() {
-  const { shifts, loading, fetchShifts } = useShifts();
+  const { shifts = [], loading, fetchShifts } = useShifts();
   const { user, isAdmin } = useAuth();
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isAddShiftDialogOpen, setIsAddShiftDialogOpen] = useState(false);
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+  const [isAddShiftDialogOpen, setIsAddShiftDialogOpen] = useState<boolean>(false);
 
   // Fetch shifts on component mount
   useEffect(() => {
     fetchShifts();
   }, [fetchShifts]);
 
-  // Navigate to previous month
-  const goToPreviousMonth = () => {
-    setCurrentDate(prev => subMonths(prev, 1));
-  };
-
-  // Navigate to next month
-  const goToNextMonth = () => {
-    setCurrentDate(prev => addMonths(prev, 1));
-  };
-
   // Group shifts by date
   const getShiftsByDate = () => {
-    const shiftsByDate = {};
+    if (!Array.isArray(shifts)) return {};
     
-    shifts.forEach(shift => {
-      const date = format(parseISO(shift.startTime), 'yyyy-MM-dd');
+    const shiftsByDate: Record<string, ShiftDisplay[]> = {};
+    
+    shifts.forEach((shift) => {
+      const shiftDisplay = convertShift(shift as Shift);
+      const date = format(parseISO(shiftDisplay.startTime), 'yyyy-MM-dd');
       
       if (!shiftsByDate[date]) {
         shiftsByDate[date] = [];
       }
       
-      shiftsByDate[date].push(shift);
+      shiftsByDate[date].push(shiftDisplay);
     });
     
     return shiftsByDate;
   };
 
-  // Get all days in current month view
-  const getDaysInMonth = () => {
-    const monthStart = startOfMonth(currentDate);
-    const monthEnd = endOfMonth(currentDate);
-    
-    return eachDayOfInterval({ start: monthStart, end: monthEnd });
-  };
-
   // Handle day click
-  const handleDayClick = (day) => {
-    setSelectedDate(day);
-    setIsDialogOpen(true);
+  const handleDayClick = (day: Date | undefined) => {
+    if (day) {
+      setSelectedDate(day);
+      setIsDialogOpen(true);
+    }
   };
 
   // Get shifts for selected date
-  const getShiftsForSelectedDate = () => {
+  const getShiftsForSelectedDate = (): ShiftDisplay[] => {
     if (!selectedDate) return [];
     
     const formattedDate = format(selectedDate, 'yyyy-MM-dd');
@@ -75,78 +97,11 @@ export default function ShiftCalendar() {
     return shiftsByDate[formattedDate] || [];
   };
 
-  // Render calendar days
-  const renderCalendarDays = () => {
-    const days = getDaysInMonth();
-    const shiftsByDate = getShiftsByDate();
-    
-    return days.map(day => {
-      const formattedDate = format(day, 'yyyy-MM-dd');
-      const dayShifts = shiftsByDate[formattedDate] || [];
-      const hasShifts = dayShifts.length > 0;
-      const hasOpenShifts = dayShifts.some(shift => shift.currentVolunteers < shift.maxVolunteers);
-      
-      return (
-        <div
-          key={formattedDate}
-          onClick={() => handleDayClick(day)}
-          className={`
-            p-2 h-24 border border-border rounded-md overflow-hidden cursor-pointer hover:bg-accent/50 transition-colors
-            ${!isSameMonth(day, currentDate) ? 'opacity-50' : ''}
-            ${isSameDay(day, new Date()) ? 'bg-accent/20' : ''}
-          `}
-        >
-          <div className="font-medium text-sm mb-1">
-            {format(day, 'd')}
-          </div>
-          
-          {hasShifts && (
-            <div className="space-y-1">
-              {hasOpenShifts && (
-                <Badge variant="outline" className="bg-green-100 text-green-800 text-xs">
-                  Available
-                </Badge>
-              )}
-              
-              {dayShifts.length > 0 && (
-                <div className="text-xs truncate">
-                  {dayShifts.length} shift{dayShifts.length !== 1 ? 's' : ''}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      );
-    });
-  };
-
   return (
     <Card className="w-full">
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle>Shift Calendar</CardTitle>
-          
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={goToPreviousMonth}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            
-            <div className="font-medium">
-              {format(currentDate, 'MMMM yyyy')}
-            </div>
-            
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={goToNextMonth}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
           
           {isAdmin && (
             <Button
@@ -170,20 +125,42 @@ export default function ShiftCalendar() {
             Loading shifts...
           </div>
         ) : (
-          <div>
-            {/* Day headers */}
-            <div className="grid grid-cols-7 gap-1 mb-1">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                <div key={day} className="font-semibold text-center py-2">
-                  {day}
-                </div>
-              ))}
-            </div>
-            
-            {/* Calendar grid */}
-            <div className="grid grid-cols-7 gap-1">
-              {renderCalendarDays()}
-            </div>
+          <div className="p-2 border rounded-lg">
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={handleDayClick}
+              month={currentDate}
+              onMonthChange={setCurrentDate}
+              className="rounded-md"
+              modifiers={{
+                hasShifts: (date) => {
+                  const formattedDate = format(date, 'yyyy-MM-dd');
+                  const shiftsByDate = getShiftsByDate();
+                  return (shiftsByDate[formattedDate] || []).length > 0;
+                }
+              }}
+              modifiersStyles={{
+                hasShifts: {
+                  fontWeight: 'bold',
+                }
+              }}
+              formatters={{
+                formatDay: (date: Date) => {
+                  const formattedDate = format(date, 'yyyy-MM-dd');
+                  const shiftsByDate = getShiftsByDate();
+                  const dayShifts = shiftsByDate[formattedDate] || [];
+                  const hasShifts = dayShifts.length > 0;
+                  const hasOpenShifts = dayShifts.some(shift => shift.currentVolunteers < shift.maxVolunteers);
+                  
+                  if (hasShifts && hasOpenShifts) {
+                    return `${date.getDate()} ⭐`;
+                  }
+                  
+                  return `${date.getDate()}`;
+                }
+              }}
+            />
             
             {/* Legend */}
             <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
@@ -206,7 +183,7 @@ export default function ShiftCalendar() {
             </DialogTitle>
           </DialogHeader>
           
-          <ScrollArea className="max-h-[50vh]">
+          <div className="max-h-[50vh] overflow-auto pr-1">
             <div className="space-y-4 p-1">
               {getShiftsForSelectedDate().length > 0 ? (
                 getShiftsForSelectedDate().map(shift => (
@@ -222,7 +199,7 @@ export default function ShiftCalendar() {
                 </div>
               )}
             </div>
-          </ScrollArea>
+          </div>
           
           {isAdmin && (
             <div className="mt-2">
@@ -248,17 +225,16 @@ export default function ShiftCalendar() {
             <DialogHeader>
               <DialogTitle>Add New Shift</DialogTitle>
             </DialogHeader>
-            
             <AddShiftForm
-              initialDate={selectedDate}
               onSuccess={() => {
                 setIsAddShiftDialogOpen(false);
                 fetchShifts();
               }}
+              initialDate={selectedDate ? null : undefined}
             />
           </DialogContent>
         </Dialog>
       )}
     </Card>
   );
-}
+} 
