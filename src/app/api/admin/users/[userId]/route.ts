@@ -47,11 +47,17 @@ export async function DELETE(
       { message: 'User deleted successfully' },
       { status: 200 }
     );
-  } catch (error) {
-    console.error('Error deleting user:', error);
+  } catch (error: unknown) {
+    // Properly handle unknown error type
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('Error deleting user:', errorMessage);
+    
     return NextResponse.json(
       { message: 'Error deleting user' },
       { status: 500 }
     );
+  } finally {
+    // Ensure Prisma disconnects properly
+    await prisma.$disconnect();
   }
 } 

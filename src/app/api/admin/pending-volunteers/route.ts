@@ -8,7 +8,7 @@ type PendingUser = {
   id: string;
   name: string | null;
   email: string | null;
-  created_at: Date;
+  created_at: Date | null; // Allow created_at to be null
 };
 
 export async function GET() {
