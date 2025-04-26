@@ -95,7 +95,7 @@ export default function JoinGroupForm() {
 
   const handleJoinByInvite = async (e) => {
     e.preventDefault();
-    
+
     if (!auth.isAuthenticated) {
       toast.error('You must be logged in to join a group');
       return;
@@ -138,7 +138,7 @@ export default function JoinGroupForm() {
                   </Button>
                 </Link>
                 <Link href="/register">
-                  <Button 
+                  <Button
                     variant="outline"
                     className="border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 py-2 px-4 rounded-md transition-colors duration-200"
                   >
@@ -180,9 +180,9 @@ export default function JoinGroupForm() {
               </CardHeader>
               <CardContent className="p-6">
                 <div className="mb-6">
-                  <Input 
+                  <Input
                     type="text"
-                    placeholder="Search by name, description, or category..." 
+                    placeholder="Search by name, description, or category..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full"
@@ -209,18 +209,18 @@ export default function JoinGroupForm() {
                           <div className="flex flex-col sm:flex-row sm:items-start">
                             <div className="sm:flex-1">
                               <h3 className="text-lg font-medium text-gray-900 mb-1">{group.name}</h3>
-                              
+
                               {group.category && (
                                 <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 mb-2 px-2.5 py-0.5 rounded-full text-xs font-medium">
                                   {group.category}
                                 </Badge>
                               )}
-                              
+
                               <p className="text-sm text-gray-600 mt-1 line-clamp-2 mb-3">
                                 {group.description?.substring(0, 150) || 'No description available.'}
                                 {group.description?.length > 150 && '...'}
                               </p>
-                              
+
                               <div className="text-xs text-gray-500 mt-1 mb-3 flex items-center flex-wrap gap-2">
                                 <span className="flex items-center">
                                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -228,7 +228,7 @@ export default function JoinGroupForm() {
                                   </svg>
                                   {group._count?.members || 0} members
                                 </span>
-                                
+
                                 <span className="flex items-center">
                                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -237,7 +237,7 @@ export default function JoinGroupForm() {
                                 </span>
                               </div>
                             </div>
-                            
+
                             <div className="mt-4 sm:mt-0 sm:ml-4 flex items-center">
                               <Button
                                 onClick={() => handleJoinGroup(group.id)}
@@ -263,7 +263,7 @@ export default function JoinGroupForm() {
               </CardContent>
             </Card>
           </div>
-          
+
           {/* Sidebar - Join by invite */}
           <div className="lg:col-span-1">
             <Card className="overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200">
@@ -289,7 +289,7 @@ export default function JoinGroupForm() {
                       required
                     />
                   </div>
-                  
+
                   <Button
                     type="submit"
                     disabled={joining === 'invite'}
@@ -305,13 +305,13 @@ export default function JoinGroupForm() {
                     )}
                   </Button>
                 </form>
-                
+
                 <div className="mt-6 pt-6 border-t border-gray-200">
                   <p className="text-sm text-gray-600 mb-4">
                     Want to create your own volunteer group?
                   </p>
                   <Link href="/groups/new">
-                    <Button 
+                    <Button
                       variant="outline"
                       className="w-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 py-2 px-4 rounded-md transition-colors duration-200"
                     >
