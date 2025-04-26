@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect } from 'react';
 import { Disclosure, Menu, Transition } from '@headlessui/react';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
@@ -14,9 +14,20 @@ function classNames(...classes: string[]) {
 export default function Navbar() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
+  
+  // IMPORTANT: Use this direct check instead of state variables
+  const isAuthenticated = status === 'authenticated' && !!session?.user;
   const userRole = session?.user?.role;
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [navItems, setNavItems] = useState<{ name: string; href: string }[]>([]);
+
+  // Debug output to help with troubleshooting
+  useEffect(() => {
+    console.log('NAVBAR STATE:', {
+      status,
+      isAuthenticated,
+      userRole,
+      session
+    });
+  }, [status, session, isAuthenticated, userRole]);
 
   // Navigation items for unauthenticated users
   const publicNavigation = [
@@ -46,41 +57,20 @@ export default function Navbar() {
     { name: 'Pending Volunteers', href: '/admin/pending-volunteers' },
   ];
 
-  // Debug session state and update navigation items accordingly
-  useEffect(() => {
-    console.log('Auth Status:', status);
-    console.log('Session:', session);
-    
-    // This works around stale session state issues
-    const authenticated = status === 'authenticated' && !!session?.user;
-    console.log('Is Authenticated:', authenticated);
-    console.log('User Role:', userRole);
-    
-    setIsAuthenticated(authenticated);
-    
-    // Determine which nav items to show based on auth status and role
-    if (!authenticated) {
-      // Not logged in - show public navigation
-      console.log('Setting public navigation (unauthenticated)');
-      setNavItems([...publicNavigation]);
-    } else if (userRole === 'PENDING') {
-      // Pending volunteer - show limited navigation
-      console.log('Setting pending navigation');
-      setNavItems([...pendingNavigation]);
-    } else if (userRole === 'VOLUNTEER' || userRole === 'GROUP_ADMIN') {
-      // Volunteer - show volunteer navigation
-      console.log('Setting volunteer navigation');
-      setNavItems([...volunteerNavigation]);
-    } else if (userRole === 'ADMIN') {
-      // Admin - show admin navigation
-      console.log('Setting admin navigation');
-      setNavItems([...adminNavigation]);
-    } else {
-      // Any other role - show public navigation
-      console.log('Setting public navigation (default)');
-      setNavItems([...publicNavigation]);
-    }
-  }, [status, session, userRole]);
+  // Determine which nav items to show based on auth status and role
+  let navigationItems: { name: string; href: string }[] = [];
+  
+  if (!isAuthenticated) {
+    navigationItems = [...publicNavigation];
+  } else if (userRole === 'PENDING') {
+    navigationItems = [...pendingNavigation];
+  } else if (userRole === 'VOLUNTEER' || userRole === 'GROUP_ADMIN') {
+    navigationItems = [...volunteerNavigation];
+  } else if (userRole === 'ADMIN') {
+    navigationItems = [...adminNavigation];
+  } else {
+    navigationItems = [...publicNavigation];
+  }
 
   return (
     <Disclosure as="nav" className="bg-white shadow">
@@ -97,7 +87,7 @@ export default function Navbar() {
                   </Link>
                 </div>
                 <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-                  {navItems.map((item) => (
+                  {navigationItems.map((item) => (
                     <Link
                       key={item.name}
                       href={item.href}
@@ -209,7 +199,7 @@ export default function Navbar() {
 
           <Disclosure.Panel className="sm:hidden">
             <div className="space-y-1 pb-3 pt-2">
-              {navItems.map((item) => (
+              {navigationItems.map((item) => (
                 <Disclosure.Button
                   key={item.name}
                   as="a"

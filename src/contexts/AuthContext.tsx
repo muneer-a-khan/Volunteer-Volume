@@ -1,13 +1,18 @@
 'use client';
 
-import React, { createContext, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, ReactNode } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
+import { AuthContextType, SessionUser, SignUpData } from '@/types/auth';
 
 // Create the authentication context
-const AuthContext = createContext(undefined);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+interface AuthProviderProps {
+  children: ReactNode;
+}
 
 // Provider component that wraps your app and makes auth object available to any child component
-export function AuthProvider({ children }) {
+export function AuthProvider({ children }: AuthProviderProps) {
   const { data: session, status } = useSession();
   const isLoading = status === 'loading';
   const isAuthenticated = status === 'authenticated' && !!session?.user;
@@ -20,14 +25,14 @@ export function AuthProvider({ children }) {
   }, [status, session, isAuthenticated]);
   
   // Authentication state
-  const authValues = {
-    user: session?.user || null,
-    dbUser: session?.user || null,
+  const authValues: AuthContextType = {
+    user: session?.user as SessionUser | null,
+    dbUser: session?.user as any,
     isAuthenticated,
     isAdmin: session?.user?.role === 'ADMIN',
     isLoading,
     signIn,
-    signUp: (data) => {
+    signUp: (data: SignUpData) => {
       // You would normally call an API endpoint here
       console.log('Sign up data:', data);
       return Promise.resolve(null);
@@ -41,7 +46,7 @@ export function AuthProvider({ children }) {
 }
 
 // Hook that lets components access the auth context
-export function useAuth() {
+export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');

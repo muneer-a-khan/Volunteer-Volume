@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -14,16 +15,43 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 
-// Define links - we'll show all links since we're removing authentication
-const navLinks = [
-  { name: "Shifts Calendar", href: "/shifts" },
-  { name: "Log Hours", href: "/log-hours" },
-  { name: "Check-in/Check-out", href: "/check-in" },
-  { name: "Admin Dashboard", href: "/admin/dashboard" }
-];
-
 export default function ShadcnNavbar() {
   const pathname = usePathname();
+  const { isAuthenticated, isAdmin, signIn, signOut, user, isLoading } = useAuth();
+
+  // Define navigation links based on authentication status
+  const getNavLinks = () => {
+    // Everyone can see these links
+    const publicLinks = [
+      { name: "Home", href: "/" },
+    ];
+
+    // Only authenticated users can see these links
+    const authLinks = [
+      { name: "Shifts Calendar", href: "/shifts" },
+      { name: "Log Hours", href: "/log-hours" },
+      { name: "Check-in/Check-out", href: "/check-in" },
+    ];
+
+    // Only admins can see these links
+    const adminLinks = [
+      { name: "Admin Dashboard", href: "/admin/dashboard" }
+    ];
+
+    if (isLoading) {
+      return publicLinks;
+    }
+
+    if (isAuthenticated) {
+      return isAdmin 
+        ? [...publicLinks, ...authLinks, ...adminLinks] 
+        : [...publicLinks, ...authLinks];
+    }
+
+    return publicLinks;
+  };
+
+  const navLinks = getNavLinks();
 
   return (
     <div className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -57,6 +85,16 @@ export default function ShadcnNavbar() {
               ))}
             </NavigationMenuList>
           </NavigationMenu>
+          
+          {!isLoading && (
+            <Button 
+              variant="outline" 
+              className="rounded-full"
+              onClick={() => isAuthenticated ? signOut() : signIn()}
+            >
+              {isAuthenticated ? 'Sign Out' : 'Sign In'}
+            </Button>
+          )}
         </div>
       </div>
     </div>
