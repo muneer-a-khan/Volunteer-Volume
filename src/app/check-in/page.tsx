@@ -53,7 +53,9 @@ export default function CheckInPage() {
   const [checkedInShiftDetails, setCheckedInShiftDetails] = useState<ActiveCheckInShift | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusLoading, setStatusLoading] = useState(true); // Separate loading for status check
-  const userId = user?.id;
+  
+  // Safely access user ID only if user exists
+  const userId = user ? user.id : null;
 
   // Function to fetch active check-in status
   const fetchActiveCheckIn = useCallback(async () => {
