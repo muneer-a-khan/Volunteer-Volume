@@ -2,23 +2,35 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { Prisma } from '@prisma/client';
 
-export async function POST(request: Request) {
+// Define the response structure explicitly
+export type RejectVolunteerResponse = {
+  message: string;
+  success?: boolean;
+};
+
+export async function POST(request: Request): Promise<NextResponse<RejectVolunteerResponse>> {
+  // Ensure Prisma will disconnect even if there's an uncaught exception
+  let disconnectRequired = true;
+  
   try {
     // Verify the user is an admin
     const session = await getServerSession(authOptions);
     if (!session || session.user.role !== 'ADMIN') {
       return NextResponse.json(
-        { message: 'Unauthorized' },
+        { message: 'Unauthorized', success: false },
         { status: 401 }
       );
     }
 
     // Get the userId from the request body
-    const { userId } = await request.json();
+    const body = await request.json().catch(() => ({}));
+    const userId = body.userId;
+    
     if (!userId) {
       return NextResponse.json(
-        { message: 'User ID is required' },
+        { message: 'User ID is required', success: false },
         { status: 400 }
       );
     }
@@ -30,27 +42,22 @@ export async function POST(request: Request) {
 
     if (!user) {
       return NextResponse.json(
-        { message: 'User not found' },
+        { message: 'User not found', success: false },
         { status: 404 }
       );
     }
 
-    // Option 1: Delete the user
+    // Delete the user
     await prisma.users.delete({
       where: { id: userId }
     });
 
-    // Option 2 (alternative): Instead of deleting, you could set a different status
-    // await prisma.users.update({
-    //   where: { id: userId },
-    //   data: { role: 'REJECTED' }
-    // });
-
-    // You might want to send an email notification to the user
-    // about their rejected status
+    // Close Prisma connection before successful response
+    await prisma.$disconnect();
+    disconnectRequired = false;
 
     return NextResponse.json(
-      { message: 'Volunteer application rejected' },
+      { message: 'Volunteer application rejected', success: true },
       { status: 200 }
     );
   } catch (error: unknown) {
@@ -58,12 +65,27 @@ export async function POST(request: Request) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     console.error('Error rejecting volunteer:', errorMessage);
     
+    // Detect specific Prisma errors
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      const prismaError = error as Prisma.PrismaClientKnownRequestError;
+      if (prismaError.code === 'P2025') {
+        return NextResponse.json(
+          { message: 'User not found for deletion', success: false },
+          { status: 404 }
+        );
+      }
+    }
+    
     return NextResponse.json(
-      { message: 'Error rejecting volunteer' },
+      { message: 'Error rejecting volunteer', success: false },
       { status: 500 }
     );
   } finally {
-    // Ensure Prisma disconnects properly
-    await prisma.$disconnect();
+    // Only disconnect if it wasn't already done
+    if (disconnectRequired) {
+      await prisma.$disconnect().catch(() => {
+        // Silent catch in finally block
+      });
+    }
   }
 } 
