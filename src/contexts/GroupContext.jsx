@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { useSession } from 'next-auth/react';
@@ -9,6 +9,9 @@ export const GroupProvider = ({ children }) => {
   const { data: session } = useSession();
   const isAuthenticated = !!session?.user;
   const userId = session?.user?.id || null;
+  
+  // Use refs to track if we've already fetched data
+  const initialFetchDone = useRef(false);
 
   const [groups, setGroups] = useState([]);
   const [myGroups, setMyGroups] = useState([]);
@@ -33,6 +36,7 @@ export const GroupProvider = ({ children }) => {
   const fetchMyGroups = useCallback(async () => {
     if (!isAuthenticated || !userId) {
       setMyGroups([]);
+      setLoading(false);
       return;
     }
     setLoading(true);
@@ -43,6 +47,11 @@ export const GroupProvider = ({ children }) => {
       console.error('Error fetching my groups:', error);
       // Silent fail - don't show error toast
       setMyGroups([]);
+      
+      // If getting a 500 error, it's likely the API route issue
+      if (error.response?.status === 500) {
+        console.log('Server error when fetching my groups. Using empty array for now.');
+      }
     } finally {
       setLoading(false);
     }
@@ -131,13 +140,23 @@ export const GroupProvider = ({ children }) => {
     }
   };
 
-  // Initial fetch
+  // Initial fetch - modified to prevent infinite loops
   useEffect(() => {
-    fetchGroups();
-    if (isAuthenticated && userId) {
-      fetchMyGroups();
+    // Only fetch once when component mounts or auth changes
+    if (!initialFetchDone.current) {
+      console.log('Initial group fetch');
+      fetchGroups();
+      if (isAuthenticated && userId) {
+        fetchMyGroups();
+      }
+      initialFetchDone.current = true;
     }
-  }, [fetchGroups, fetchMyGroups, isAuthenticated, userId]);
+  }, [isAuthenticated, userId]); // Remove fetchGroups, fetchMyGroups from dependencies
+
+  // Reset initialFetchDone when auth changes
+  useEffect(() => {
+    initialFetchDone.current = false;
+  }, [isAuthenticated, userId]);
 
   const value = {
     groups,

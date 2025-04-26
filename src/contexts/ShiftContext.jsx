@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { useSession } from 'next-auth/react';
@@ -9,6 +9,9 @@ export const ShiftProvider = ({ children }) => {
   const { data: session } = useSession();
   const isAuthenticated = !!session?.user;
   const userId = session?.user?.id || null;
+  
+  // Use refs to track if we've already fetched data
+  const initialFetchDone = useRef(false);
 
   const [shifts, setShifts] = useState([]);
   const [myShifts, setMyShifts] = useState([]);
@@ -32,7 +35,12 @@ export const ShiftProvider = ({ children }) => {
 
   // Fetch user's shifts (requires user identification)
   const fetchMyShifts = useCallback(async () => {
-    if (!isAuthenticated || !userId) return; // Cannot fetch without user ID
+    if (!isAuthenticated || !userId) {
+      setMyShifts([]);
+      setLoading(false);
+      return;
+    }
+    
     setLoading(true);
     try {
       const response = await axios.get(`/api/shifts/my?userId=${userId}`);
@@ -41,6 +49,11 @@ export const ShiftProvider = ({ children }) => {
       console.error('Error fetching my shifts:', error);
       // Silent fail - don't show error toast
       setMyShifts([]);
+      
+      // If getting a 500 error, it's likely the API route issue
+      if (error.response?.status === 500) {
+        console.log('Server error when fetching my shifts. Using empty array for now.');
+      }
     } finally {
       setLoading(false);
     }
@@ -170,11 +183,23 @@ export const ShiftProvider = ({ children }) => {
     }
   };
 
-  // Initial fetch (maybe fetch all by default?)
+  // Initial fetch - modified to prevent infinite loops
   useEffect(() => {
-    fetchShifts(); // Fetch all upcoming shifts initially
-    fetchMyShifts(); // Fetching user shifts requires ID
-  }, [isAuthenticated, fetchShifts, fetchMyShifts]); // Added fetchShifts and fetchMyShifts dependency
+    // Only fetch once when component mounts or auth changes
+    if (!initialFetchDone.current) {
+      console.log('Initial shift fetch');
+      fetchShifts(); // Fetch all upcoming shifts initially
+      if (isAuthenticated && userId) {
+        fetchMyShifts(); // Fetching user shifts requires ID
+      }
+      initialFetchDone.current = true;
+    }
+  }, [isAuthenticated, userId]); // Remove fetchShifts, fetchMyShifts from dependencies
+
+  // Reset initialFetchDone when auth changes
+  useEffect(() => {
+    initialFetchDone.current = false;
+  }, [isAuthenticated, userId]);
 
   // Provider value
   const value = {

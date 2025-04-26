@@ -9,71 +9,32 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from '../../contexts/AuthContext';
+import ShiftListItem from './ShiftListItem';
+import AddShiftForm from './AddShiftForm';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { PlusCircle, Search, Filter } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 export default function ShiftList({ groupId = null }) {
-  const { shifts, loading, fetchShifts, signUpForShift, cancelShiftSignup } = useShifts();
-  // Hardcoded auth values since we've removed authentication
-  const isAdmin = true; // Default to admin for simplicity
-  // Use useMemo to prevent dbUser from changing on every render
-  const dbUser = useMemo(() => ({ id: 'placeholder-user-id' }), []); // Placeholder user
-
+  const { shifts, loading, fetchShifts, signUpForShift, cancelShiftSignup, deleteShift } = useShifts();
+  const { isAdmin } = useAuth();
+  const [isAddShiftDialogOpen, setIsAddShiftDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [shiftToEdit, setShiftToEdit] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('upcoming');
   const [dateFilter, setDateFilter] = useState('');
-  const [filteredShifts, setFilteredShifts] = useState([]);
   const [isSigningUp, setIsSigningUp] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
 
-  // Fetch shifts on component mount
+  // Placeholder user ID if needed, otherwise rely on AuthContext
+  const dbUser = useMemo(() => ({ id: 'placeholder-user-id' }), []);
+
+  // Fetch shifts based on the main filter (upcoming, past, all)
   useEffect(() => {
-    fetchShifts();
-  }, [fetchShifts]);
-
-  // Filter shifts based on user selection
-  useEffect(() => {
-    if (!shifts) return;
-
-    const now = new Date();
-    let filtered = [...shifts];
-
-    // Apply status filter
-    if (filter === 'upcoming') {
-      filtered = filtered.filter(shift => isAfter(parseISO(shift.startTime), now));
-    } else if (filter === 'past') {
-      filtered = filtered.filter(shift => isBefore(parseISO(shift.endTime), now));
-    } else if (filter === 'my') {
-      // This needs to be handled differently, as we need to fetch my-shifts specifically
-      // For now, this won't work correctly just by client-side filtering
-      // Should use fetchMyShifts() instead in a different component
-    } else if (filter === 'available') {
-      filtered = filtered.filter(shift =>
-        isAfter(parseISO(shift.startTime), now) &&
-        shift.currentVolunteers < shift.maxVolunteers
-      );
-    }
-
-    // Apply date filter if selected
-    if (dateFilter) {
-      const selectedDate = new Date(dateFilter);
-      const nextDay = new Date(dateFilter);
-      nextDay.setDate(nextDay.getDate() + 1);
-
-      filtered = filtered.filter(shift => {
-        const shiftDate = parseISO(shift.startTime);
-        return (
-          shiftDate >= selectedDate &&
-          shiftDate < nextDay
-        );
-      });
-    }
-
-    // Sort by start time
-    filtered.sort((a, b) => {
-      return new Date(a.startTime) - new Date(b.startTime);
-    });
-
-    setFilteredShifts(filtered);
-  }, [shifts, filter, dateFilter, dbUser]);
+    fetchShifts(filter);
+  }, [filter, fetchShifts]);
 
   // Handle signing up for a shift
   const handleSignUp = async (shiftId) => {
@@ -99,7 +60,7 @@ export default function ShiftList({ groupId = null }) {
     }
   };
 
-  // Format shift time for display
+  // Format shift time for display (Keep if ShiftListItem doesn't handle it)
   const formatShiftTime = (start, end) => {
     const startDate = parseISO(start);
     const endDate = parseISO(end);
@@ -107,7 +68,7 @@ export default function ShiftList({ groupId = null }) {
     return `${format(startDate, 'MMM d, yyyy h:mm a')} - ${format(endDate, 'h:mm a')}`;
   };
 
-  // Get status class for styling
+  // Get status class for styling (Keep if needed)
   const getStatusClass = (status) => {
     switch (status) {
       case 'OPEN':
@@ -123,74 +84,148 @@ export default function ShiftList({ groupId = null }) {
     }
   };
 
-  // Check if user is signed up for a shift
+  // Check if user is signed up for a shift (Keep if needed)
   const isSignedUp = (shift) => {
+    // This logic might be better inside ShiftListItem using myShifts from context
     if (!shift.volunteers) return false;
     return shift.volunteers.some(volunteer => volunteer.id === dbUser.id);
   };
 
-  // Check if shift has available spots
+  // Check if shift has available spots (Keep if needed)
   const hasAvailableSpots = (shift) => {
+    // This logic is likely handled in ShiftListItem now
     return shift.currentVolunteers < shift.maxVolunteers;
   };
 
+  const handleOpenAddDialog = () => {
+    setShiftToEdit(null);
+    setIsAddShiftDialogOpen(true);
+  };
+
+  const handleOpenEditDialog = (shift) => {
+    setShiftToEdit(shift);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setIsAddShiftDialogOpen(false);
+    setIsEditDialogOpen(false);
+    setShiftToEdit(null); // Clear edit state
+    fetchShifts(filter); // Refresh list after add/edit
+  };
+
+  const handleDeleteShift = async (id) => {
+    if (window.confirm('Are you sure you want to delete this shift?')) {
+      const success = await deleteShift(id);
+      if (success) {
+        toast.success('Shift deleted');
+        // List will refresh via context
+      } else {
+        toast.error('Failed to delete shift');
+      }
+    }
+  };
+
+  // Filter shifts based on search term - Memoized
+  const filteredShifts = useMemo(() => {
+    if (!shifts) return [];
+    // Add optional chaining for safety, in case shift properties are missing
+    return shifts.filter(shift => 
+      (shift.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (shift.location?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (shift.description?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+    );
+  }, [shifts, searchTerm]);
+
   // Show loading state
-  if (loading) {
+  if (loading && !shifts.length) { // Show spinner only on initial load
     return (
       <div className="space-y-6">
-        <div className="flex justify-center">
+        <div className="flex justify-center py-10">
           <LoadingSpinner size="lg" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Optional skeleton loading */}
+        {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-64 w-full" />
           ))}
-        </div>
+        </div> */}
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-        {!groupId && (
-          <Button asChild>
-            <Link href="/admin/shifts/new">Add New Shift</Link>
-          </Button>
-        )}
-        {groupId && <div />}
-        <div className="flex w-full md:w-auto gap-4">
-          <Input
-            type="text"
-            placeholder="Search shifts..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-xs w-full"
-          />
+    <div className="container mx-auto py-8">
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+        <h1 className="text-2xl font-bold">Available Shifts</h1>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="relative flex-grow sm:flex-grow-0">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input 
+              type="search"
+              placeholder="Search shifts..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8 w-full sm:w-[200px] lg:w-[300px]"
+            />
+          </div>
           <Select value={filter} onValueChange={setFilter}>
             <SelectTrigger className="w-[180px]">
+              <Filter className="h-4 w-4 mr-1" />
               <SelectValue placeholder="Filter shifts" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="upcoming">Upcoming</SelectItem>
-              <SelectItem value="past">Past</SelectItem>
+              <SelectItem value="upcoming">Upcoming Shifts</SelectItem>
+              <SelectItem value="past">Past Shifts</SelectItem>
               <SelectItem value="all">All Shifts</SelectItem>
             </SelectContent>
           </Select>
+          {isAdmin && (
+            <Button onClick={handleOpenAddDialog} className="flex items-center gap-1">
+              <PlusCircle className="h-4 w-4" />
+              Add Shift
+            </Button>
+          )}
         </div>
       </div>
 
-      {filteredShifts.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredShifts.map(shift => (
-            <ShiftCard key={shift.id} shift={shift} userId={dbUser?.id} />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-10 text-gray-500">
-          No shifts found{searchTerm ? ' matching your search' : filter !== 'all' ? ` matching the filter '${filter}'` : ''}.
+      {/* Display Loading indicator subtly if fetching updates */}
+      {loading && shifts.length > 0 && (
+        <div className="text-center py-4 text-muted-foreground">
+          <LoadingSpinner size="sm" /> Refreshing...
         </div>
       )}
+
+      {!loading && filteredShifts.length > 0 ? (
+        <div>
+          {filteredShifts.map(shift => (
+            <ShiftListItem 
+              key={shift.id} 
+              shift={shift} 
+              onEdit={isAdmin ? handleOpenEditDialog : undefined}
+              onDelete={isAdmin ? handleDeleteShift : undefined}
+            />
+          ))}
+        </div>
+      ) : !loading && filteredShifts.length === 0 ? (
+        <div className="text-center py-10 text-muted-foreground">
+          <p>No shifts found matching your criteria.</p>
+        </div>
+      ) : null} 
+      {/* Avoid rendering the empty state while loading */}
+
+      {/* Dialog for Adding/Editing Shifts - reusing AddShiftForm */}
+      <Dialog open={isAddShiftDialogOpen || isEditDialogOpen} onOpenChange={() => { setIsAddShiftDialogOpen(false); setIsEditDialogOpen(false); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{shiftToEdit ? 'Edit Shift' : 'Add New Shift'}</DialogTitle>
+          </DialogHeader>
+          <AddShiftForm 
+            initialData={shiftToEdit} // Pass shift data for editing
+            onSuccess={handleCloseDialog} 
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
