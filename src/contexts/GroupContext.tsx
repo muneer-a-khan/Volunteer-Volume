@@ -31,15 +31,8 @@ export interface GroupMember {
   };
 }
 
-export interface GroupShift {
+export interface GroupShift extends Omit<Shift, 'id'> {
   id: string;
-  title: string;
-  description?: string;
-  startTime: string;
-  endTime: string;
-  location: string;
-  capacity: number;
-  status: string;
   groupId: string;
 }
 
@@ -67,8 +60,9 @@ interface GroupContextType {
   deleteGroup: (id: string) => Promise<boolean>;
   joinGroup: (id: string) => Promise<void>;
   leaveGroup: (id: string) => Promise<void>;
-  getGroupShifts: (id: string) => Promise<Shift[]>;
+  getGroupShifts: (id: string) => Promise<GroupShift[]>;
   getGroupVolunteers: (id: string) => Promise<User[]>;
+  getGroupHoursReport: (groupId: string, startDate: string, endDate: string) => Promise<HoursReport | null>;
 }
 
 const GroupContext = createContext<GroupContextType | undefined>(undefined);
@@ -221,15 +215,12 @@ export const GroupProvider = ({ children }: GroupProviderProps) => {
   // Get group shifts
   const getGroupShifts = async (groupId: string): Promise<GroupShift[]> => {
     try {
-      setLoading(true);
-      const response = await axios.get(`/api/groups/${groupId}/shifts`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching group shifts:', error);
-      toast.error('Failed to load group shifts. Please try again.');
+      // Mock API call to fetch group shifts
       return [];
-    } finally {
-      setLoading(false);
+    } catch (error: any) {
+      console.error('Fetch group shifts error:', error);
+      toast.error('Failed to load group shifts');
+      return [];
     }
   };
 
