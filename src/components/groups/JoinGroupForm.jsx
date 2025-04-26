@@ -197,7 +197,7 @@ export default function JoinGroupForm() {
                   <div className="text-center py-8 text-red-600">
                     {error}
                   </div>
-                ) : filteredGroups.length === 0 ? (
+                ) : !filteredGroups || filteredGroups.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     No groups found matching your search.
                   </div>
