@@ -18,7 +18,7 @@ export default function ShiftsPage() {
     const timer = setTimeout(() => {
       setLoading(false);
     }, 1000);
-    
+
     return () => clearTimeout(timer);
   }, []);
 

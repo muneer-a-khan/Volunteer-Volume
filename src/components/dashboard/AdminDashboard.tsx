@@ -62,15 +62,15 @@ export default function AdminDashboard() {
         // Get dashboard statistics
         const statsResponse = await axios.get('/api/admin/stats');
         setStats(statsResponse.data);
-        
+
         // Get recent activity
         const activityResponse = await axios.get('/api/admin/activity');
         setRecentActivity(activityResponse.data);
-        
+
         // Get upcoming shifts
         const shiftsResponse = await axios.get('/api/shifts?upcoming=true&limit=5');
         setUpcomingShifts(shiftsResponse.data);
-        
+
         // Get vacant shifts
         const vacantResponse = await axios.get('/api/admin/shifts/vacant');
         setVacantShifts(vacantResponse.data);
@@ -92,20 +92,20 @@ export default function AdminDashboard() {
         <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
         {/* Skeleton Loading State */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
         </div>
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-             <Skeleton className="h-64 w-full" />
-             <Skeleton className="h-64 w-full" />
-             <Skeleton className="h-64 w-full" />
+          <Skeleton className="h-64 w-full" />
+          <Skeleton className="h-64 w-full" />
+          <Skeleton className="h-64 w-full" />
         </div>
       </div>
     );
   }
-  
+
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8 text-center text-red-600">
@@ -162,9 +162,9 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.totalHoursLogged ?? '-'}</div>
-             <Button variant="link" size="sm" asChild className="p-0 h-auto text-xs">
-               <Link href="/admin/reports">View Reports</Link>
-             </Button>
+            <Button variant="link" size="sm" asChild className="p-0 h-auto text-xs">
+              <Link href="/admin/reports">View Reports</Link>
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -179,15 +179,15 @@ export default function AdminDashboard() {
           <Button asChild variant="outline">
             <Link href="/admin/shifts/new">Create New Shift</Link>
           </Button>
-           <Button asChild variant="outline">
-             <Link href="/admin/groups">Manage Groups</Link>
-           </Button>
-           <Button asChild variant="outline">
-              <Link href="/admin/users">Manage Users</Link>
-           </Button>
-           <Button asChild variant="outline">
-              <Link href="/admin/settings">System Settings</Link>
-           </Button>
+          <Button asChild variant="outline">
+            <Link href="/admin/groups">Manage Groups</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/admin/users">Manage Users</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/admin/settings">System Settings</Link>
+          </Button>
         </div>
       </div>
 

@@ -14,28 +14,28 @@ export default function LogHoursPage() {
 
   if (authLoading) {
     return (
-      
-        <div className="flex justify-center items-center h-screen">
-          <Skeleton className="h-12 w-12 rounded-full" />
-        </div>
+
+      <div className="flex justify-center items-center h-screen">
+        <Skeleton className="h-12 w-12 rounded-full" />
+      </div>
 
     );
   }
-  
+
   return (
-    
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-6">Log Volunteer Hours</h1>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div>
-            <LogHoursForm />
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Your Logged Hours</h2>
-            <HoursLogList /> 
-          </div>
+
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-6">Log Volunteer Hours</h1>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div>
+          <LogHoursForm />
+        </div>
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Your Logged Hours</h2>
+          <HoursLogList />
         </div>
       </div>
+    </div>
 
   );
 } 

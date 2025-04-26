@@ -57,7 +57,7 @@ export default function Navbar() {
                       {item.name}
                     </Link>
                   ))}
-                  
+
                   <Menu as="div" className="relative ml-3">
                     <Menu.Button className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
                       Admin
@@ -92,7 +92,7 @@ export default function Navbar() {
                   </Menu>
                 </div>
               </div>
-              
+
               <div className="-mr-2 flex items-center sm:hidden">
                 {/* Mobile menu button */}
                 <Disclosure.Button className="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
@@ -124,7 +124,7 @@ export default function Navbar() {
                   {item.name}
                 </Disclosure.Button>
               ))}
-              
+
               <div className="border-t border-gray-200 pt-4 pb-3">
                 <div className="mt-3 space-y-1">
                   <p className="px-4 text-base font-medium text-gray-500">Admin</p>

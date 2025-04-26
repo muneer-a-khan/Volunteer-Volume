@@ -62,16 +62,16 @@ export default function CheckInPage() {
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold mb-6">Volunteer Check-In/Out</h1>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-xl font-semibold mb-4">Current Status</h2>
           <CurrentCheckInStatus checkInData={checkInData} />
         </div>
-        
+
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-xl font-semibold mb-4">Check In/Out</h2>
-          <CheckInOutForm 
+          <CheckInOutForm
             userId={userId}
             currentStatus={checkInData}
             onCheckInOut={() => fetchCheckInStatus(userId!)}
