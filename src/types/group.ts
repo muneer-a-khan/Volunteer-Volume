@@ -14,4 +14,11 @@ export interface Group {
   members?: { 
     user: { id: string }
   }[];
+}
+
+// Type for the PATCH request body when updating a group
+export interface GroupUpdateInput {
+  name: string; // Name is required for updates
+  description?: string | null; // Optional
+  logoUrl?: string | null;     // Optional
 } 

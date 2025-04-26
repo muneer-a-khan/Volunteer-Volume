@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
 import { getSession } from 'next-auth/react'; // Use getSession for Pages Router API routes
+import { Prisma } from '@prisma/client'; // Ensure Prisma is imported
 
 // Helper function to check if the requesting user is an admin of the group or a site admin
 async function isAuthorized(req: NextApiRequest, groupId: string): Promise<boolean> {
@@ -103,10 +104,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
     } catch (error) {
         console.error(`Error processing group member request (Group: ${groupId}, Member: ${memberUserId}):`, error);
-        // Check for specific Prisma errors, e.g., record not found
-        if (error.code === 'P2025') { 
-             return res.status(404).json({ message: 'Membership record not found.' });
+
+        // Type check before accessing error properties
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            if (error.code === 'P2025') { // Record not found for delete
+                return res.status(404).json({ message: 'Membership record not found.' });
+            }
+            // Add more specific Prisma error codes if needed
         }
+
+        // Generic error for other cases
         res.status(500).json({ message: 'Internal Server Error' });
     } finally {
         await prisma.$disconnect();
