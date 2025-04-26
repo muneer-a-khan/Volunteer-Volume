@@ -4,7 +4,6 @@ import React, { ReactElement } from 'react';
 import { render, RenderOptions } from '@testing-library/react';
 import { ShiftProvider } from '@/contexts/ShiftContext';
 import { GroupProvider } from '@/contexts/GroupContext';
-import { SessionProvider } from 'next-auth/react';
 import { ThemeProvider } from 'next-themes';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
@@ -13,22 +12,77 @@ import { Toaster } from 'react-hot-toast';
  * Custom renderer that wraps components with necessary providers for testing
  */
 interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
-  withAuth?: boolean;
   withShifts?: boolean;
   withGroups?: boolean;
   route?: string;
-  mockAuthValue?: {
-    currentUser: any | null;
-    isAuthenticated: boolean;
-    isLoading: boolean;
-    isAdmin: boolean;
-    login?: (email: string, password: string) => Promise<any>;
-    logout?: () => Promise<void>;
-    register?: (email: string, password: string, name: string) => Promise<any>;
-  };
   mockShiftValue?: any;
   mockGroupValue?: any;
 }
+
+/**
+ * Custom render function that wraps the component with the necessary providers.
+ */
+function customRender(
+  ui: ReactElement,
+  options: CustomRenderOptions = {}
+) {
+  const {
+    withShifts = false,
+    withGroups = false,
+    route = '/',
+    mockShiftValue = null,
+    mockGroupValue = null,
+    ...renderOptions
+  } = options;
+
+  // Create wrappers based on options
+  const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
+    let wrapped = (
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          {children}
+          <Toaster />
+        </ThemeProvider>
+      </QueryClientProvider>
+    );
+
+    // Add providers in sequence
+    if (withShifts) {
+      wrapped = (
+        <ShiftProvider>
+          {wrapped}
+        </ShiftProvider>
+      );
+    }
+
+    if (withGroups) {
+      wrapped = (
+        <GroupProvider>
+          {wrapped}
+        </GroupProvider>
+      );
+    }
+
+    return wrapped;
+  };
+
+  return render(ui, { wrapper: AllTheProviders, ...renderOptions });
+}
+
+// Re-export everything from testing-library
+export * from '@testing-library/react';
+
+// Override the render method with our custom renderer
+export { customRender as render };
+
+// Mock @tanstack/react-query
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false, // Disable retries for tests
+    },
+  },
+});
 
 // Mock context for ShiftContext
 jest.mock('@/contexts/ShiftContext', () => ({
@@ -45,52 +99,6 @@ jest.mock('@/contexts/GroupContext', () => ({
   GroupProvider: ({ children }: { children: React.ReactNode }) => children,
   useGroup: jest.fn().mockReturnValue({}),
 }));
-
-/**
- * Custom renderer for testing components with necessary providers
- */
-export function renderWithProviders(
-  ui: ReactElement,
-  options: CustomRenderOptions = {}
-) {
-  const {
-    withAuth = true,
-    withShifts = false,
-    withGroups = false,
-    mockAuthValue = {},
-    mockShiftValue = {},
-    mockGroupValue = {},
-    ...renderOptions
-  } = options;
-
-  // Update mock implementations based on provided values
-  if (withAuth) {
-    const { useAuth } = require('@/contexts/AuthContext');
-    useAuth.mockReturnValue({ ...mockAuthValue });
-  }
-
-  if (withShifts) {
-    const { useShift } = require('@/contexts/ShiftContext');
-    useShift.mockReturnValue(mockShiftValue);
-  }
-
-  if (withGroups) {
-    const { useGroup } = require('@/contexts/GroupContext');
-    useGroup.mockReturnValue(mockGroupValue);
-  }
-
-  // Mock router functionality
-  if (options.route) {
-    // This would be implemented if we need to mock Next.js router
-    // Could use next/jest and next-router-mock for this
-  }
-
-  function Wrapper({ children }: { children: React.ReactNode }) {
-    return <>{children}</>;
-  }
-
-  return render(ui, { wrapper: Wrapper, ...renderOptions });
-}
 
 /**
  * Mock implementations for commonly used components
@@ -123,6 +131,23 @@ export const mocks = {
     delete: jest.fn().mockResolvedValue({ data: {} }),
   },
 };
+
+// Mock react-hot-toast
+jest.mock('react-hot-toast', () => ({
+  toast: {
+    success: jest.fn(),
+    error: jest.fn(),
+    loading: jest.fn(),
+    dismiss: jest.fn(),
+  },
+  Toaster: () => <div data-testid="toaster-mock" />,
+}));
+
+// Ensure mocks are cleared between tests
+beforeEach(() => {
+  jest.clearAllMocks();
+  queryClient.clear();
+});
 
 /**
  * Utility function to wait for a condition to be true
@@ -211,65 +236,4 @@ jest.mock('next/config', () => () => ({
   publicRuntimeConfig: {
     // Add any public runtime config variables needed for tests
   },
-}));
-
-// Mock next-auth/react
-jest.mock('next-auth/react', () => ({
-  useSession: jest.fn(() => ({
-    data: { user: { id: 'test-user-id', name: 'Test User', email: 'test@example.com', role: 'VOLUNTEER' } },
-    status: 'authenticated',
-  })),
-  signIn: jest.fn(),
-  signOut: jest.fn(),
-  SessionProvider: ({ children }: { children: React.ReactNode }) => children,
-}));
-
-// Mock react-hot-toast
-jest.mock('react-hot-toast', () => ({
-  toast: {
-    success: jest.fn(),
-    error: jest.fn(),
-    loading: jest.fn(),
-    dismiss: jest.fn(),
-  },
-  Toaster: () => <div data-testid="toaster-mock" />,
-}));
-
-// Mock @tanstack/react-query
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: false, // Disable retries for tests
-    },
-  },
-});
-
-const AllProviders = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <SessionProvider session={null}>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {children}
-          <Toaster />
-        </ThemeProvider>
-      </QueryClientProvider>
-    </SessionProvider>
-  );
-};
-
-const customRender = (
-  ui: React.ReactElement,
-  options?: Omit<RenderOptions, 'wrapper'>
-) => render(ui, { wrapper: AllProviders, ...options });
-
-// Re-export everything from testing-library
-export * from '@testing-library/react';
-
-// Override render method
-export { customRender as render };
-
-// Ensure mocks are cleared between tests
-beforeEach(() => {
-  jest.clearAllMocks();
-  queryClient.clear();
-}); 
+})); 

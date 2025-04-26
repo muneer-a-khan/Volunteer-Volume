@@ -2,38 +2,28 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { format, parseISO, isAfter, isBefore, addDays } from 'date-fns';
+import { format, parseISO, isAfter, isBefore, addDays, isSameDay } from 'date-fns';
 import { Calendar, Clock, MapPin, CheckCircle } from 'lucide-react';
 import axios from 'axios';
-import { useShifts, Shift } from '@/contexts/ShiftContext';
-
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Shift as ShiftType } from '@/types/shift';
 
 interface VolunteerStats {
   totalHours: number;
-  shiftsCompleted: number;
-  upcomingShifts: number;
-}
-
-interface UpcomingShift {
-  id: string;
-  title: string;
-  startTime: string;
+  totalMinutes: number;
+  shiftsCount: number;
+  checkInsCount: number;
+  logsCount: number;
 }
 
 export default function VolunteerDashboard() {
-  const { myShifts, fetchMyShifts } = useShifts();
-  const [upcomingShifts, setUpcomingShifts] = useState<UpcomingShift[]>([]);
-  const [pastShifts, setPastShifts] = useState<Shift[]>([]);
-  const [todayShifts, setTodayShifts] = useState<Shift[]>([]);
-  const [volunteerStats, setVolunteerStats] = useState<VolunteerStats>({
-    totalHours: 0,
-    shiftsCompleted: 0,
-    upcomingShifts: 0
-  });
+  const [stats, setStats] = useState<VolunteerStats | null>(null);
+  const [upcomingShifts, setUpcomingShifts] = useState<ShiftType[]>([]);
+  const [pastShifts, setPastShifts] = useState<ShiftType[]>([]);
+  const [todayShifts, setTodayShifts] = useState<ShiftType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,60 +32,54 @@ export default function VolunteerDashboard() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       setLoading(true);
+      setError(null);
       try {
-        const [statsResponse, shiftsResponse] = await Promise.all([
-          axios.get('/api/dashboard/volunteer/stats'), 
-          axios.get('/api/dashboard/volunteer/upcoming-shifts')
-        ]);
-        setVolunteerStats(statsResponse.data);
-        setUpcomingShifts(shiftsResponse.data);
+        const shiftsRes = await axios.get('/api/shifts?filter=upcoming');
+        const allShifts: ShiftType[] = shiftsRes.data;
+
+        // Process shifts locally
+        const today = new Date();
+        const upcoming: ShiftType[] = [];
+        const past: ShiftType[] = [];
+        const todays: ShiftType[] = [];
+
+        allShifts.forEach(shift => {
+           try {
+               const shiftStart = parseISO(shift.start_time || new Date(0).toISOString()); 
+               const shiftEnd = parseISO(shift.end_time || new Date(0).toISOString());
+
+               if (isSameDay(shiftStart, today)) {
+                   todays.push(shift);
+               } else if (isAfter(shiftStart, today)) {
+                   upcoming.push(shift);
+               } else if (isBefore(shiftEnd, today)) {
+                   past.push(shift);
+               }
+           } catch (dateError) {
+                console.error('Error parsing shift dates:', shift, dateError);
+           }
+        });
+
+        setUpcomingShifts(upcoming);
+        setPastShifts(past);
+        setTodayShifts(todays);
+
+        // Stats fetch commented out
+        setStats(null); 
+
       } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to load dashboard data');
+        console.error("Error fetching volunteer dashboard data:", err);
+        setError('Failed to load some dashboard data.'); 
+        setUpcomingShifts([]);
+        setPastShifts([]); 
+        setTodayShifts([]);
+        setStats(null);      
       } finally {
         setLoading(false);
       }
     };
     fetchDashboardData();
   }, []);
-
-  // Sort shifts into categories
-  useEffect(() => {
-    if (myShifts?.length > 0) {
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const tomorrow = addDays(today, 1);
-
-      const upcoming: UpcomingShift[] = [];
-      const past: Shift[] = [];
-      const today_shifts: Shift[] = [];
-
-      myShifts.forEach((shift) => {
-        const shiftStart = parseISO(shift.startTime);
-
-        if (isAfter(shiftStart, tomorrow)) {
-          upcoming.push({
-            id: shift.id,
-            title: shift.title,
-            startTime: shift.startTime
-          });
-        } else if (isBefore(shiftStart, today)) {
-          past.push(shift);
-        } else {
-          today_shifts.push(shift);
-        }
-      });
-
-      // Sort by start time
-      upcoming.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
-      past.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()); // Most recent first
-      today_shifts.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
-
-      setUpcomingShifts(upcoming);
-      setPastShifts(past);
-      setTodayShifts(today_shifts);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [myShifts]);
 
   // Format shift time
   const formatShiftTime = (start: string, end: string) => {
@@ -157,7 +141,11 @@ export default function VolunteerDashboard() {
              <Clock className="h-4 w-4 text-muted-foreground" />
            </CardHeader>
            <CardContent>
-             <div className="text-2xl font-bold">{volunteerStats.totalHours.toFixed(1)}</div>
+             {stats ? (
+               <div className="text-2xl font-bold">{stats.totalHours}h {stats.totalMinutes}m</div>
+             ) : (
+               <p className="text-muted-foreground italic">Volunteer stats are unavailable.</p>
+             )}
              <Button variant="link" size="sm" asChild className="p-0 h-auto text-xs">
                <Link href="/log-hours">View Log</Link>
              </Button>
@@ -169,7 +157,7 @@ export default function VolunteerDashboard() {
              <CheckCircle className="h-4 w-4 text-muted-foreground" />
            </CardHeader>
            <CardContent>
-             <div className="text-2xl font-bold">{volunteerStats.shiftsCompleted}</div>
+             <div className="text-2xl font-bold">{stats?.shiftsCount || 0}</div>
              <p className="text-xs text-muted-foreground">Lifetime total</p>
            </CardContent>
          </Card>
@@ -179,7 +167,7 @@ export default function VolunteerDashboard() {
              <Calendar className="h-4 w-4 text-muted-foreground" />
            </CardHeader>
            <CardContent>
-             <div className="text-2xl font-bold">{volunteerStats.upcomingShifts}</div>
+             <div className="text-2xl font-bold">{upcomingShifts.length}</div>
              <Button variant="link" size="sm" asChild className="p-0 h-auto text-xs">
                <Link href="/shifts">View Shifts</Link>
              </Button>
@@ -202,7 +190,7 @@ export default function VolunteerDashboard() {
                       {shift.title}
                     </Link>
                     <p className="text-sm text-muted-foreground">
-                      {format(parseISO(shift.startTime), 'PPP p')}
+                      {format(parseISO(shift.start_time || ''), 'PPP p')}
                     </p>
                   </div>
                   <Button variant="outline" size="sm" asChild>

@@ -43,9 +43,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     await prisma.$connect();
-    let whereClause: any = { active: true };
+    let whereClause: any = {};
 
-    // Filter logic remains, but doesn't depend on userId directly
     if (filter === 'upcoming') {
       whereClause.start_time = { gte: new Date() };
     } else if (filter === 'past') {
@@ -59,10 +58,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const shifts = await prisma.shifts.findMany({
       where: whereClause,
       include: {
-        groups: true, // Include group info
-        shift_volunteers: { // Include volunteer signups
+        groups: true,
+        shift_volunteers: {
           include: {
-            users: true // Include user info for each signup
+            users: true
           }
         }
       },
@@ -71,7 +70,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     });
 
-    // No need to filter by user ID anymore
     res.status(200).json(mapSnakeToCamel(shifts));
 
   } catch (error) {

@@ -5,88 +5,142 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { Button } from "@/components/ui/button";
-// import CheckInOutForm from '@/components/checkin/CheckInOutForm'; // Component does not seem to exist
-// import CurrentCheckInStatus from '@/components/checkin/CurrentCheckInStatus'; // Component does not seem to exist
-import Layout from '@/components/layout/Layout'; // Corrected path
-import { Skeleton } from '@/components/ui/skeleton'; // Use Skeleton instead of LoadingSpinner
-// import { useAuth } from '@/contexts/AuthContext'; // Removed
-import { useShifts } from '@/contexts/ShiftContext'; // Keep for check-in/out functions
+import Layout from '@/components/layout/Layout';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useShifts } from '@/contexts/ShiftContext';
 
 export default function CheckInPage() {
-  // const { isAuthenticated, dbUser, loading: authLoading } = useAuth(); // Removed
   const router = useRouter();
-  const authLoading = false; // Placeholder
-  const isAuthenticated = true; // Placeholder
-  const dbUser = null; // Placeholder - check-in needs user ID
+  // Placeholder for user data - in a real app, this would come from your auth system
+  const userId = "placeholder-user-id";
   
-  // Keep shift context functions if they are adapted to work without dbUser from auth
-  // Note: Linter reports these might not exist on ShiftContextType. Verify context definition.
+  // Keep shift context functions for check-in/out, but they'll need user ID
   const { checkInForShift, checkOutFromShift } = useShifts(); 
 
   const [loadingCheckIn, setLoadingCheckIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentCheckInData, setCurrentCheckInData] = useState<any>(null); // Type based on API response
+  const [currentCheckInData, setCurrentCheckInData] = useState<any>(null);
 
-  // Fetch current check-in status (needs user ID)
-  useEffect(() => {
-    const fetchCheckInStatus = async () => {
-      if (!isAuthenticated || !dbUser) { // Need dbUser or other ID
-         setCurrentCheckInData(null);
-         return;
-      }
+  // Function to fetch current check-in status
+  async function fetchCheckInStatus() {
+    try {
       setLoadingCheckIn(true);
-      try {
-        // Assume API exists: GET /api/check-in/status?userId=...
-        // const response = await axios.get(`/api/check-in/status?userId=${dbUser.id}`);
-        // setCurrentCheckInData(response.data);
-        setCurrentCheckInData(null); // Placeholder response
-        toast.info('Fetching check-in status requires user ID (API call commented out)');
-      } catch (err) {
-         // Handle error, maybe user is not checked in
-         setCurrentCheckInData(null);
-      } finally {
-         setLoadingCheckIn(false);
+      // Example API call, adjust to your actual API
+      const response = await fetch(`/api/check-in?userId=${userId}`);
+      const data = await response.json();
+      
+      if (response.ok) {
+        setCurrentCheckInData(data);
+      } else {
+        setError(data.message || 'Failed to fetch check-in status');
       }
-    };
+    } catch (err) {
+      setError('An error occurred while fetching check-in status');
+      console.error(err);
+    } finally {
+      setLoadingCheckIn(false);
+    }
+  }
+
+  // Fetch check-in status on component mount
+  useEffect(() => {
     fetchCheckInStatus();
-  }, [isAuthenticated, dbUser]); // Need dbUser or other ID
+  }, []);
 
-  // Removed redirection logic
+  // Handle check-in button click
+  const handleCheckIn = async (shiftId: string) => {
+    try {
+      await checkInForShift(shiftId);
+      toast.success('Successfully checked in!');
+      fetchCheckInStatus(); // Refresh status
+    } catch (err) {
+      toast.error('Failed to check in. Please try again.');
+      console.error(err);
+    }
+  };
 
-  if (authLoading || loadingCheckIn) {
+  // Handle check-out button click
+  const handleCheckOut = async () => {
+    try {
+      if (currentCheckInData?.id) {
+        await checkOutFromShift(currentCheckInData.id);
+        toast.success('Successfully checked out!');
+        fetchCheckInStatus(); // Refresh status
+      }
+    } catch (err) {
+      toast.error('Failed to check out. Please try again.');
+      console.error(err);
+    }
+  };
+
+  if (loadingCheckIn) {
     return (
       <Layout>
-        <div className="flex justify-center items-center h-screen">
-          {/* Replace LoadingSpinner with Skeleton */}
-          <Skeleton className="h-12 w-12 rounded-full" /> 
+        <div className="flex justify-center items-center h-64">
+          <Skeleton className="h-12 w-12 rounded-full" />
         </div>
       </Layout>
     );
   }
-  
-  // Removed auth checks
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
-        <h1 className="text-3xl font-bold mb-6">Check In / Check Out</h1>
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-6">Check In/Out</h1>
         
-        {/* Commented out components as they don't seem to exist */}
-        {/* TODO: Create CheckInOutForm and CurrentCheckInStatus components */}
-        {currentCheckInData ? (
-          <p>Currently Checked In (Implement CurrentCheckInStatus component)</p>
-          // <CurrentCheckInStatus checkInData={currentCheckInData} onCheckOut={checkOutFromShift} />
-        ) : (
-          <p>Ready to Check In (Implement CheckInOutForm component)</p>
-          // <CheckInOutForm onCheckIn={checkInForShift} />
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
         )}
 
-        <div className="mt-8 text-center">
-           <p className="text-sm text-muted-foreground">Need to log hours manually?</p>
-           <Button variant="link" asChild>
-              <Link href="/log-hours">Go to Log Hours Page</Link>
-           </Button>
+        <div className="bg-white shadow-md rounded-lg p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4">Current Status</h2>
+          
+          {currentCheckInData ? (
+            <div>
+              <p>You are currently checked in to:</p>
+              <p className="font-medium">{currentCheckInData.shift?.title || 'Unknown Shift'}</p>
+              <p className="text-gray-600 text-sm mb-4">
+                Checked in at: {new Date(currentCheckInData.checkedInAt).toLocaleString()}
+              </p>
+              
+              <Button 
+                onClick={handleCheckOut}
+                variant="destructive"
+              >
+                Check Out
+              </Button>
+            </div>
+          ) : (
+            <div>
+              <p>You are not currently checked in.</p>
+              <p className="mb-4">Please select a shift to check in to:</p>
+              
+              {/* This would be replaced with actual available shifts */}
+              <div className="space-y-2">
+                <Button
+                  onClick={() => handleCheckIn('shift-id-1')}
+                  variant="default"
+                  className="w-full text-left justify-start"
+                >
+                  Morning Shift (9AM - 12PM)
+                </Button>
+                <Button
+                  onClick={() => handleCheckIn('shift-id-2')}
+                  variant="default"
+                  className="w-full text-left justify-start"
+                >
+                  Afternoon Shift (1PM - 4PM)
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
+        
+        <Button asChild variant="outline">
+          <Link href="/dashboard">Back to Dashboard</Link>
+        </Button>
       </div>
     </Layout>
   );

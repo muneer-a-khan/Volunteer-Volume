@@ -1,6 +1,5 @@
 'use client';
 
-// import { SessionProvider } from 'next-auth/react'; // Removed
 import { ShiftProvider } from '@/contexts/ShiftContext';
 import { GroupProvider } from '@/contexts/GroupContext';
 import { ThemeProvider } from 'next-themes';
@@ -15,17 +14,15 @@ const queryClient = new QueryClient();
 
 export default function Providers({ children }: ProvidersProps) {
   return (
-    // <SessionProvider> // Removed Wrapper
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <ShiftProvider>
-            <GroupProvider>
-              {children}
-            </GroupProvider>
-          </ShiftProvider>
-          <Toaster position="top-center" />
-        </ThemeProvider>
-      </QueryClientProvider>
-    // </SessionProvider> // Removed Wrapper
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <ShiftProvider>
+          <GroupProvider>
+            {children}
+          </GroupProvider>
+        </ShiftProvider>
+        <Toaster position="top-center" />
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }

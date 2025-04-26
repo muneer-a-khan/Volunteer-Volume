@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import axios from 'axios';
 import { format } from 'date-fns';
 
@@ -40,28 +39,15 @@ interface Application {
 }
 
 export default function MyApplicationsPage() {
-  const { data: session, status } = useSession();
   const router = useRouter();
   const [application, setApplication] = useState<Application | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Skip any redirects or fetches on the first render
-    if (status === 'loading') return;
-
-    // Handle unauthenticated users
-    if (status === 'unauthenticated') {
-      const redirect = () => router.push('/login');
-      redirect();
-      return;
-    }
-
-    // Only fetch application data when authenticated
-    if (status === 'authenticated') {
-      fetchApplication();
-    }
-  }, [status, router]);
+    // Fetch application data when component mounts
+    fetchApplication();
+  }, []);
 
   const fetchApplication = async () => {
     try {
@@ -112,7 +98,7 @@ export default function MyApplicationsPage() {
     }
   };
 
-  if (loading || status === 'loading') {
+  if (loading) {
     return (
       <div className="container mx-auto py-10">
         <Skeleton className="h-12 w-64 mb-6" />

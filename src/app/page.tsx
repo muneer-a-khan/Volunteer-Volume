@@ -2,15 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Home() {
-  const { data: session, status } = useSession();
-  const isPending = session?.user?.role === "PENDING";
-  const isAuthenticated = status === "authenticated";
-
   return (
     <>
       {/* Hero Section */}
@@ -22,20 +17,12 @@ export default function Home() {
           <h1 className="text-5xl font-extrabold">Welcome to Our Volunteer Program!</h1>
           <p className="mt-2 text-lg max-w-lg">Volunteers are essential to our mission. Join a passionate community making a difference.</p>
           <div className="mt-5 flex gap-4">
-            {isPending ? (
-              <Link href="/my-applications">
-                <Button size="xl" className="bg-primary hover:bg-primary/90">Apply</Button>
-              </Link>
-            ) : !isAuthenticated ? (
-              <>
-                <Link href="/register">
-                  <Button size="xl" className="bg-primary hover:bg-primary/90">Sign Up</Button>
-                </Link>
-                <Link href="/login">
-                  <Button variant="outline" size="xl" className="bg-white text-primary border-white hover:bg-white/90">Log In</Button>
-                </Link>
-              </>
-            ) : null}
+            <Link href="/dashboard">
+              <Button size="xl" className="bg-primary hover:bg-primary/90">Dashboard</Button>
+            </Link>
+            <Link href="/shifts">
+              <Button variant="outline" size="xl" className="bg-white text-primary border-white hover:bg-white/90">View Shifts</Button>
+            </Link>
           </div>
         </div>
       </div>
@@ -171,19 +158,11 @@ export default function Home() {
             </h2>
           </div>
           <div className="mt-8 md:mt-0">
-            {isPending ? (
-              <Link href="/my-applications">
-                <Button variant="outline" size="lg" className="bg-white text-primary hover:bg-white/90">
-                  View Your Application
-                </Button>
-              </Link>
-            ) : !isAuthenticated ? (
-              <Link href="/register">
-                <Button variant="outline" size="lg" className="bg-white text-primary hover:bg-white/90">
-                  Get Started
-                </Button>
-              </Link>
-            ) : null}
+            <Link href="/dashboard">
+              <Button variant="outline" size="lg" className="bg-white text-primary hover:bg-white/90">
+                Go to Dashboard
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

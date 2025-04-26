@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import axios from 'axios';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,7 +35,6 @@ interface Volunteer {
 }
 
 export default function ProfilePage() {
-  const { data: session, status } = useSession();
   const router = useRouter();
   const [volunteer, setVolunteer] = useState<Volunteer | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,15 +56,8 @@ export default function ProfilePage() {
 
   // Fetch volunteer data
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login');
-      return;
-    }
-
-    if (status === 'authenticated') {
-      fetchVolunteerData();
-    }
-  }, [status, router]);
+    fetchVolunteerData();
+  }, []);
 
   const fetchVolunteerData = async () => {
     try {
@@ -115,7 +106,7 @@ export default function ProfilePage() {
     }
   };
 
-  if (loading || status === 'loading') {
+  if (loading) {
     return (
       <div className="container mx-auto py-10">
         <Skeleton className="h-12 w-48 mb-6" />
@@ -249,85 +240,94 @@ export default function ProfilePage() {
           </form>
         ) : (
           <>
-            <CardContent className="space-y-4">
-              <div className="flex flex-col items-center space-y-4 mb-6">
-                <Avatar className="w-24 h-24">
-                  <AvatarFallback className="text-xl">
-                    {getUserInitials(volunteer?.name || '')}
-                  </AvatarFallback>
-                </Avatar>
+            <CardContent>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+                <div className="flex items-center gap-4">
+                  <Avatar className="w-16 h-16">
+                    <AvatarFallback className="text-lg">
+                      {getUserInitials(volunteer?.name || '')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="text-xl font-semibold">{volunteer?.name || ''}</h3>
+                    <p className="text-muted-foreground">{volunteer?.email || ''}</p>
+                  </div>
+                </div>
+                <Button onClick={() => setIsEditing(true)} className="mt-4 sm:mt-0">
+                  Edit Profile
+                </Button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-6">
                 <div>
-                  <h3 className="font-medium text-muted-foreground">Name</h3>
-                  <p className="text-lg">{volunteer?.name || 'Not provided'}</p>
+                  <h3 className="text-lg font-medium mb-2">Contact Information</h3>
+                  <Separator className="mb-4" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Email</p>
+                      <p>{volunteer?.email || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Phone</p>
+                      <p>{volunteer?.phone || 'Not provided'}</p>
+                    </div>
+                  </div>
                 </div>
+
                 <div>
-                  <h3 className="font-medium text-muted-foreground">Email</h3>
-                  <p className="text-lg">{volunteer?.email || 'Not provided'}</p>
+                  <h3 className="text-lg font-medium mb-2">Address</h3>
+                  <Separator className="mb-4" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+                    <div className="md:col-span-2">
+                      <p className="text-sm text-muted-foreground">Street Address</p>
+                      <p>{volunteer?.profiles?.address || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">City</p>
+                      <p>{volunteer?.profiles?.city || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">State</p>
+                      <p>{volunteer?.profiles?.state || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">ZIP Code</p>
+                      <p>{volunteer?.profiles?.zipCode || 'Not provided'}</p>
+                    </div>
+                  </div>
                 </div>
+
                 <div>
-                  <h3 className="font-medium text-muted-foreground">Phone</h3>
-                  <p className="text-lg">{volunteer?.phone || 'Not provided'}</p>
+                  <h3 className="text-lg font-medium mb-2">Emergency Contact</h3>
+                  <Separator className="mb-4" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Contact Name</p>
+                      <p>{volunteer?.profiles?.emergencyContact || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Contact Phone</p>
+                      <p>{volunteer?.profiles?.emergencyPhone || 'Not provided'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Volunteer Information</h3>
+                  <Separator className="mb-4" />
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Interests</p>
+                      <p>{volunteer?.profiles?.interests || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Skills</p>
+                      <p>{volunteer?.profiles?.skills || 'Not provided'}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
-
-              {volunteer?.profiles && (
-                <>
-                  <Separator className="my-4" />
-                  <h3 className="text-lg font-medium">Address</h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h3 className="font-medium text-muted-foreground">Street Address</h3>
-                      <p className="text-lg">{volunteer.profiles.address || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-muted-foreground">City</h3>
-                      <p className="text-lg">{volunteer.profiles.city || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-muted-foreground">State</h3>
-                      <p className="text-lg">{volunteer.profiles.state || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-muted-foreground">ZIP Code</h3>
-                      <p className="text-lg">{volunteer.profiles.zipCode || 'Not provided'}</p>
-                    </div>
-                  </div>
-
-                  <Separator className="my-4" />
-                  <h3 className="text-lg font-medium">Emergency Contact</h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h3 className="font-medium text-muted-foreground">Contact Name</h3>
-                      <p className="text-lg">{volunteer.profiles.emergencyContact || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-muted-foreground">Contact Phone</h3>
-                      <p className="text-lg">{volunteer.profiles.emergencyPhone || 'Not provided'}</p>
-                    </div>
-                  </div>
-
-                  <Separator className="my-4" />
-                  <h3 className="text-lg font-medium">Volunteer Information</h3>
-
-                  <div className="space-y-2">
-                    <h3 className="font-medium text-muted-foreground">Interests</h3>
-                    <p className="text-lg">{volunteer.profiles.interests || 'Not provided'}</p>
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="font-medium text-muted-foreground">Skills</h3>
-                    <p className="text-lg">{volunteer.profiles.skills || 'Not provided'}</p>
-                  </div>
-                </>
-              )}
             </CardContent>
-            <CardFooter>
-              <Button onClick={() => setIsEditing(true)}>Edit Profile</Button>
-            </CardFooter>
           </>
         )}
       </Card>
