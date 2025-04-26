@@ -5,31 +5,49 @@ import { useRouter } from 'next/navigation';
 import { useGroups } from '../../contexts/GroupContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import Navbar from '../layout/Navbar';
+import Footer from '../layout/Footer';
+import { LoadingSpinner } from '../ui/loading-spinner';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 
 export default function GroupsPage() {
   const { groups, myGroups, loading, fetchGroups, joinGroup } = useGroups();
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState('all');
   const [filteredGroups, setFilteredGroups] = useState([]);
   const router = useRouter();
   
   // Hardcoded authentication for demo purposes
   const isAuthenticated = true;
 
-  // Filter groups based on search term
+  // Fetch groups when component mounts
   useEffect(() => {
-    if (groups) {
-      if (searchTerm) {
-        setFilteredGroups(
-          groups.filter(group =>
-            group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (group.description && group.description.toLowerCase().includes(searchTerm.toLowerCase()))
-          )
-        );
-      } else {
-        setFilteredGroups(groups);
-      }
+    fetchGroups();
+  }, [fetchGroups]);
+
+  // Filter groups based on search term and active tab
+  useEffect(() => {
+    if (!groups) return;
+
+    let groupsToFilter = activeTab === 'my' ? myGroups : groups;
+    
+    if (!searchTerm) {
+      setFilteredGroups(groupsToFilter);
+      return;
     }
-  }, [groups, searchTerm]);
+
+    const term = searchTerm.toLowerCase();
+    const filtered = groupsToFilter.filter(group => {
+      return (
+        group.name.toLowerCase().includes(term) ||
+        (group.description && group.description.toLowerCase().includes(term)) ||
+        (group.category && group.category.toLowerCase().includes(term))
+      );
+    });
+
+    setFilteredGroups(filtered);
+  }, [groups, myGroups, searchTerm, activeTab]);
 
   // Check if user is a member of a group
   const isMember = (groupId) => {
@@ -46,161 +64,143 @@ export default function GroupsPage() {
     }
   };
 
+  const handleCreateNewGroup = () => {
+    router.push('/groups/new');
+  };
+
+  const handleViewGroup = (groupId) => {
+    router.push(`/groups/${groupId}`);
+  };
+
   // Render loading state
   if (loading) {
     return (
-      <div className="container py-12">
-        <div className="animate-pulse space-y-8">
-          <div className="h-8 bg-muted rounded w-1/4"></div>
-          <div className="h-10 bg-muted rounded"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="h-64 bg-muted rounded"></div>
-            ))}
-          </div>
+      <>
+        <Navbar />
+        <div className="min-h-screen flex justify-center items-center bg-gray-50">
+          <LoadingSpinner />
         </div>
-      </div>
+        <Footer />
+      </>
     );
   }
 
   return (
-    <div className="container py-10">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">
-            Organizations & Groups
-          </h1>
-          <p className="text-muted-foreground">
-            Browse and join volunteer groups to track your hours for specific organizations.
-          </p>
-        </div>
-        <div className="flex w-full md:w-auto gap-4 mt-4 md:mt-0">
-          <Input 
-            type="text"
-            placeholder="Search groups..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-xs w-full"
-          />
-          <Button asChild>
-            <Link href="/admin/groups/new">Create New Group</Link>
-          </Button>
-        </div>
-      </div>
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row justify-between items-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-4 md:mb-0">Volunteer Groups</h1>
+            <Button onClick={handleCreateNewGroup}>Create New Group</Button>
+          </div>
 
-      {/* Groups grid */}
-      {filteredGroups.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredGroups.map((group) => (
-            <div
-              key={group.id}
-              className="bg-card rounded-lg shadow-sm border border-border overflow-hidden hover:shadow-md transition-shadow"
-            >
-              <div className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-shrink-0">
-                    {group.logoUrl ? (
-                      <Image
-                        className="h-16 w-16 rounded-full object-cover"
-                        src={group.logoUrl}
-                        alt={group.name}
-                        width={64}
-                        height={64}
-                      />
-                    ) : (
-                      <div className="h-16 w-16 rounded-full bg-primary flex items-center justify-center text-white font-bold text-2xl">
-                        {group.name.charAt(0)}
-                      </div>
+          <div className="mb-8">
+            <div className="flex flex-col sm:flex-row justify-between space-y-4 sm:space-y-0 sm:space-x-4">
+              <div className="relative flex-grow max-w-md">
+                <Input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search groups..."
+                  className="pr-8"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute inset-y-0 right-2 flex items-center text-gray-400 hover:text-gray-600"
+                  >
+                    <span className="sr-only">Clear search</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full sm:w-auto">
+                <TabsList>
+                  <TabsTrigger value="all">All Groups</TabsTrigger>
+                  <TabsTrigger value="my">My Groups</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Create New Group Card */}
+            <Card className="bg-gray-50 border-dashed border-2 border-gray-300">
+              <CardContent className="p-6 flex flex-col items-center justify-center h-full min-h-[200px]">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Create a new group</h3>
+                <p className="text-sm text-gray-500 text-center mb-4">
+                  Start a new volunteer group for your organization or cause
+                </p>
+                <Button variant="outline" onClick={handleCreateNewGroup}>
+                  Create Group
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Group Cards */}
+            {filteredGroups.length > 0 ? (
+              filteredGroups.map((group) => (
+                <Card key={group.id} className="overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <CardTitle>{group.name}</CardTitle>
+                    {group.category && (
+                      <CardDescription>{group.category}</CardDescription>
                     )}
-                  </div>
-                  <div className="ml-4 flex-1">
-                    <h2 className="text-xl font-bold">
-                      <Link href={`/groups/${group.id}`} className="hover:text-primary">
-                        {group.name}
-                      </Link>
-                    </h2>
-                    <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-600 line-clamp-3 mb-4">
                       {group.description || 'No description available.'}
                     </p>
-                  </div>
-                </div>
-
-                <div className="mt-4 border-t pt-4">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-muted-foreground">
-                      {(group._count?.members || 0)} member{(group._count?.members || 0) !== 1 ? 's' : ''}
+                    <div className="flex items-center text-xs text-gray-500">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                      </svg>
+                      {group._count?.members || 0} members
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      {(group._count?.shifts || 0)} shift{(group._count?.shifts || 0) !== 1 ? 's' : ''}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex items-center justify-end space-x-4">
-                  <Link
-                    href={`/groups/${group.id}`}
-                    className="text-sm font-medium text-primary hover:text-primary/80"
-                  >
-                    View Details
-                  </Link>
-
-                  {!isMember(group.id) ? (
+                  </CardContent>
+                  <CardFooter className="pt-0">
                     <Button 
-                      size="sm" 
-                      variant="secondary"
-                      onClick={() => handleJoinGroup(group.id)}
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => handleViewGroup(group.id)}
                     >
-                      Join Group
+                      View Details
                     </Button>
-                  ) : (
-                    <span className="inline-flex items-center px-3 py-1 rounded-md text-green-800 bg-green-100 text-sm">
-                      Member
-                    </span>
-                  )}
-                </div>
+                  </CardFooter>
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-full text-center py-12 text-gray-500">
+                {activeTab === 'my' ? 
+                  "You haven't joined any groups yet." : 
+                  searchTerm ? 
+                    `No groups found matching "${searchTerm}"` : 
+                    "No groups available."}
               </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="bg-card border rounded-lg shadow-sm p-8 text-center">
-          <svg
-            className="mx-auto h-12 w-12 text-muted-foreground"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-            />
-          </svg>
-          <h3 className="mt-2 text-sm font-medium">No groups found</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {searchTerm
-              ? `No groups match your search "${searchTerm}".`
-              : 'There are no groups available at this time.'}
-          </p>
-          <div className="mt-6">
-            {searchTerm && (
-              <Button 
-                variant="outline" 
-                onClick={() => setSearchTerm('')}
-              >
-                Clear search
-              </Button>
             )}
-            <Button asChild className="ml-3">
-              <Link href="/admin/groups/new">
-                Create Group
-              </Link>
+          </div>
+
+          {/* Join a Group Link */}
+          <div className="mt-10 text-center">
+            <p className="text-gray-600 mb-4">Looking for a group to join?</p>
+            <Button 
+              variant="link" 
+              onClick={() => router.push('/groups/join')}
+              className="text-blue-600 hover:text-blue-800"
+            >
+              Browse available groups
             </Button>
           </div>
         </div>
-      )}
-    </div>
+      </div>
+      <Footer />
+    </>
   );
 } 
