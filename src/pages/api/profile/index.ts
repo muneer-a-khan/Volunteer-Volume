@@ -18,7 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             await prisma.$connect();
             // Need userId to get specific user profile.
             // Cannot get profile without authentication.
-             return res.status(501).json({ message: 'Fetching profile requires authentication (currently disabled)' });
+            return res.status(501).json({ message: 'Fetching profile requires authentication (currently disabled)' });
 
             /* Original logic:
             const userProfile = await prisma.users.findUnique({
@@ -40,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             await prisma.$disconnect();
         }
     } else if (req.method === 'PUT') {
-         try {
+        try {
             await prisma.$connect();
             // Need userId to update specific user profile.
             // Cannot update profile without authentication.

@@ -27,15 +27,15 @@ export default function GroupDetailPage({ id: propId }) {
   // Extract ID from pathname if not provided as prop (for App Router)
   const pathId = pathname ? pathname.split('/').pop() : null;
   const groupId = propId || pathId;
-  
+
   // Prevent data fetching on every render
   const hasLoaded = useRef(false);
-  
+
   // Hardcoded auth values for demo
   const isAuthenticated = true;
   const isAdmin = true;
   const dbUser = mockUser;
-  
+
   const {
     loading,
     getGroup,
@@ -91,7 +91,7 @@ export default function GroupDetailPage({ id: propId }) {
     };
 
     loadGroupData();
-    
+
     // Empty dependency array to ensure this only runs once
   }, [groupId]);
 
@@ -195,7 +195,7 @@ export default function GroupDetailPage({ id: propId }) {
                   </div>
                 </div>
               </div>
-              
+
               <div className="mt-4 md:mt-0">
                 {isMember ? (
                   <Button
@@ -215,10 +215,10 @@ export default function GroupDetailPage({ id: propId }) {
                     {buttonLoading ? <><LoadingSpinner className="h-4 w-4 mr-2" /> Joining...</> : 'Join Group'}
                   </Button>
                 )}
-                
+
                 {isGroupAdmin && (
                   <Link href={`/groups/${groupId}/edit`}>
-                    <Button 
+                    <Button
                       className="ml-3 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md transition-colors duration-200"
                       variant="outline"
                     >
@@ -247,7 +247,7 @@ export default function GroupDetailPage({ id: propId }) {
                 <p className="text-gray-700 whitespace-pre-line">
                   {group.description || 'No description available.'}
                 </p>
-                
+
                 {group.category && (
                   <div className="mt-4">
                     <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 px-2.5 py-0.5 rounded-full text-xs font-medium">
@@ -255,7 +255,7 @@ export default function GroupDetailPage({ id: propId }) {
                     </Badge>
                   </div>
                 )}
-                
+
                 <div className="mt-6 pt-6 border-t border-gray-200">
                   <h3 className="text-md font-medium text-gray-900 mb-2">Group details</h3>
                   <dl className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
@@ -277,7 +277,7 @@ export default function GroupDetailPage({ id: propId }) {
                 </div>
               </CardContent>
             </Card>
-            
+
             {/* Shifts section */}
             {shifts.length > 0 && (
               <Card className="overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200 mb-8">
@@ -300,10 +300,10 @@ export default function GroupDetailPage({ id: propId }) {
                 </CardHeader>
                 <CardContent className="p-6">
                   <ShiftList shifts={shifts.slice(0, 3)} group={group} showGroup={false} />
-                  
+
                   {shifts.length > 3 && (
                     <div className="mt-4 text-center">
-                      <Link 
+                      <Link
                         href={`/shifts?groupId=${groupId}`}
                         className="text-sm font-medium text-blue-600 hover:text-blue-800"
                       >
@@ -315,7 +315,7 @@ export default function GroupDetailPage({ id: propId }) {
               </Card>
             )}
           </div>
-          
+
           {/* Sidebar */}
           <div className="lg:col-span-1">
             {/* Members Card */}
@@ -328,10 +328,10 @@ export default function GroupDetailPage({ id: propId }) {
               </CardHeader>
               <CardContent className="p-6">
                 <MemberList members={volunteers.slice(0, 5)} isAdmin={isGroupAdmin} />
-                
+
                 {volunteers.length > 5 && (
                   <div className="mt-4 text-center">
-                    <Link 
+                    <Link
                       href={`/groups/${groupId}/members`}
                       className="text-sm font-medium text-blue-600 hover:text-blue-800"
                     >
@@ -341,7 +341,7 @@ export default function GroupDetailPage({ id: propId }) {
                 )}
               </CardContent>
             </Card>
-            
+
             {/* Admin Actions */}
             {isGroupAdmin && (
               <Card className="overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200">
@@ -350,16 +350,16 @@ export default function GroupDetailPage({ id: propId }) {
                 </CardHeader>
                 <CardContent className="p-6 space-y-4">
                   <Link href={`/groups/${groupId}/invite`}>
-                    <Button 
+                    <Button
                       className="w-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 py-2 px-4 rounded-md transition-colors duration-200"
                       variant="outline"
                     >
                       Manage Invites
                     </Button>
                   </Link>
-                  
+
                   <Link href={`/groups/${groupId}/reports`}>
-                    <Button 
+                    <Button
                       className="w-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 py-2 px-4 rounded-md transition-colors duration-200"
                       variant="outline"
                     >

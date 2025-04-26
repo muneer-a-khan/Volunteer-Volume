@@ -20,7 +20,7 @@ export default function VolunteersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const router = useRouter();
-  
+
   // Redirect if not authenticated or not admin
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -34,7 +34,7 @@ export default function VolunteersPage() {
   useEffect(() => {
     const fetchVolunteers = async () => {
       if (!isAuthenticated || !isAdmin) return;
-      
+
       setLoading(true);
       try {
         const response = await axios.get('/api/volunteers');
@@ -61,7 +61,7 @@ export default function VolunteersPage() {
     if (activeFilter === 'inactive' && volunteer.status !== 'INACTIVE') {
       return false;
     }
-    
+
     // Apply search term
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
@@ -71,7 +71,7 @@ export default function VolunteersPage() {
         (volunteer.phone && volunteer.phone.includes(searchTerm))
       );
     }
-    
+
     return true;
   });
 
