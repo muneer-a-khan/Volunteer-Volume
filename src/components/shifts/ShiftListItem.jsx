@@ -4,29 +4,27 @@ import { useShifts } from '../../contexts/ShiftContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Clock, MapPin, Users, Edit, Trash2 } from 'lucide-react';
+import { MapPin, Edit, Trash2 } from 'lucide-react';
 
 export default function ShiftListItem({ shift, onEdit, onDelete }) {
-  const { signUpForShift, cancelShiftSignup, myShifts } = useShifts();
+  const { signUpForShift, cancelShiftSignup, myShifts, loading: shiftContextLoading } = useShifts();
   const { user, isAdmin } = useAuth();
 
   const userIsSignedUp = myShifts.some(myShift => myShift.id === shift.id);
-  const isFull = shift.currentVolunteers >= shift.maxVolunteers;
+  const isFull = shift.currentVolunteers > 0;
 
   const handleSignUp = () => {
-    if (user) {
+    if (user && !shiftContextLoading) {
       signUpForShift(shift.id);
-    } else {
-      // Handle case where user is not logged in (e.g., show login prompt)
+    } else if (!user) {
       console.log("User must be logged in to sign up");
     }
   };
 
   const handleCancel = () => {
-    if (user) {
+    if (user && !shiftContextLoading) {
       cancelShiftSignup(shift.id);
-    } else {
+    } else if (!user) {
       console.log("User must be logged in to cancel");
     }
   };
@@ -38,12 +36,11 @@ export default function ShiftListItem({ shift, onEdit, onDelete }) {
           <div>
             <CardTitle className="text-lg">{shift.title}</CardTitle>
             <CardDescription className="text-sm text-muted-foreground">
-              {format(new Date(shift.startTime), 'EEE, MMM d, yyyy')} · {format(new Date(shift.startTime), 'p')} - {format(new Date(shift.endTime), 'p')}
+              {shift.startTime && shift.endTime ? 
+                `${format(new Date(shift.startTime), 'EEE, MMM d, yyyy')} · ${format(new Date(shift.startTime), 'p')} - ${format(new Date(shift.endTime), 'p')}`
+                : "Invalid date"}
             </CardDescription>
           </div>
-          <Badge variant={isFull ? "secondary" : "default"} className={isFull ? "bg-yellow-100 text-yellow-800" : "bg-green-100 text-green-800"}>
-            {shift.currentVolunteers} / {shift.maxVolunteers} spots filled
-          </Badge>
         </div>
       </CardHeader>
       <CardContent>
@@ -56,34 +53,27 @@ export default function ShiftListItem({ shift, onEdit, onDelete }) {
               <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
               <span>{shift.location || 'Not specified'}</span>
             </div>
-            {/* Add group info if available */}
-            {/* {shift.group && (
-              <div className="flex items-center text-sm">
-                <Users className="h-4 w-4 mr-2 text-muted-foreground" />
-                <span>{shift.group.name}</span>
-              </div>
-            )} */}
           </div>
           <div className="flex items-center space-x-2">
             {isAdmin ? (
               <>
-                <Button variant="outline" size="sm" onClick={() => onEdit(shift)}>
+                <Button variant="outline" size="sm" onClick={() => onEdit(shift)} disabled={shiftContextLoading}>
                   <Edit className="h-4 w-4 mr-1" /> Edit
                 </Button>
-                <Button variant="destructive" size="sm" onClick={() => onDelete(shift.id)}>
+                <Button variant="destructive" size="sm" onClick={() => onDelete(shift.id)} disabled={shiftContextLoading}>
                   <Trash2 className="h-4 w-4 mr-1" /> Delete
                 </Button>
               </>
             ) : userIsSignedUp ? (
-              <Button variant="outline" size="sm" onClick={handleCancel}>
+              <Button variant="outline" size="sm" onClick={handleCancel} disabled={shiftContextLoading}>
                 Cancel Signup
               </Button>
             ) : isFull ? (
               <Button size="sm" disabled>
-                Shift Full
+                Shift Taken
               </Button>
             ) : (
-              <Button size="sm" onClick={handleSignUp}>
+              <Button size="sm" onClick={handleSignUp} disabled={shiftContextLoading}>
                 Sign Up
               </Button>
             )}

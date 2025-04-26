@@ -8,29 +8,28 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/components/ui/use-toast';
 import { CalendarIcon, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export default function AddShiftForm({ initialDate = null, onSuccess }) {
-  const { createShift } = useShifts();
+export default function AddShiftForm({ initialData = null, onSuccess }) {
+  const { createShift, updateShift } = useShifts();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Set default date and times
-  const today = initialDate || new Date();
-  const defaultStartTime = format(today, 'HH:mm');
-  const defaultEndTime = format(addHours(today, 2), 'HH:mm');
+  const today = initialData?.date ? new Date(initialData.date) : new Date();
+  const defaultStartTime = initialData?.startTime ? format(new Date(initialData.startTime), 'HH:mm') : format(today, 'HH:mm');
+  const defaultEndTime = initialData?.endTime ? format(new Date(initialData.endTime), 'HH:mm') : format(addHours(today, 1), 'HH:mm'); // Default to 1 hour shift
   
   const form = useForm({
     defaultValues: {
-      title: '',
-      description: '',
-      location: '',
+      title: initialData?.title || '',
+      description: initialData?.description || '',
+      location: initialData?.location || '',
       date: today,
       startTime: defaultStartTime,
       endTime: defaultEndTime,
-      maxVolunteers: 1,
+      maxVolunteers: 1, // Hardcode to 1
     },
   });
   
@@ -47,32 +46,44 @@ export default function AddShiftForm({ initialDate = null, onSuccess }) {
       const [endHours, endMinutes] = data.endTime.split(':').map(Number);
       endDateTime.setHours(endHours, endMinutes);
       
-      // Create shift payload
+      // Create or Update shift payload
       const shiftData = {
         title: data.title,
         description: data.description,
         location: data.location,
         startTime: startDateTime.toISOString(),
         endTime: endDateTime.toISOString(),
-        maxVolunteers: Number(data.maxVolunteers),
+        maxVolunteers: 1, // Hardcode to 1
+        // Include group_id if applicable
+        // group_id: initialData?.group_id || null, 
       };
-      
-      await createShift(shiftData);
-      toast({
-        title: "Success",
-        description: "Shift created successfully",
-      });
+
+      if (initialData?.id) {
+        // Update existing shift
+        await updateShift(initialData.id, shiftData);
+        toast({
+          title: "Success",
+          description: "Shift updated successfully",
+        });
+      } else {
+        // Create new shift
+        await createShift(shiftData);
+        toast({
+          title: "Success",
+          description: "Shift created successfully",
+        });
+      }
       
       if (onSuccess) {
         onSuccess();
       }
       
-      form.reset();
+      form.reset(); // Reset form after successful submission
     } catch (error) {
-      console.error('Error creating shift:', error);
+      console.error('Error saving shift:', error);
       toast({
         title: "Error",
-        description: "Failed to create shift. Please try again.",
+        description: initialData?.id ? "Failed to update shift." : "Failed to create shift.",
         variant: "destructive",
       });
     } finally {
@@ -127,82 +138,45 @@ export default function AddShiftForm({ initialDate = null, onSuccess }) {
           )}
         />
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="date"
-            rules={{ required: "Date is required" }}
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Date</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full pl-3 text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        {field.value ? (
-                          format(field.value, "PPP")
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="maxVolunteers"
-            rules={{ 
-              required: "Number of volunteers is required",
-              min: {
-                value: 1,
-                message: "Minimum of 1 volunteer required"
-              }
-            }}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Number of Volunteers Needed</FormLabel>
-                <Select 
-                  onValueChange={field.onChange} 
-                  defaultValue={String(field.value)}
-                >
+        <FormField
+          control={form.control}
+          name="date"
+          rules={{ required: "Date is required" }}
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <FormLabel>Date</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
                   <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select number of volunteers" />
-                    </SelectTrigger>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full pl-3 text-left font-normal",
+                        !field.value && "text-muted-foreground"
+                      )}
+                    >
+                      {field.value ? (
+                        format(field.value, "PPP")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
                   </FormControl>
-                  <SelectContent>
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
-                      <SelectItem key={num} value={String(num)}>
-                        {num}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={field.value}
+                    onSelect={field.onChange}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
@@ -230,7 +204,8 @@ export default function AddShiftForm({ initialDate = null, onSuccess }) {
               required: "End time is required",
               validate: value => {
                 const startTime = form.getValues('startTime');
-                return value > startTime || "End time must be after start time";
+                // Ensure validation handles potential null/undefined startTime
+                return !startTime || value > startTime || "End time must be after start time";
               }
             }}
             render={({ field }) => (
@@ -248,19 +223,9 @@ export default function AddShiftForm({ initialDate = null, onSuccess }) {
           />
         </div>
         
-        <div className="flex justify-end space-x-2 pt-2">
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={() => onSuccess?.()}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Creating..." : "Create Shift"}
-          </Button>
-        </div>
+        <Button type="submit" disabled={isSubmitting} className="w-full">
+          {isSubmitting ? 'Saving...' : (initialData?.id ? 'Update Shift' : 'Create Shift')}
+        </Button>
       </form>
     </Form>
   );

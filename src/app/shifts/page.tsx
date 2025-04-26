@@ -1,60 +1,29 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import React from 'react';
 import ShiftList from '@/components/shifts/ShiftList';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CalendarIcon, ListIcon } from 'lucide-react';
-import { useShifts } from '@/contexts/ShiftContext';
-import { ShiftProvider } from '@/contexts/ShiftContext';
+// Import ShiftProvider if it's not wrapping a parent component
+// import { ShiftProvider } from '@/contexts/ShiftContext'; 
+
+// Remove unused imports if ShiftProvider is higher up
+// import { useShifts } from '@/contexts/ShiftContext';
+// import { Skeleton } from '@/components/ui/skeleton';
+// import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+// import { CalendarIcon, ListIcon } from 'lucide-react';
 
 export default function ShiftsPage() {
-  const router = useRouter();
-  const { loading } = useShifts();
-  const [view, setView] = useState<string>('list');
-
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <Skeleton className="h-10 w-40 mb-4" />
-        <Skeleton className="h-[600px] w-full rounded-lg" />
-      </div>
-    );
-  }
+  // No need for local state or context fetching here if ShiftList handles it
+  // const { loading } = useShifts(); // Remove if ShiftList shows its own loading
 
   return (
-    <ShiftProvider>
-      <main className="flex min-h-screen flex-col items-center justify-between p-4 md:p-24">
+    // If ShiftProvider is not in layout.js or similar, uncomment it here
+    // <ShiftProvider>
+      <main className="flex min-h-screen flex-col items-center justify-start p-4 md:p-8">
         <div className="w-full max-w-6xl">
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold">Available Shifts</h1>
-          </div>
-
-          <Tabs defaultValue="list" className="w-full" onValueChange={setView}>
-            <TabsList className="mb-4">
-              <TabsTrigger value="list" className="flex items-center">
-                <ListIcon className="h-4 w-4 mr-2" />
-                List
-              </TabsTrigger>
-              <TabsTrigger value="calendar" className="flex items-center">
-                <CalendarIcon className="h-4 w-4 mr-2" />
-                Calendar
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="list">
-              <ShiftList />
-            </TabsContent>
-
-            <TabsContent value="calendar">
-              {/* <ShiftCalendar /> */}
-            </TabsContent>
-          </Tabs>
+          {/* Removed Tabs component - Directly render ShiftList */}
+          <ShiftList />
         </div>
       </main>
-    </ShiftProvider>
+    // </ShiftProvider>
   );
 } 
