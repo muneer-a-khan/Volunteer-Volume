@@ -75,8 +75,8 @@ export default function CheckInPage() {
     if (!userId) return;
     setStatusLoading(true);
     try {
-      const response = await axios.get<{success: boolean, activeCheckIn: ActiveCheckInRecord | null}>('/api/check-in/status');
-      if (response.data.success && response.data.activeCheckIn) {
+      const response = await axios.get(`/api/check-ins/active?userId=${userId}`);
+      if (response.data.activeCheckIn) {
         setActiveCheckInId(response.data.activeCheckIn.id);
         setCheckedInShiftDetails(response.data.activeCheckIn.shift); 
         setNotes(response.data.activeCheckIn.notes || ''); 
@@ -93,7 +93,7 @@ export default function CheckInPage() {
     } finally {
       setStatusLoading(false);
     }
-  }, [userId, toast]); // Added toast to dependencies
+  }, [userId]); // Removed toast from dependencies
 
   // Fetch initial data
   useEffect(() => {
