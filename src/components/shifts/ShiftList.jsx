@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import Link from 'next/link';
 import { format, parseISO, isAfter, isBefore } from 'date-fns';
@@ -14,7 +14,8 @@ export default function ShiftList({ groupId = null }) {
   const { shifts, loading, fetchShifts, signUpForShift, cancelShiftSignup } = useShifts();
   // Hardcoded auth values since we've removed authentication
   const isAdmin = true; // Default to admin for simplicity
-  const dbUser = { id: 'placeholder-user-id' }; // Placeholder user
+  // Use useMemo to prevent dbUser from changing on every render
+  const dbUser = useMemo(() => ({ id: 'placeholder-user-id' }), []); // Placeholder user
 
   const [filter, setFilter] = useState('upcoming');
   const [dateFilter, setDateFilter] = useState('');

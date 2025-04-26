@@ -92,8 +92,8 @@ export default function GroupDetailPage({ id: propId }) {
 
     loadGroupData();
 
-    // Empty dependency array to ensure this only runs once
-  }, [groupId]);
+    // Added missing dependencies
+  }, [groupId, getGroup, getGroupShifts, getGroupVolunteers, dbUser.id, isAdmin]);
 
   const handleJoinGroup = async () => {
     if (!isAuthenticated) {

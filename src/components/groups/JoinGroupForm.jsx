@@ -57,7 +57,7 @@ export default function JoinGroupForm() {
     } else {
       setLoading(false);
     }
-  }, [auth.isAuthenticated]);
+  }, [auth.isAuthenticated, fetchGroups]);
 
   useEffect(() => {
     if (searchTerm === '') {

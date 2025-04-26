@@ -12,12 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 export default function VolunteerDetailPage() {
   const params = useParams();
   const router = useRouter();
-
-  if (!params) {
-    return <div className="container mx-auto px-4 py-8 text-center">Loading...</div>;
-  }
-
-  const volunteerId = params.id as string;
+  const volunteerId = params?.id as string;
 
   const authLoading = false;
   const isAuthenticated = true;

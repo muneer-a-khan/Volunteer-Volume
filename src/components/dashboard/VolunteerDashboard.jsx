@@ -145,9 +145,9 @@ export default function VolunteerDashboard() {
             <Link href="/check-in">Check In/Out</Link>
           </Button>
           {/* Remove Logout Button - handled differently now */}
-          {/* <Button variant="destructive" onClick={() => { /* Implement logout */}}>Logout</Button> */}
+          {/* <Button variant="destructive" onClick={() => { Implement logout }>Logout</Button> */}
+        </div>
       </div>
     </div>
-    </div >
   );
 }

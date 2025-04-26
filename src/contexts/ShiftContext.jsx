@@ -175,7 +175,7 @@ export const ShiftProvider = ({ children }) => {
   useEffect(() => {
     fetchShifts(); // Fetch all upcoming shifts initially
     // fetchMyShifts(); // Fetching user shifts requires ID
-  }, [isAuthenticated]); // Removed userId dependency
+  }, [isAuthenticated, fetchShifts]); // Added fetchShifts dependency
 
   // Provider value
   const value = {
