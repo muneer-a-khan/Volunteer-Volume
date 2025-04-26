@@ -1,266 +1,329 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { toast } from 'react-hot-toast';
+import axios from 'axios';
 import { useGroups } from '../../contexts/GroupContext';
-import Navbar from '../layout/Navbar';
-import Footer from '../layout/Footer';
+import { useAuth } from '../../contexts/AuthContext';
+import { format, parseISO } from 'date-fns';
+import { LoadingSpinner } from '../ui/loading-spinner';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { LoadingSpinner } from '../ui/loading-spinner';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../ui/card';
+import { toast } from 'react-hot-toast';
 
 export default function JoinGroupForm() {
   const router = useRouter();
-  const { groups, loading: groupsLoading, fetchGroups, joinGroup } = useGroups();
   const [searchTerm, setSearchTerm] = useState('');
-  const [filteredGroups, setFilteredGroups] = useState([]);
-  const [joining, setJoining] = useState(false);
   const [inviteCode, setInviteCode] = useState('');
+  const [filteredGroups, setFilteredGroups] = useState([]);
+  const [allGroups, setAllGroups] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [joining, setJoining] = useState(null);
+  const [error, setError] = useState(null);
+  const { joinGroup, fetchGroups } = useGroups();
+  const { isAuthenticated, user } = useAuth();
 
-  // Fetch groups when component mounts
-  useEffect(() => {
-    fetchGroups();
-  }, [fetchGroups]);
-
-  // Filter groups based on search term
-  useEffect(() => {
-    if (!groups) return;
-
-    if (!searchTerm) {
-      // Show all public groups if no search term
-      setFilteredGroups(groups.filter(group => group.isPublic));
-      return;
-    }
-
-    const term = searchTerm.toLowerCase();
-    const filtered = groups.filter(group => {
-      return (
-        group.isPublic && (
-          group.name.toLowerCase().includes(term) ||
-          (group.description && group.description.toLowerCase().includes(term)) ||
-          (group.category && group.category.toLowerCase().includes(term))
-        )
-      );
-    });
-
-    setFilteredGroups(filtered);
-  }, [groups, searchTerm]);
-
-  const handleJoinGroup = async (groupId) => {
-    setJoining(true);
-    
-    try {
-      await joinGroup(groupId);
-      toast.success('Successfully joined the group!');
-      router.push('/groups');
-    } catch (error) {
-      console.error('Error joining group:', error);
-      toast.error(error.message || 'Failed to join group. Please try again.');
-    } finally {
-      setJoining(false);
+  const mockAuthValues = {
+    isAuthenticated: true,
+    loading: false,
+    user: {
+      id: '1',
+      name: 'Demo User',
+      email: 'demo@example.com'
     }
   };
 
-  const handleJoinByInvite = async () => {
+  // For demo purposes - use real auth when available
+  const auth = isAuthenticated !== undefined ? { isAuthenticated, user } : mockAuthValues;
+
+  useEffect(() => {
+    const loadGroups = async () => {
+      try {
+        setLoading(true);
+        const groups = await fetchGroups();
+        setAllGroups(groups);
+        setFilteredGroups(groups);
+      } catch (err) {
+        console.error('Failed to load groups:', err);
+        setError('Failed to load groups. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (auth.isAuthenticated) {
+      loadGroups();
+    } else {
+      setLoading(false);
+    }
+  }, [auth.isAuthenticated]);
+
+  useEffect(() => {
+    if (searchTerm === '') {
+      setFilteredGroups(allGroups);
+    } else {
+      const filtered = allGroups.filter(group => {
+        return (
+          group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (group.description && group.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (group.category && group.category.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+      });
+      setFilteredGroups(filtered);
+    }
+  }, [searchTerm, allGroups]);
+
+  const handleJoinGroup = async (groupId) => {
+    if (!auth.isAuthenticated) {
+      toast.error('You must be logged in to join a group');
+      return;
+    }
+
+    setJoining(groupId);
+    try {
+      await joinGroup(groupId);
+      toast.success('Successfully joined the group!');
+      router.push(`/groups/${groupId}`);
+    } catch (err) {
+      console.error('Error joining group:', err);
+      toast.error(err.response?.data?.message || 'Failed to join group');
+    } finally {
+      setJoining(null);
+    }
+  };
+
+  const handleJoinByInvite = async (e) => {
+    e.preventDefault();
+    
+    if (!auth.isAuthenticated) {
+      toast.error('You must be logged in to join a group');
+      return;
+    }
+
     if (!inviteCode.trim()) {
       toast.error('Please enter an invite code');
       return;
     }
 
-    setJoining(true);
-    
+    setJoining('invite');
     try {
-      // This would typically call a different API endpoint with the invite code
-      await joinGroup(inviteCode); // For now, using the same function
+      const response = await axios.post('/api/groups/join-by-invite', { code: inviteCode.trim() });
       toast.success('Successfully joined the group!');
-      setInviteCode('');
-      router.push('/groups');
-    } catch (error) {
-      console.error('Error joining group:', error);
-      toast.error(error.message || 'Invalid invite code. Please try again.');
+      router.push(`/groups/${response.data.groupId}`);
+    } catch (err) {
+      console.error('Error joining group by invite:', err);
+      toast.error(err.response?.data?.message || 'Invalid or expired invite code');
     } finally {
-      setJoining(false);
+      setJoining(null);
     }
   };
 
-  if (groupsLoading) {
+  if (!auth.isAuthenticated && !auth.loading) {
     return (
-      <>
-        <Navbar />
-        <div className="min-h-screen flex justify-center items-center bg-gray-50">
-          <LoadingSpinner />
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <Card className="overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200">
+            <CardHeader className="bg-gray-50 border-b border-gray-200 pb-4">
+              <CardTitle className="text-2xl font-bold text-center">Join a Group</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 text-center">
+              <p className="text-gray-600 mb-6">
+                You need to sign in or create an account to join volunteer groups.
+              </p>
+              <div className="flex justify-center space-x-4">
+                <Link href="/login">
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition-colors duration-200">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link href="/register">
+                  <Button 
+                    variant="outline"
+                    className="border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 py-2 px-4 rounded-md transition-colors duration-200"
+                  >
+                    Create Account
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-        <Footer />
-      </>
+      </div>
     );
   }
 
   return (
-    <>
-      <Navbar />
-      <div className="min-h-screen bg-gray-50 py-12">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-8">
-            <Link 
-              href="/groups" 
-              className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-              </svg>
-              Back to Groups
-            </Link>
-          </div>
+    <div className="min-h-screen bg-gray-50 py-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-6">
+          <Link
+            href="/groups"
+            className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+            </svg>
+            Back to Groups
+          </Link>
+        </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Join by Invite Code */}
-            <div className="lg:col-span-1">
-              <Card className="overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200">
-                <CardHeader className="bg-gray-50 border-b border-gray-200 pb-4">
-                  <CardTitle className="text-xl">Join with Invite Code</CardTitle>
-                  <CardDescription className="text-gray-600">
-                    Enter an invite code to join a private group
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4 pt-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main content - Public groups */}
+          <div className="lg:col-span-2">
+            <Card className="overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200 mb-8">
+              <CardHeader className="bg-gray-50 border-b border-gray-200 pb-4">
+                <CardTitle className="text-2xl font-bold">Find a Group</CardTitle>
+                <CardDescription className="text-gray-600">
+                  Browse public volunteer groups to join
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="mb-6">
+                  <Input 
+                    type="text"
+                    placeholder="Search by name, description, or category..." 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+
+                {loading ? (
+                  <div className="flex justify-center py-12">
+                    <LoadingSpinner className="h-8 w-8 text-blue-600" />
+                  </div>
+                ) : error ? (
+                  <div className="text-center py-8 text-red-600">
+                    {error}
+                  </div>
+                ) : filteredGroups.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No groups found matching your search.
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {filteredGroups.map(group => (
+                      <Card key={group.id} className="overflow-hidden hover:shadow transition-shadow duration-200">
+                        <CardContent className="p-6">
+                          <div className="flex flex-col sm:flex-row sm:items-start">
+                            <div className="sm:flex-1">
+                              <h3 className="text-lg font-medium text-gray-900 mb-1">{group.name}</h3>
+                              
+                              {group.category && (
+                                <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 mb-2 px-2.5 py-0.5 rounded-full text-xs font-medium">
+                                  {group.category}
+                                </Badge>
+                              )}
+                              
+                              <p className="text-sm text-gray-600 mt-1 line-clamp-2 mb-3">
+                                {group.description?.substring(0, 150) || 'No description available.'}
+                                {group.description?.length > 150 && '...'}
+                              </p>
+                              
+                              <div className="text-xs text-gray-500 mt-1 mb-3 flex items-center flex-wrap gap-2">
+                                <span className="flex items-center">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                  </svg>
+                                  {group._count?.members || 0} members
+                                </span>
+                                
+                                <span className="flex items-center">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                  </svg>
+                                  Created {format(parseISO(group.createdAt), 'MMM d, yyyy')}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            <div className="mt-4 sm:mt-0 sm:ml-4 flex items-center">
+                              <Button
+                                onClick={() => handleJoinGroup(group.id)}
+                                disabled={joining === group.id}
+                                className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition-colors duration-200"
+                              >
+                                {joining === group.id ? (
+                                  <>
+                                    <LoadingSpinner className="h-4 w-4 mr-2" />
+                                    Joining...
+                                  </>
+                                ) : (
+                                  'Join Group'
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* Sidebar - Join by invite */}
+          <div className="lg:col-span-1">
+            <Card className="overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200">
+              <CardHeader className="bg-gray-50 border-b border-gray-200 pb-4">
+                <CardTitle className="text-xl">Have an Invite Code?</CardTitle>
+                <CardDescription className="text-gray-600">
+                  Join a private group directly
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-6">
+                <form onSubmit={handleJoinByInvite} className="space-y-4">
                   <div>
                     <label htmlFor="inviteCode" className="block text-sm font-medium text-gray-700 mb-1">
-                      Invite Code
+                      Enter Invite Code
                     </label>
                     <Input
                       id="inviteCode"
                       type="text"
                       value={inviteCode}
                       onChange={(e) => setInviteCode(e.target.value)}
-                      placeholder="Enter invite code"
-                      className="w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md"
+                      placeholder="ABC123"
+                      className="w-full"
+                      required
                     />
                   </div>
-                </CardContent>
-                <CardFooter className="bg-gray-50 border-t border-gray-200 pt-4">
+                  
                   <Button
-                    onClick={handleJoinByInvite}
-                    disabled={joining || !inviteCode.trim()}
+                    type="submit"
+                    disabled={joining === 'invite'}
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition-colors duration-200"
                   >
-                    {joining ? (
-                      <><LoadingSpinner className="h-4 w-4 mr-2" /> Joining...</>
+                    {joining === 'invite' ? (
+                      <>
+                        <LoadingSpinner className="h-4 w-4 mr-2" />
+                        Joining...
+                      </>
                     ) : (
-                      'Join Group'
+                      'Join with Invite Code'
                     )}
                   </Button>
-                </CardFooter>
-              </Card>
-
-              <div className="mt-6">
-                <Card className="overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200">
-                  <CardHeader className="bg-gray-50 border-b border-gray-200 pb-4">
-                    <CardTitle className="text-xl">Create a Group</CardTitle>
-                    <CardDescription className="text-gray-600">
-                      Don't see a group you like? Create your own!
-                    </CardDescription>
-                  </CardHeader>
-                  <CardFooter className="pt-6 pb-6">
-                    <Button
-                      onClick={() => router.push('/groups/new')}
-                      className="w-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 py-2 px-4 rounded-md transition-colors duration-200"
+                </form>
+                
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <p className="text-sm text-gray-600 mb-4">
+                    Want to create your own volunteer group?
+                  </p>
+                  <Link href="/groups/new">
+                    <Button 
                       variant="outline"
+                      className="w-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 py-2 px-4 rounded-md transition-colors duration-200"
                     >
-                      Create New Group
+                      Create a New Group
                     </Button>
-                  </CardFooter>
-                </Card>
-              </div>
-            </div>
-
-            {/* Public Groups */}
-            <div className="lg:col-span-2">
-              <Card className="overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200">
-                <CardHeader className="bg-gray-50 border-b border-gray-200 pb-4">
-                  <CardTitle className="text-xl">Join a Public Group</CardTitle>
-                  <CardDescription className="text-gray-600">
-                    Browse and join public volunteer groups
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6 pt-6">
-                  {/* Search */}
-                  <div>
-                    <div className="relative">
-                      <Input
-                        type="text"
-                        placeholder="Search groups by name, description, or category"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pr-10 w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md"
-                      />
-                      {searchTerm && (
-                        <button
-                          className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                          onClick={() => setSearchTerm('')}
-                        >
-                          <span className="sr-only">Clear search</span>
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                          </svg>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Groups List */}
-                  {filteredGroups.length > 0 ? (
-                    <div className="space-y-4">
-                      {filteredGroups.map((group) => (
-                        <div key={group.id} className="border border-gray-200 rounded-lg p-5 bg-white hover:shadow-md transition-shadow duration-200">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h3 className="text-lg font-medium text-gray-900">{group.name}</h3>
-                              {group.category && (
-                                <p className="text-sm text-gray-500 mt-1">{group.category}</p>
-                              )}
-                            </div>
-                            <Button
-                              size="sm"
-                              onClick={() => handleJoinGroup(group.id)}
-                              disabled={joining}
-                              className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-md transition-colors duration-200"
-                            >
-                              {joining ? 'Joining...' : 'Join'}
-                            </Button>
-                          </div>
-                          <p className="mt-3 text-sm text-gray-600 line-clamp-2">
-                            {group.description}
-                          </p>
-                          <div className="mt-3 flex items-center text-xs text-gray-500">
-                            <span className="flex items-center">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                              </svg>
-                              {group._count?.members || 0} members
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                      </svg>
-                      <h3 className="mt-2 text-sm font-medium text-gray-900">No groups found</h3>
-                      <p className="mt-1 text-sm text-gray-500">
-                        {searchTerm ? `No groups match "${searchTerm}"` : 'No public groups available to join'}
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
-      <Footer />
-    </>
+    </div>
   );
 } 
