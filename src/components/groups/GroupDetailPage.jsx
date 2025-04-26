@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'react-hot-toast';
 import GroupAnnouncements from './GroupAnnouncements';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../ui/card';
 
 // Hardcoded mock user for demo purposes
 const mockUser = {
@@ -160,7 +161,7 @@ export default function GroupDetailPage({ id: propId }) {
         <div className="mb-6">
           <Link
             href="/groups"
-            className="inline-flex items-center text-sm font-medium text-vadm-blue hover:text-blue-700"
+            className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
@@ -170,8 +171,8 @@ export default function GroupDetailPage({ id: propId }) {
         </div>
 
         {/* Group header */}
-        <div className="bg-white shadow rounded-lg overflow-hidden mb-8">
-          <div className="p-6 sm:p-8">
+        <Card className="overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200 mb-8">
+          <CardContent className="p-6 sm:p-8">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between">
               <div className="flex items-center">
                 {group.logoUrl ? (
@@ -183,7 +184,7 @@ export default function GroupDetailPage({ id: propId }) {
                     height={80}
                   />
                 ) : (
-                  <div className="h-20 w-20 rounded-full bg-vadm-blue flex items-center justify-center text-white font-bold text-3xl">
+                  <div className="h-20 w-20 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-3xl">
                     {group.name.charAt(0)}
                   </div>
                 )}
@@ -194,17 +195,181 @@ export default function GroupDetailPage({ id: propId }) {
                   </div>
                 </div>
               </div>
+              
+              <div className="mt-4 md:mt-0">
+                {isMember ? (
+                  <Button
+                    onClick={handleLeaveGroup}
+                    disabled={buttonLoading}
+                    variant="outline"
+                    className="border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 py-2 px-4 rounded-md transition-colors duration-200"
+                  >
+                    {buttonLoading ? <><LoadingSpinner className="h-4 w-4 mr-2" /> Leaving...</> : 'Leave Group'}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleJoinGroup}
+                    disabled={buttonLoading}
+                    className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition-colors duration-200"
+                  >
+                    {buttonLoading ? <><LoadingSpinner className="h-4 w-4 mr-2" /> Joining...</> : 'Join Group'}
+                  </Button>
+                )}
+                
+                {isGroupAdmin && (
+                  <Link href={`/groups/${groupId}/edit`}>
+                    <Button 
+                      className="ml-3 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md transition-colors duration-200"
+                      variant="outline"
+                    >
+                      Edit Group
+                    </Button>
+                  </Link>
+                )}
+              </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        {/* Display content based on active tab */}
-        <div>
-          {/* Basic group details */}
-          <h2 className="text-xl font-bold text-gray-900 mb-4">About</h2>
-          <p className="text-gray-700 whitespace-pre-line mb-6">
-            {group.description || 'No description available.'}
-          </p>
+        {/* Group details */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main content */}
+          <div className="lg:col-span-2">
+            {/* About section */}
+            <Card className="overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200 mb-8">
+              <CardHeader className="bg-gray-50 border-b border-gray-200 pb-4">
+                <CardTitle className="text-xl">About</CardTitle>
+                <CardDescription className="text-gray-600">
+                  Group information and details
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-6">
+                <p className="text-gray-700 whitespace-pre-line">
+                  {group.description || 'No description available.'}
+                </p>
+                
+                {group.category && (
+                  <div className="mt-4">
+                    <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 px-2.5 py-0.5 rounded-full text-xs font-medium">
+                      {group.category}
+                    </Badge>
+                  </div>
+                )}
+                
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <h3 className="text-md font-medium text-gray-900 mb-2">Group details</h3>
+                  <dl className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
+                    <div className="sm:col-span-1">
+                      <dt className="text-sm font-medium text-gray-500">Status</dt>
+                      <dd className="mt-1 text-sm text-gray-900 capitalize">{group.status?.toLowerCase() || 'Active'}</dd>
+                    </div>
+                    <div className="sm:col-span-1">
+                      <dt className="text-sm font-medium text-gray-500">Visibility</dt>
+                      <dd className="mt-1 text-sm text-gray-900">{group.isPublic ? 'Public' : 'Private'}</dd>
+                    </div>
+                    <div className="sm:col-span-1">
+                      <dt className="text-sm font-medium text-gray-500">Created</dt>
+                      <dd className="mt-1 text-sm text-gray-900">
+                        {group.createdAt ? format(parseISO(group.createdAt), 'PPP') : 'Unknown'}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Shifts section */}
+            {shifts.length > 0 && (
+              <Card className="overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200 mb-8">
+                <CardHeader className="bg-gray-50 border-b border-gray-200 pb-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <CardTitle className="text-xl">Upcoming Shifts</CardTitle>
+                      <CardDescription className="text-gray-600">
+                        Volunteer opportunities
+                      </CardDescription>
+                    </div>
+                    {isMember && (
+                      <Link href={`/shifts/new?groupId=${groupId}`}>
+                        <Button className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition-colors duration-200">
+                          Create Shift
+                        </Button>
+                      </Link>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <ShiftList shifts={shifts.slice(0, 3)} group={group} showGroup={false} />
+                  
+                  {shifts.length > 3 && (
+                    <div className="mt-4 text-center">
+                      <Link 
+                        href={`/shifts?groupId=${groupId}`}
+                        className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                      >
+                        View all {shifts.length} shifts
+                      </Link>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+          
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
+            {/* Members Card */}
+            <Card className="overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200 mb-8">
+              <CardHeader className="bg-gray-50 border-b border-gray-200 pb-4">
+                <CardTitle className="text-xl">Members</CardTitle>
+                <CardDescription className="text-gray-600">
+                  {group._count?.members || 0} people
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-6">
+                <MemberList members={volunteers.slice(0, 5)} isAdmin={isGroupAdmin} />
+                
+                {volunteers.length > 5 && (
+                  <div className="mt-4 text-center">
+                    <Link 
+                      href={`/groups/${groupId}/members`}
+                      className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                    >
+                      View all {volunteers.length} members
+                    </Link>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            {/* Admin Actions */}
+            {isGroupAdmin && (
+              <Card className="overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200">
+                <CardHeader className="bg-gray-50 border-b border-gray-200 pb-4">
+                  <CardTitle className="text-xl">Admin Actions</CardTitle>
+                </CardHeader>
+                <CardContent className="p-6 space-y-4">
+                  <Link href={`/groups/${groupId}/invite`}>
+                    <Button 
+                      className="w-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 py-2 px-4 rounded-md transition-colors duration-200"
+                      variant="outline"
+                    >
+                      Manage Invites
+                    </Button>
+                  </Link>
+                  
+                  <Link href={`/groups/${groupId}/reports`}>
+                    <Button 
+                      className="w-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 py-2 px-4 rounded-md transition-colors duration-200"
+                      variant="outline"
+                    >
+                      Generate Reports
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
       </div>
     </div>

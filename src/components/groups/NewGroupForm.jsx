@@ -80,7 +80,7 @@ export default function NewGroupForm() {
             </Link>
           </div>
 
-          <div className="bg-white shadow rounded-lg overflow-hidden">
+          <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200">
             <div className="px-6 py-8">
               <h1 className="text-2xl font-bold text-gray-900 mb-6">Create New Group</h1>
 
@@ -99,7 +99,7 @@ export default function NewGroupForm() {
                       maxLength: { value: 50, message: 'Group name cannot exceed 50 characters' }
                     })}
                     placeholder="Enter group name"
-                    className={errors.name ? 'border-red-500' : ''}
+                    className={`w-full ${errors.name ? 'border-red-500' : 'border-gray-300'} focus:border-blue-500 focus:ring-blue-500 rounded-md`}
                   />
                   {errors.name && (
                     <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
@@ -119,7 +119,7 @@ export default function NewGroupForm() {
                     })}
                     placeholder="Enter group description"
                     rows={4}
-                    className={errors.description ? 'border-red-500' : ''}
+                    className={`w-full ${errors.description ? 'border-red-500' : 'border-gray-300'} focus:border-blue-500 focus:ring-blue-500 rounded-md`}
                   />
                   {errors.description && (
                     <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
@@ -136,6 +136,7 @@ export default function NewGroupForm() {
                     type="text"
                     {...register('category')}
                     placeholder="Enter group category"
+                    className="w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md"
                   />
                 </div>
 
@@ -172,8 +173,9 @@ export default function NewGroupForm() {
                   <Select 
                     defaultValue="ACTIVE"
                     onValueChange={(value) => register('status').onChange({ target: { value } })}
+                    className="w-full"
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md bg-white">
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -187,7 +189,7 @@ export default function NewGroupForm() {
                 <div className="pt-4">
                   <Button
                     type="submit"
-                    className="w-full"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition-colors duration-200"
                     disabled={submitting}
                   >
                     {submitting ? (

@@ -116,7 +116,7 @@ export default function JoinGroupForm() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Join by Invite Code */}
             <div className="lg:col-span-1">
-              <Card className="overflow-hidden shadow-sm border border-gray-200">
+              <Card className="overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200">
                 <CardHeader className="bg-gray-50 border-b border-gray-200 pb-4">
                   <CardTitle className="text-xl">Join with Invite Code</CardTitle>
                   <CardDescription className="text-gray-600">
@@ -134,7 +134,7 @@ export default function JoinGroupForm() {
                       value={inviteCode}
                       onChange={(e) => setInviteCode(e.target.value)}
                       placeholder="Enter invite code"
-                      className="w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                      className="w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md"
                     />
                   </div>
                 </CardContent>
@@ -142,7 +142,7 @@ export default function JoinGroupForm() {
                   <Button
                     onClick={handleJoinByInvite}
                     disabled={joining || !inviteCode.trim()}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition-colors duration-200"
                   >
                     {joining ? (
                       <><LoadingSpinner className="h-4 w-4 mr-2" /> Joining...</>
@@ -154,7 +154,7 @@ export default function JoinGroupForm() {
               </Card>
 
               <div className="mt-6">
-                <Card className="overflow-hidden shadow-sm border border-gray-200">
+                <Card className="overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200">
                   <CardHeader className="bg-gray-50 border-b border-gray-200 pb-4">
                     <CardTitle className="text-xl">Create a Group</CardTitle>
                     <CardDescription className="text-gray-600">
@@ -164,7 +164,7 @@ export default function JoinGroupForm() {
                   <CardFooter className="pt-6 pb-6">
                     <Button
                       onClick={() => router.push('/groups/new')}
-                      className="w-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                      className="w-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 py-2 px-4 rounded-md transition-colors duration-200"
                       variant="outline"
                     >
                       Create New Group
@@ -176,7 +176,7 @@ export default function JoinGroupForm() {
 
             {/* Public Groups */}
             <div className="lg:col-span-2">
-              <Card className="overflow-hidden shadow-sm border border-gray-200">
+              <Card className="overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200">
                 <CardHeader className="bg-gray-50 border-b border-gray-200 pb-4">
                   <CardTitle className="text-xl">Join a Public Group</CardTitle>
                   <CardDescription className="text-gray-600">
@@ -192,7 +192,7 @@ export default function JoinGroupForm() {
                         placeholder="Search groups by name, description, or category"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pr-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        className="pr-10 w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md"
                       />
                       {searchTerm && (
                         <button
@@ -224,7 +224,7 @@ export default function JoinGroupForm() {
                               size="sm"
                               onClick={() => handleJoinGroup(group.id)}
                               disabled={joining}
-                              className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded"
+                              className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-md transition-colors duration-200"
                             >
                               {joining ? 'Joining...' : 'Join'}
                             </Button>
