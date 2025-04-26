@@ -3,25 +3,30 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { Prisma } from '@prisma/client';
-import { mapSnakeToCamel } from '@/lib/map-utils';
 
+// Define the type for the CheckIn payload including shifts initially
+type CheckInWithShifts = Prisma.check_insGetPayload<{ include: { shifts: true } }>;
+// Define the type for the payload we actually send (without shifts)
+type CheckInResponsePayload = Omit<CheckInWithShifts, 'shifts'>;
+
+// Update ResponseData interface
 interface ResponseData {
   success: boolean;
-  message: string;
-  activeCheckIn?: any; // The active check-in record with shift details
+  data?: CheckInResponsePayload | null; // Use the specific payload type, make optional
+  message?: string; // Keep message optional, mainly for errors
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ResponseData>) {
   if (req.method !== 'GET') {
-    return res.status(405).json({ success: false, message: 'Method not allowed' });
+    // Error response
+    return res.status(405).json({ success: false, message: 'Method Not Allowed' });
   }
 
-  // --- Authentication Check --- 
+  // --- Authentication Check ---
   const session = await getServerSession(req, res, authOptions);
   if (!session?.user?.id) {
-    // Return success: false but status 200 if just checking status anonymously?
-    // Or require login? Let's require login.
-    return res.status(401).json({ success: false, message: 'Unauthorized. Please log in.' });
+    // Error response
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
   }
   const userId = session.user.id;
   // --- End Authentication Check ---
@@ -44,20 +49,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     });
 
     if (!checkIn) {
+      // Success response with null data - This is now valid according to the updated interface
       return res.status(200).json({ success: true, data: null });
     }
 
     // Destructure to omit the 'shifts' property before sending
     const { shifts, ...responsePayload } = checkIn;
 
-    return res.status(200).json({ 
-      success: true, 
-      data: responsePayload // Send the object without the shifts property
+    // Success response with data payload - This is also valid now
+    return res.status(200).json({
+      success: true,
+      data: responsePayload
     });
 
   } catch (error) {
     console.error('Error fetching active check-in status:', error);
-    res.status(500).json({ success: false, message: 'Internal server error fetching status' });
+    // Error response
+    res.status(500).json({ success: false, message: 'Internal Server Error' });
   } finally {
     await prisma.$disconnect();
   }
