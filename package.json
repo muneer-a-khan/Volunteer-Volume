@@ -17,7 +17,8 @@
     "prisma:push": "prisma db push",
     "test": "jest",
     "create-admin": "node scripts/create-root-admin.js",
-    "create-supabase-admin": "node scripts/create-supabase-admin.js"
+    "create-supabase-admin": "node scripts/create-supabase-admin.js",
+    "seed": "node scripts/seed-database.js"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
