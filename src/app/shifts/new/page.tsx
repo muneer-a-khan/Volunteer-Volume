@@ -14,25 +14,25 @@ export default function NewShiftPage() {
 
   if (authLoading) {
     return (
-      
-        <div className="flex justify-center items-center h-screen">
-          <Skeleton className="h-12 w-12 rounded-full" />
-        </div>
+
+      <div className="flex justify-center items-center h-screen">
+        <Skeleton className="h-12 w-12 rounded-full" />
+      </div>
 
     );
   }
-  
+
   return (
-    
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-6">
-           <Link href="/admin/shifts" className="text-blue-600 hover:underline">
-              &larr; Back to Shifts Management
-           </Link>
-        </div>
-        <h1 className="text-3xl font-bold mb-6">Create New Shift</h1>
-        <ShiftForm shift={null} />
+
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-6">
+        <Link href="/admin/shifts" className="text-blue-600 hover:underline">
+          &larr; Back to Shifts Management
+        </Link>
       </div>
+      <h1 className="text-3xl font-bold mb-6">Create New Shift</h1>
+      <ShiftForm shift={null} />
+    </div>
 
   );
 } 

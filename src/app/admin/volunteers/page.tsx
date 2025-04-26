@@ -19,33 +19,33 @@ export default function AdminVolunteersPage() {
 
   if (authLoading) {
     return (
-      
-        <div className="flex justify-center items-center h-screen">
-          <Skeleton className="h-12 w-12 rounded-full" />
-        </div>
+
+      <div className="flex justify-center items-center h-screen">
+        <Skeleton className="h-12 w-12 rounded-full" />
+      </div>
 
     );
   }
-  
+
   // Removed auth checks
 
   return (
-    
-       <div className="container mx-auto px-4 py-8">
-         <div className="flex justify-between items-center mb-8">
-           <h1 className="text-3xl font-bold">Manage Volunteers</h1>
-            <div className="flex space-x-3">
-              <Button asChild>
-                <Link href="/admin/volunteers/new">Add New Volunteer</Link>
-              </Button>
-               <Button variant="outline" asChild>
-                 <Link href="/admin/dashboard">Back to Dashboard</Link>
-               </Button>
-            </div>
-         </div>
-         {/* VolunteerList handles fetching and display */}
-         <VolunteerList /> 
-       </div>
+
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Manage Volunteers</h1>
+        <div className="flex space-x-3">
+          <Button asChild>
+            <Link href="/admin/volunteers/new">Add New Volunteer</Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/admin/dashboard">Back to Dashboard</Link>
+          </Button>
+        </div>
+      </div>
+      {/* VolunteerList handles fetching and display */}
+      <VolunteerList />
+    </div>
 
   );
 } 
