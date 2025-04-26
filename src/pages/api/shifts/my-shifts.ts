@@ -27,7 +27,7 @@ export default async function handler(
         // Need a userId to fetch specific user shifts.
         // Cannot proceed without authentication.
         return res.status(501).json({ message: 'My Shifts requires authentication (currently disabled)' });
-        
+
         /* Original logic requiring userId:
         const userShifts = await prisma.shifts.findMany({
             where: {

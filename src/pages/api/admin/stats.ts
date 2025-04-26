@@ -22,10 +22,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 status: { not: 'CANCELLED' },
             },
         });
-        
+
         // Example: Count pending applications
         const pendingApplications = await prisma.applications.count({
-             where: { status: 'PENDING' }
+            where: { status: 'PENDING' }
         });
 
         const stats = {

@@ -19,8 +19,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 minutes: true,
             },
             orderBy: [
-                 { _sum: { hours: 'desc' } }, // Order by hours first
-                 { _sum: { minutes: 'desc' } } // Then by minutes
+                { _sum: { hours: 'desc' } }, // Order by hours first
+                { _sum: { minutes: 'desc' } } // Then by minutes
             ],
             take: 5, // Limit to top 5
         });

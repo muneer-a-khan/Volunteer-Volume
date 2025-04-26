@@ -16,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
   try {
     await prisma.$connect();
-    
+
     // Need a userId to fetch stats for.
     // Cannot proceed without authentication to identify the user.
     return res.status(501).json({ message: 'Volunteer Stats requires authentication (currently disabled)' });
