@@ -9,6 +9,7 @@ interface GroupResponse {
     name: string;
     description: string | null;
     logoUrl: string | null;
+    memberCount: number;
 }
 
 export default async function handler(
@@ -32,17 +33,23 @@ export default async function handler(
             where: {
                 active: true,
             },
+            include: {
+              _count: {
+                select: { user_groups: true }
+              }
+            },
             orderBy: {
                 name: 'asc'
             }
         });
 
         // Format the response
-        const formattedGroups = groups.map((groups) => ({
-            id: groups.id,
-            name: groups.name,
-            description: groups.description,
-            logoUrl: groups.logo_url
+        const formattedGroups = groups.map((group) => ({
+            id: group.id,
+            name: group.name,
+            description: group.description,
+            logoUrl: group.logo_url,
+            memberCount: group._count?.user_groups ?? 0
         }));
 
         return res.status(200).json(mapSnakeToCamel(formattedGroups));
