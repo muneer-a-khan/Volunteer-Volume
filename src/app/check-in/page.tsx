@@ -17,8 +17,8 @@ import { AuthContextType, SessionUser } from '@/types/auth';
 interface ActiveCheckInShift {
   id: string;
   title: string;
-  startTime: string; // Expect camelCase here now
-  endTime: string;   // Expect camelCase here now
+  startTime: string; 
+  endTime: string;   
 }
 
 // Interface for the active check-in record from the API
@@ -29,26 +29,37 @@ interface ActiveCheckInRecord {
   shift: ActiveCheckInShift | null; 
 }
 
-// Define a type for the shift object *from context*
+// Define a type for the shift object *from context* - Assume API returns snake_case
 interface ContextShift {
   id: string;
   title: string;
-  startTime: string; // camelCase expected from context based on local definition
-  endTime: string;   // camelCase expected from context based on local definition
-  // Add other properties if needed
+  start_time: string; // Use snake_case matching common API/Prisma naming
+  end_time: string;   // Use snake_case matching common API/Prisma naming
+  // Add other properties if needed (e.g., location, description)
 }
+
+// Explicit type for the checkInForShift function based on ShiftContext.jsx
+type CheckInFunctionType = (shiftId: string, volunteerId: string, notes?: string) => Promise<ActiveCheckInRecord | null>;
 
 export default function CheckInPage() {
   const { user, isLoading: authLoading } = useAuth();
   const typedUser = user as SessionUser | null;
-  // Use the correct type for myShifts from context
-  const {
-    myShifts, // Assume this is ContextShift[]
-    fetchMyShifts,
-    checkInForShift,
-    checkOutFromShift,
-    loading: shiftsLoading
-  } = useShifts();
+  
+  // Destructure context with explicit type for checkInForShift
+  const { 
+    myShifts, // Assume this is ContextShift[] now
+    fetchMyShifts, 
+    checkInForShift, 
+    checkOutFromShift, 
+    loading: shiftsLoading 
+  } = useShifts() as { 
+    myShifts: ContextShift[]; 
+    fetchMyShifts: () => Promise<void>;
+    checkInForShift: CheckInFunctionType; // Apply explicit type here
+    checkOutFromShift: (checkInId: string, notes?: string) => Promise<any>;
+    loading: boolean;
+  };
+  
   const [selectedShiftId, setSelectedShiftId] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
   const [activeCheckInId, setActiveCheckInId] = useState<string | null>(null);
@@ -67,8 +78,8 @@ export default function CheckInPage() {
       const response = await axios.get<{success: boolean, activeCheckIn: ActiveCheckInRecord | null}>('/api/check-in/status');
       if (response.data.success && response.data.activeCheckIn) {
         setActiveCheckInId(response.data.activeCheckIn.id);
-        setCheckedInShiftDetails(response.data.activeCheckIn.shift); // Store the embedded shift details
-        setNotes(response.data.activeCheckIn.notes || ''); // Pre-fill notes if editing
+        setCheckedInShiftDetails(response.data.activeCheckIn.shift); 
+        setNotes(response.data.activeCheckIn.notes || ''); 
       } else {
         setActiveCheckInId(null);
         setCheckedInShiftDetails(null);
@@ -82,13 +93,13 @@ export default function CheckInPage() {
     } finally {
       setStatusLoading(false);
     }
-  }, [userId]); // Depend on userId
+  }, [userId, toast]); // Added toast to dependencies
 
   // Fetch initial data
   useEffect(() => {
     if (userId) {
       fetchMyShifts();
-      fetchActiveCheckIn(); // Fetch status when userId is available
+      fetchActiveCheckIn(); 
     }
   }, [userId, fetchMyShifts, fetchActiveCheckIn]);
 
@@ -99,42 +110,38 @@ export default function CheckInPage() {
     }
     setIsSubmitting(true);
     try {
-      // Call checkInForShift - assume it returns the check-in record directly or null
-      // Cast the result to the expected record type
-      const checkInRecord = await checkInForShift(selectedShiftId, userId, notes) as ActiveCheckInRecord | null;
+      // Call checkInForShift with 3 arguments, using the explicitly typed function
+      const checkInRecord = await checkInForShift(selectedShiftId, userId, notes);
 
-      if (checkInRecord) { // Check if a valid record was returned
-         setActiveCheckInId(checkInRecord.id); // Use the ID from the returned record
+      if (checkInRecord) { 
+         setActiveCheckInId(checkInRecord.id); 
          
-         // Use the embedded shift details if available in the returned record
-         const returnedShift = checkInRecord.shift;
+         const returnedShift = checkInRecord.shift; // This is ActiveCheckInShift (camelCase)
          if (returnedShift) {
-             setCheckedInShiftDetails(returnedShift);
+             setCheckedInShiftDetails(returnedShift); // Directly use the returned camelCase shift
          } else {
-             // Fallback: Find the shift details from myShifts if not embedded
+             // Fallback: Find shift in myShifts (which has snake_case)
              const shiftDetails = myShifts.find((s: ContextShift) => s.id === selectedShiftId);
              if (shiftDetails) {
+               // Map snake_case to camelCase for the state
                setCheckedInShiftDetails({
                  id: shiftDetails.id,
                  title: shiftDetails.title,
-                 startTime: shiftDetails.startTime,
-                 endTime: shiftDetails.endTime,
+                 startTime: shiftDetails.start_time, 
+                 endTime: shiftDetails.end_time,   
                });
              } else {
-               setCheckedInShiftDetails(null); // Shift not found
+               setCheckedInShiftDetails(null); 
              }
          }
          setNotes(checkInRecord.notes || '');
-         setSelectedShiftId(''); // Clear selection
+         setSelectedShiftId(''); 
       } else {
-         // If checkInRecord is null, it might indicate a failure handled by the context's toast
-         // Refetch status as a fallback, although the context might already show an error.
          fetchActiveCheckIn(); 
       }
     } catch (error) {
-      // Error is caught and toast shown in the context function,
-      // but we can log it here if needed and ensure state is cleared.
       console.error("Check-in failed on page:", error);
+      // Reset state on error
       setActiveCheckInId(null);
       setCheckedInShiftDetails(null);
       setNotes('');
@@ -151,21 +158,37 @@ export default function CheckInPage() {
     };
     setIsSubmitting(true);
     try {
-      await checkOutFromShift(activeCheckInId, notes);
+      // Ensure checkOutFromShift exists before calling
+      if (checkOutFromShift) {
+        await checkOutFromShift(activeCheckInId, notes); 
+      } else {
+        throw new Error("checkOutFromShift function not available from context");
+      }
       setNotes('');
-      setActiveCheckInId(null); // Clear active check-in
+      setActiveCheckInId(null); 
       setCheckedInShiftDetails(null);
-      // No need to fetchMyShifts here unless it affects the list display
     } catch (error) {
-       // Error toast handled in context
+       console.error("Checkout error:", error);
+       // Type check the error before accessing message
+       let errorMessage = "Failed to check out.";
+       if (error instanceof Error) {
+         errorMessage = error.message;
+       } else if (typeof error === 'string') {
+         errorMessage = error;
+       }
+       toast({ 
+         title: "Error", 
+         description: errorMessage, 
+         variant: "destructive" 
+       });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Filter shifts for the dropdown - use ContextShift type
-  const upcomingUserShifts = myShifts.filter((shift: ContextShift) =>
-    shift.startTime && new Date(shift.startTime) >= new Date()
+  // Filter shifts for the dropdown - use snake_case from ContextShift
+  const upcomingUserShifts = myShifts.filter((shift: ContextShift) => 
+    shift.start_time && new Date(shift.start_time) >= new Date()
   );
 
   // Combined loading state
@@ -177,7 +200,6 @@ export default function CheckInPage() {
     return <div className="text-center py-10">Please log in to check in or out.</div>;
   }
 
-  // Use the fetched activeCheckInId to determine current status
   const isCurrentlyCheckedIn = !!activeCheckInId;
 
   return (
@@ -192,7 +214,6 @@ export default function CheckInPage() {
             <div>
               <h3 className="text-lg font-semibold mb-2">Currently Checked In:</h3>
               <p>Shift: {checkedInShiftDetails.title}</p>
-              {/* Use camelCase startTime from checkedInShiftDetails */}
               <p>Time: {checkedInShiftDetails.startTime ? format(parseISO(checkedInShiftDetails.startTime), 'Pp') : 'N/A'}</p>
               <Textarea
                 placeholder="Add or update check-out notes (optional)"
@@ -202,7 +223,7 @@ export default function CheckInPage() {
               />
               <Button
                 onClick={handleCheckOut}
-                disabled={isSubmitting || shiftsLoading} // Disable if submitting or shifts are loading
+                disabled={isSubmitting || shiftsLoading}
                 className="w-full mt-4"
               >
                 {isSubmitting ? <LoadingSpinner size="sm" /> : 'Check Out'}
@@ -212,26 +233,27 @@ export default function CheckInPage() {
             // Check-in View
             <div>
               <h3 className="text-lg font-semibold mb-4">Select Shift to Check In:</h3>
-              {/* Disable select if shifts are loading */}
               <Select value={selectedShiftId} onValueChange={setSelectedShiftId} disabled={shiftsLoading}>
                 <SelectTrigger>
                   <SelectValue placeholder={shiftsLoading ? "Loading shifts..." : "Select your upcoming shift..."} />
                 </SelectTrigger>
                 <SelectContent>
-                  {!shiftsLoading && upcomingUserShifts.length > 0 ? (
-                    // Use ContextShift in the map function as well
-                    upcomingUserShifts.map((shift: ContextShift) => (
-                      <SelectItem key={shift.id} value={shift.id}>
-                        {/* Use camelCase startTime from ContextShift */}
-                        {shift.title} ({shift.startTime ? format(parseISO(shift.startTime), 'MMM d, p') : 'Invalid Date'})
-                      </SelectItem>
-                    ))
-                  ) : !shiftsLoading ? (
-                    <div className="p-4 text-center text-muted-foreground">You have no upcoming shifts.</div>
-                  ) : null /* Don't show anything while loading */} 
+                  {!shiftsLoading && upcomingUserShifts.length > 0 
+                    ? upcomingUserShifts.map((shift: ContextShift) => (
+                        <SelectItem key={shift.id} value={shift.id}>
+                          {shift.title} ({shift.start_time ? format(parseISO(shift.start_time), 'MMM d, p') : 'Invalid Date'})
+                        </SelectItem>
+                      )) 
+                    : !shiftsLoading 
+                      ? (
+                          <div className="p-4 text-center text-muted-foreground">
+                            You have no upcoming shifts.
+                          </div>
+                        )
+                      : null /* Handle loading case - render nothing */
+                  }
                 </SelectContent>
               </Select>
-
               <Textarea
                 placeholder="Add check-in notes (optional)"
                 value={notes}
