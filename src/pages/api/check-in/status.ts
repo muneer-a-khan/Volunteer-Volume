@@ -30,43 +30,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     await prisma.$connect();
 
     // Find the active check-in for the user (check_out_time is null)
-    const activeCheckIn = await prisma.check_ins.findFirst({
+    const checkIn = await prisma.check_ins.findFirst({
       where: {
         user_id: userId,
         check_out_time: null, // Key condition for active check-in
       },
       include: {
-        shifts: { // Include related shift data
-          select: { 
-            id: true, 
-            title: true, 
-            start_time: true, 
-            end_time: true 
-          } 
-        },
+        shifts: true, // Include shifts temporarily
       },
       orderBy: {
         check_in_time: 'desc' // Get the most recent active one if somehow multiple exist
       }
     });
 
-    if (activeCheckIn) {
-      // Map keys if necessary (depends if you map on client or want consistent API)
-      const result = {
-        ...activeCheckIn, // Keep check_in id, check_in_time etc.
-        shift: activeCheckIn.shifts ? mapSnakeToCamel(activeCheckIn.shifts) : null,
-      };
-      // Don't send the nested 'shifts' property from the include
-      delete result.shifts; 
-      
-      return res.status(200).json({ 
-        success: true, 
-        message: 'Active check-in found', 
-        activeCheckIn: result
-      });
-    } else {
-      return res.status(200).json({ success: true, message: 'No active check-in found', activeCheckIn: null });
+    if (!checkIn) {
+      return res.status(200).json({ success: true, data: null });
     }
+
+    // Destructure to omit the 'shifts' property before sending
+    const { shifts, ...responsePayload } = checkIn;
+
+    return res.status(200).json({ 
+      success: true, 
+      data: responsePayload // Send the object without the shifts property
+    });
 
   } catch (error) {
     console.error('Error fetching active check-in status:', error);
