@@ -22,7 +22,7 @@ export default function VolunteerDashboard() {
       try {
         // Assume API endpoints exist and can identify user (e.g., via session/cookie)
         const [statsResponse, shiftsResponse] = await Promise.all([
-          axios.get('/api/dashboard/volunteer/stats'), 
+          axios.get('/api/dashboard/volunteer/stats'),
           axios.get('/api/dashboard/volunteer/upcoming-shifts')
         ]);
         setStats(statsResponse.data);
@@ -138,16 +138,16 @@ export default function VolunteerDashboard() {
           <Button asChild variant="outline">
             <Link href="/profile">Update My Profile</Link>
           </Button>
-           <Button asChild variant="outline">
-             <Link href="/groups">View Groups</Link>
-           </Button>
-            <Button asChild variant="outline">
-              <Link href="/check-in">Check In/Out</Link>
-            </Button>
-           {/* Remove Logout Button - handled differently now */}
-           {/* <Button variant="destructive" onClick={() => { /* Implement logout */ }}>Logout</Button> */}
-        </div>
+          <Button asChild variant="outline">
+            <Link href="/groups">View Groups</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/check-in">Check In/Out</Link>
+          </Button>
+          {/* Remove Logout Button - handled differently now */}
+          {/* <Button variant="destructive" onClick={() => { /* Implement logout */}}>Logout</Button> */}
       </div>
     </div>
+    </div >
   );
 }

@@ -130,33 +130,33 @@ export default function VolunteerList({ initialFilter = 'active', groupId = null
       setVolunteers(prev => prev.map(v => v.id === userId ? { ...v, active: false } : v));
     } catch (err) { toast.error('Failed to deactivate'); }
   };
-  
+
   const handleActivate = async (userId: string) => {
-     if (!window.confirm('Are you sure you want to reactivate this volunteer?')) return;
-     try {
-       // await axios.put(`/api/admin/users/${userId}/activate`);
-       toast.success('Volunteer reactivated (API call commented out)');
-       setVolunteers(prev => prev.map(v => v.id === userId ? { ...v, active: true } : v));
-     } catch (err) { toast.error('Failed to reactivate'); }
-   };
+    if (!window.confirm('Are you sure you want to reactivate this volunteer?')) return;
+    try {
+      // await axios.put(`/api/admin/users/${userId}/activate`);
+      toast.success('Volunteer reactivated (API call commented out)');
+      setVolunteers(prev => prev.map(v => v.id === userId ? { ...v, active: true } : v));
+    } catch (err) { toast.error('Failed to reactivate'); }
+  };
 
   const handlePromoteAdmin = async (userId: string) => {
-     if (!window.confirm('Promote this user to ADMIN?')) return;
-     try {
-       // await axios.put(`/api/admin/users/${userId}/promote`, { role: 'ADMIN' });
-       toast.success('Volunteer promoted (API call commented out)');
-       setVolunteers(prev => prev.map(v => v.id === userId ? { ...v, role: 'ADMIN' } : v));
-     } catch (err) { toast.error('Failed to promote'); }
-   };
-   
-   const handleDemoteVolunteer = async (userId: string) => {
-     if (!window.confirm('Demote this user to VOLUNTEER?')) return;
-     try {
-       // await axios.put(`/api/admin/users/${userId}/demote`, { role: 'VOLUNTEER' });
-       toast.success('Admin demoted (API call commented out)');
-       setVolunteers(prev => prev.map(v => v.id === userId ? { ...v, role: 'VOLUNTEER' } : v));
-     } catch (err) { toast.error('Failed to demote'); }
-   };
+    if (!window.confirm('Promote this user to ADMIN?')) return;
+    try {
+      // await axios.put(`/api/admin/users/${userId}/promote`, { role: 'ADMIN' });
+      toast.success('Volunteer promoted (API call commented out)');
+      setVolunteers(prev => prev.map(v => v.id === userId ? { ...v, role: 'ADMIN' } : v));
+    } catch (err) { toast.error('Failed to promote'); }
+  };
+
+  const handleDemoteVolunteer = async (userId: string) => {
+    if (!window.confirm('Demote this user to VOLUNTEER?')) return;
+    try {
+      // await axios.put(`/api/admin/users/${userId}/demote`, { role: 'VOLUNTEER' });
+      toast.success('Admin demoted (API call commented out)');
+      setVolunteers(prev => prev.map(v => v.id === userId ? { ...v, role: 'VOLUNTEER' } : v));
+    } catch (err) { toast.error('Failed to demote'); }
+  };
 
   // Render loading state
   if (loading) {
@@ -250,11 +250,11 @@ export default function VolunteerList({ initialFilter = 'active', groupId = null
                       {volunteer.role}
                     </Badge>
                   </TableCell>
-                   <TableCell>
-                     <Badge variant={volunteer.active ? "outline-green" : "outline-red"}>
-                       {volunteer.active ? 'Active' : 'Inactive'}
-                     </Badge>
-                   </TableCell>
+                  <TableCell>
+                    <Badge variant={volunteer.active ? "outline-green" : "outline-red"}>
+                      {volunteer.active ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </TableCell>
                   <TableCell>{new Date(volunteer.created_at).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <DropdownMenu>
@@ -266,27 +266,27 @@ export default function VolunteerList({ initialFilter = 'active', groupId = null
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
-                           <Link href={`/admin/volunteers/${volunteer.id}`}>View Profile</Link>
+                          <Link href={`/admin/volunteers/${volunteer.id}`}>View Profile</Link>
                         </DropdownMenuItem>
                         {volunteer.active ? (
-                           <DropdownMenuItem onClick={() => handleDeactivate(volunteer.id)} className="text-yellow-600">
-                              Deactivate
-                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDeactivate(volunteer.id)} className="text-yellow-600">
+                            Deactivate
+                          </DropdownMenuItem>
                         ) : (
-                           <DropdownMenuItem onClick={() => handleActivate(volunteer.id)} className="text-green-600">
-                              Reactivate
-                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleActivate(volunteer.id)} className="text-green-600">
+                            Reactivate
+                          </DropdownMenuItem>
                         )}
-                         {volunteer.role === 'VOLUNTEER' && (
-                            <DropdownMenuItem onClick={() => handlePromoteAdmin(volunteer.id)}>
-                              Promote to Admin
-                            </DropdownMenuItem>
-                         )}
-                         {volunteer.role === 'ADMIN' && (
-                            <DropdownMenuItem onClick={() => handleDemoteVolunteer(volunteer.id)} className="text-red-600">
-                              Demote to Volunteer
-                            </DropdownMenuItem>
-                         )}
+                        {volunteer.role === 'VOLUNTEER' && (
+                          <DropdownMenuItem onClick={() => handlePromoteAdmin(volunteer.id)}>
+                            Promote to Admin
+                          </DropdownMenuItem>
+                        )}
+                        {volunteer.role === 'ADMIN' && (
+                          <DropdownMenuItem onClick={() => handleDemoteVolunteer(volunteer.id)} className="text-red-600">
+                            Demote to Volunteer
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

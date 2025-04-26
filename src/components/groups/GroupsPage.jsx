@@ -15,7 +15,7 @@ export default function GroupsPage() {
   const [activeTab, setActiveTab] = useState('all');
   const [filteredGroups, setFilteredGroups] = useState([]);
   const router = useRouter();
-  
+
   // Hardcoded authentication for demo purposes
   const isAuthenticated = true;
 
@@ -29,7 +29,7 @@ export default function GroupsPage() {
     if (!groups) return;
 
     let groupsToFilter = activeTab === 'my' ? myGroups : groups;
-    
+
     if (!searchTerm) {
       setFilteredGroups(groupsToFilter);
       return;
@@ -130,8 +130,8 @@ export default function GroupsPage() {
               <p className="text-sm text-gray-500 text-center mb-4">
                 Start a new volunteer group for your organization or cause
               </p>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={handleCreateNewGroup}
                 className="border border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
               >
@@ -162,8 +162,8 @@ export default function GroupsPage() {
                   </div>
                 </CardContent>
                 <CardFooter className="pt-0 bg-gray-50 border-t border-gray-200">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="w-full border border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
                     onClick={() => handleViewGroup(group.id)}
                   >
@@ -174,10 +174,10 @@ export default function GroupsPage() {
             ))
           ) : (
             <div className="col-span-full text-center py-12 text-gray-500">
-              {activeTab === 'my' ? 
-                "You haven't joined any groups yet." : 
-                searchTerm ? 
-                  `No groups found matching "${searchTerm}"` : 
+              {activeTab === 'my' ?
+                "You haven't joined any groups yet." :
+                searchTerm ?
+                  `No groups found matching "${searchTerm}"` :
                   "No groups available."}
             </div>
           )}
@@ -186,8 +186,8 @@ export default function GroupsPage() {
         {/* Join a Group Link */}
         <div className="mt-10 text-center">
           <p className="text-gray-600 mb-4">Looking for a group to join?</p>
-          <Button 
-            variant="link" 
+          <Button
+            variant="link"
             onClick={() => router.push('/groups/join')}
             className="text-blue-600 hover:text-blue-800"
           >

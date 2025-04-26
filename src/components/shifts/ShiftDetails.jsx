@@ -14,7 +14,7 @@ export default function ShiftDetails({ shiftId, onClose }) {
   const { signUpForShift, cancelShiftSignup } = useShifts();
   const isAdmin = true;
   const dbUser = { id: 'placeholder-user-id', role: 'ADMIN' };
-  
+
   const [shift, setShift] = useState(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -107,13 +107,13 @@ export default function ShiftDetails({ shiftId, onClose }) {
   }
 
   const statusMap = {
-     OPEN: { text: 'Open', icon: CheckCircle, color: 'text-green-600' },
-     FILLED: { text: 'Filled', icon: XCircle, color: 'text-red-600' },
-     CANCELLED: { text: 'Cancelled', icon: AlertTriangle, color: 'text-yellow-600' },
-     COMPLETED: { text: 'Completed', icon: CheckCircle, color: 'text-gray-500' }
-   };
-   const statusInfo = statusMap[shift.status] || { text: shift.status, icon: Info, color: 'text-gray-500' };
-   const StatusIcon = statusInfo.icon;
+    OPEN: { text: 'Open', icon: CheckCircle, color: 'text-green-600' },
+    FILLED: { text: 'Filled', icon: XCircle, color: 'text-red-600' },
+    CANCELLED: { text: 'Cancelled', icon: AlertTriangle, color: 'text-yellow-600' },
+    COMPLETED: { text: 'Completed', icon: CheckCircle, color: 'text-gray-500' }
+  };
+  const statusInfo = statusMap[shift.status] || { text: shift.status, icon: Info, color: 'text-gray-500' };
+  const StatusIcon = statusInfo.icon;
 
   return (
     <div className="p-4">
@@ -123,7 +123,7 @@ export default function ShiftDetails({ shiftId, onClose }) {
       <p className="text-gray-700 mb-4">
         Volunteers: {shift.currentVolunteers}/{shift.maxVolunteers}
       </p>
-      
+
       <div className="bg-gray-50 p-3 rounded-md mb-4">
         <h3 className="font-medium mb-1">Description</h3>
         <p className="text-gray-600">{shift.description || 'No description provided.'}</p>
@@ -161,17 +161,17 @@ export default function ShiftDetails({ shiftId, onClose }) {
         <Button variant="outline" onClick={onClose}>
           Close
         </Button>
-        
+
         {isSignedUp() ? (
-          <Button 
-            variant="destructive" 
+          <Button
+            variant="destructive"
             onClick={handleCancel}
             disabled={actionLoading}
           >
             {actionLoading ? 'Canceling...' : 'Cancel Registration'}
           </Button>
         ) : (
-          <Button 
+          <Button
             disabled={!hasAvailableSpots() || actionLoading}
             onClick={handleSignUp}
           >

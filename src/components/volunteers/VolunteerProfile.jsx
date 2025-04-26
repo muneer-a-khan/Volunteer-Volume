@@ -34,7 +34,7 @@ export default function VolunteerProfile({ volunteer: initialVolunteer = null, v
         let profileData;
         if (volunteerId) {
           // Fetch specific volunteer profile
-          const response = await axios.get(`/api/volunteers/${volunteerId}`); 
+          const response = await axios.get(`/api/volunteers/${volunteerId}`);
           profileData = response.data;
         } else {
           // Fetch own profile - THIS REQUIRES A NON-AUTH WAY TO IDENTIFY USER
@@ -59,11 +59,11 @@ export default function VolunteerProfile({ volunteer: initialVolunteer = null, v
     };
 
     if (initialVolunteer) {
-        setVolunteer(initialVolunteer);
-        setFormData({ name: initialVolunteer.name || '', email: initialVolunteer.email || '', phone: initialVolunteer.phone || '' });
-        setLoading(false);
+      setVolunteer(initialVolunteer);
+      setFormData({ name: initialVolunteer.name || '', email: initialVolunteer.email || '', phone: initialVolunteer.phone || '' });
+      setLoading(false);
     } else {
-        loadProfile();
+      loadProfile();
     }
   }, [volunteerId, initialVolunteer]);
 
@@ -105,13 +105,13 @@ export default function VolunteerProfile({ volunteer: initialVolunteer = null, v
     <Card>
       <CardHeader>
         <div className="flex items-center space-x-4">
-           <Avatar className="h-16 w-16">
-             <AvatarImage src={volunteer.image || undefined} alt={volunteer.name} />
-             <AvatarFallback>{volunteer.name?.charAt(0).toUpperCase()}</AvatarFallback>
-           </Avatar>
-           <div>
-             <CardTitle>{volunteer.name}</CardTitle>
-             <CardDescription>{volunteer.role}</CardDescription>
+          <Avatar className="h-16 w-16">
+            <AvatarImage src={volunteer.image || undefined} alt={volunteer.name} />
+            <AvatarFallback>{volunteer.name?.charAt(0).toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <div>
+            <CardTitle>{volunteer.name}</CardTitle>
+            <CardDescription>{volunteer.role}</CardDescription>
           </div>
         </div>
       </CardHeader>

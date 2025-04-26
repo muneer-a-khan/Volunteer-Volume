@@ -15,7 +15,7 @@ export default function ShiftList({ groupId = null }) {
   // Hardcoded auth values since we've removed authentication
   const isAdmin = true; // Default to admin for simplicity
   const dbUser = { id: 'placeholder-user-id' }; // Placeholder user
-  
+
   const [filter, setFilter] = useState('upcoming');
   const [dateFilter, setDateFilter] = useState('');
   const [filteredShifts, setFilteredShifts] = useState([]);
@@ -153,9 +153,9 @@ export default function ShiftList({ groupId = null }) {
     <div>
       <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
         {!groupId && (
-           <Button asChild>
-             <Link href="/admin/shifts/new">Add New Shift</Link>
-           </Button>
+          <Button asChild>
+            <Link href="/admin/shifts/new">Add New Shift</Link>
+          </Button>
         )}
         {groupId && <div />}
         <div className="flex w-full md:w-auto gap-4">
