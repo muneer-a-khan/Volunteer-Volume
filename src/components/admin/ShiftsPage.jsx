@@ -10,8 +10,8 @@ import Footer from '../../components/layout/Footer';
 import ShiftCalendar from '../../components/shifts/ShiftCalendar';
 import ShiftList from '../../components/shifts/ShiftList';
 import { Button } from '@/components/ui/button';
-import Layout from '../../components/Layout';
-import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import Layout from '../../components/layout/Layout';
+import { LoadingSpinner } from '../../components/ui/loading-spinner';
 
 export default function AdminShiftsPage() {
     const router = useRouter();
@@ -125,7 +125,8 @@ export default function AdminShiftsPage() {
 
     // Format volunteer status display
     const volunteerText = (shift) => {
-        return `${shift.volunteers.length} / ${shift.capacity} volunteers`;
+        const volunteerCount = shift.volunteers?.length || 0;
+        return `${volunteerCount} / ${shift.capacity} volunteers`;
     };
 
     if (authLoading) {

@@ -1,5 +1,6 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
+import { ShiftProvider } from '../../contexts/ShiftContext';
 
 // Import the actual component dynamically with SSR disabled
 const AdminShiftsPage = dynamic(
@@ -8,5 +9,9 @@ const AdminShiftsPage = dynamic(
 );
 
 export default function AdminShifts() {
-  return <AdminShiftsPage />;
+  return (
+    <ShiftProvider>
+      <AdminShiftsPage />
+    </ShiftProvider>
+  );
 }

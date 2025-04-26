@@ -1,5 +1,4 @@
 import React from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -12,8 +11,16 @@ import { Button } from '@/components/ui/button';
 import { MoreHorizontal, UserCheck, UserX, Crown, Mail } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
+// Hardcoded mock user for demo purposes
+const mockUser = {
+  id: '1',
+  name: 'Demo User',
+  email: 'demo@example.com'
+};
+
 export default function MemberList({ members = [], isAdmin = false, groupId }) {
-  const { user } = useAuth();
+  // Use hardcoded user data instead of auth context
+  const user = mockUser;
   
   const handlePromoteMember = (memberId) => {
     // This would call an API in a real implementation

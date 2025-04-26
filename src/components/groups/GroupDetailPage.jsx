@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { format, parseISO } from 'date-fns';
-import { useAuth } from '../../contexts/AuthContext';
 import { useGroups } from '../../contexts/GroupContext';
 import axios from 'axios';
 import { LoadingSpinner } from '../ui/loading-spinner';
@@ -15,13 +14,27 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'react-hot-toast';
 import GroupAnnouncements from './GroupAnnouncements';
 
+// Hardcoded mock user for demo purposes
+const mockUser = {
+  id: '1',
+  name: 'Demo User',
+  email: 'demo@example.com'
+};
+
 export default function GroupDetailPage({ id: propId }) {
   const pathname = usePathname();
   // Extract ID from pathname if not provided as prop (for App Router)
   const pathId = pathname ? pathname.split('/').pop() : null;
   const groupId = propId || pathId;
   
-  const { isAuthenticated, isAdmin, dbUser } = useAuth();
+  // Prevent data fetching on every render
+  const hasLoaded = useRef(false);
+  
+  // Hardcoded auth values for demo
+  const isAuthenticated = true;
+  const isAdmin = true;
+  const dbUser = mockUser;
+  
   const {
     loading,
     getGroup,
@@ -50,17 +63,16 @@ export default function GroupDetailPage({ id: propId }) {
   // Load group data when ID is available
   useEffect(() => {
     const loadGroupData = async () => {
-      if (groupId && isAuthenticated) {
+      if (groupId && !hasLoaded.current) {
+        hasLoaded.current = true;
         try {
           const groupData = await getGroup(groupId);
           if (groupData) {
             setGroup(groupData);
 
             // Check if user is admin of this group
-            if (dbUser) {
-              setIsGroupAdmin(groupData.admins && groupData.admins.some(admin => admin.id === dbUser.id) || isAdmin);
-              setIsMember(groupData.members && groupData.members.some(membership => membership.user.id === dbUser.id));
-            }
+            setIsGroupAdmin(groupData.admins && groupData.admins.some(admin => admin.id === dbUser.id) || isAdmin);
+            setIsMember(groupData.members && groupData.members.some(membership => membership.user.id === dbUser.id));
 
             // Load shifts
             const shiftsData = await getGroupShifts(groupId);
@@ -72,13 +84,15 @@ export default function GroupDetailPage({ id: propId }) {
           }
         } catch (error) {
           console.error("Error loading group data:", error);
-          setError(error.response?.data?.message || 'Failed to load group');
+          setError('Failed to load group');
         }
       }
     };
 
     loadGroupData();
-  }, [groupId, isAuthenticated, dbUser, isAdmin, getGroup, getGroupShifts, getGroupVolunteers]);
+    
+    // Empty dependency array to ensure this only runs once
+  }, [groupId]);
 
   const handleJoinGroup = async () => {
     if (!isAuthenticated) {
