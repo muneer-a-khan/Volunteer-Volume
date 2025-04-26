@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 export default function AdminDashboard() {
   // Hardcoded user data
   const dbUser = { id: 'placeholder-user-id', name: 'Admin User' };
-  
+
   const [stats, setStats] = useState({
     totalVolunteers: 0,
     activeVolunteers: 0,
@@ -29,7 +29,7 @@ export default function AdminDashboard() {
         // This would be a real API call in production
         // const response = await axios.get('/api/admin/stats');
         // setStats(response.data);
-        
+
         // For now, use placeholder data
         setTimeout(() => {
           setStats({
@@ -59,7 +59,7 @@ export default function AdminDashboard() {
   const formatShiftTime = (start, end) => {
     const startDate = parseISO(start);
     const endDate = parseISO(end);
-    
+
     return `${format(startDate, 'MMM d, yyyy h:mm a')} - ${format(endDate, 'h:mm a')}`;
   };
 
@@ -152,7 +152,7 @@ export default function AdminDashboard() {
             </p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Shifts</CardTitle>
@@ -164,7 +164,7 @@ export default function AdminDashboard() {
             </p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Total Hours</CardTitle>
@@ -192,7 +192,7 @@ export default function AdminDashboard() {
             </p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader>
             <CardTitle>Volunteer Hours</CardTitle>

@@ -42,7 +42,7 @@ export default function RegisterPage() {
 
     setIsLoading(true);
     setError(null);
-    
+
     try {
       // Register the user
       const response = await axios.post('/api/auth/register', {
@@ -54,7 +54,7 @@ export default function RegisterPage() {
 
       if (response.status === 201) {
         toast.success("Registration successful!");
-        
+
         // Redirect to Clerk sign-in page instead of using NextAuth
         router.push('/sign-in');
       }
@@ -107,7 +107,7 @@ export default function RegisterPage() {
               <Input
                 id="email"
                 type="email"
-                {...register('email', { 
+                {...register('email', {
                   required: "Email is required",
                   pattern: {
                     value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
@@ -139,7 +139,7 @@ export default function RegisterPage() {
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  {...register('password', { 
+                  {...register('password', {
                     required: "Password is required",
                     minLength: {
                       value: 8,
@@ -172,7 +172,7 @@ export default function RegisterPage() {
                 <Input
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
-                  {...register('confirmPassword', { 
+                  {...register('confirmPassword', {
                     required: "Please confirm your password",
                     validate: value => value === password || "Passwords do not match"
                   })}

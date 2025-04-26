@@ -45,7 +45,7 @@ export default function HoursLogList({ refreshTrigger = 0 }: HoursLogListProps) 
         // In a production environment, this would be a real API call
         // const response = await axios.get('/api/volunteer-logs');
         // setLogs(response.data);
-        
+
         // For demo purposes, use hardcoded logs with a delay
         setTimeout(() => {
           const demoLogs: HoursLog[] = [
@@ -94,7 +94,7 @@ export default function HoursLogList({ refreshTrigger = 0 }: HoursLogListProps) 
               updatedAt: '2023-05-26T11:20:00Z'
             }
           ];
-          
+
           setLogs(demoLogs);
           setLoading(false);
         }, 1000);
@@ -196,13 +196,13 @@ export default function HoursLogList({ refreshTrigger = 0 }: HoursLogListProps) 
             <TabsTrigger value="approved">Approved</TabsTrigger>
             <TabsTrigger value="rejected">Rejected</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value={activeTab}>
             <div className="space-y-4">
               {filteredLogs.length > 0 ? (
                 filteredLogs.map(log => (
-                  <div 
-                    key={log.id} 
+                  <div
+                    key={log.id}
                     className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     <div className="flex justify-between items-start mb-2">
@@ -222,20 +222,20 @@ export default function HoursLogList({ refreshTrigger = 0 }: HoursLogListProps) 
                       </div>
                       {getStatusBadge(log.status)}
                     </div>
-                    
+
                     <p className="text-gray-700 mb-2">{log.description}</p>
-                    
+
                     {log.group && (
                       <div className="flex items-center text-sm text-gray-600 mb-2">
                         <Building className="h-4 w-4 mr-1 text-gray-500" />
                         <span>{log.group.name}</span>
                       </div>
                     )}
-                    
+
                     <div className="text-xs text-gray-500 mt-2">
                       Submitted on {format(parseISO(log.createdAt), 'MMM d, yyyy h:mm a')}
                     </div>
-                    
+
                     {log.status === 'PENDING' && (
                       <div className="flex justify-end mt-2">
                         <Button variant="outline" size="sm" className="text-xs">

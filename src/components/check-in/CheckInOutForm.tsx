@@ -15,20 +15,20 @@ interface CheckInOutFormProps {
   shifts: any[];
 }
 
-export default function CheckInOutForm({ 
-  userId, 
-  currentStatus, 
+export default function CheckInOutForm({
+  userId,
+  currentStatus,
   onCheckInOut,
   shifts = []
 }: CheckInOutFormProps) {
   const [selectedShiftId, setSelectedShiftId] = useState<string>('');
   const [loading, setLoading] = useState(false);
-  
+
   // If user is already checked in, show check-out option
   const isCheckedIn = !!currentStatus;
-  
+
   // Filter shifts to only show available ones (not already checked in)
-  const availableShifts = shifts.filter(shift => 
+  const availableShifts = shifts.filter(shift =>
     // Allow shifts that are happening today and not already checked in
     new Date(shift.start_time).toDateString() === new Date().toDateString()
   );
@@ -38,7 +38,7 @@ export default function CheckInOutForm({
       toast.error('Please select a shift to check in');
       return;
     }
-    
+
     try {
       setLoading(true);
       // Make API call to check in
@@ -46,7 +46,7 @@ export default function CheckInOutForm({
         userId,
         shiftId: selectedShiftId
       });
-      
+
       toast.success('Successfully checked in!');
       onCheckInOut(); // Refresh status
     } catch (error) {
@@ -62,7 +62,7 @@ export default function CheckInOutForm({
       toast.error('No active check-in found');
       return;
     }
-    
+
     try {
       setLoading(true);
       // Make API call to check out
@@ -70,7 +70,7 @@ export default function CheckInOutForm({
         userId,
         checkOutTime: new Date().toISOString()
       });
-      
+
       toast.success('Successfully checked out!');
       onCheckInOut(); // Refresh status
     } catch (error) {
@@ -86,8 +86,8 @@ export default function CheckInOutForm({
       <Card>
         <CardContent className="p-4">
           <p className="mb-4">You are currently checked in. Would you like to check out?</p>
-          <Button 
-            onClick={handleCheckOut} 
+          <Button
+            onClick={handleCheckOut}
             variant="destructive"
             disabled={loading}
             className="w-full"
@@ -104,7 +104,7 @@ export default function CheckInOutForm({
     <Card>
       <CardContent className="p-4">
         <p className="mb-4">Select a shift to check in:</p>
-        
+
         {availableShifts.length > 0 ? (
           <>
             <Select value={selectedShiftId} onValueChange={setSelectedShiftId}>
@@ -119,9 +119,9 @@ export default function CheckInOutForm({
                 ))}
               </SelectContent>
             </Select>
-            
-            <Button 
-              onClick={handleCheckIn} 
+
+            <Button
+              onClick={handleCheckIn}
               variant="default"
               disabled={loading || !selectedShiftId}
               className="w-full"

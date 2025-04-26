@@ -27,7 +27,7 @@ export function AuthProvider({ children }) {
     signUp: () => Promise.resolve(mockUser),
     signOut: () => Promise.resolve(),
     error: null,
-    clearError: () => {},
+    clearError: () => { },
   };
 
   return <AuthContext.Provider value={authValues}>{children}</AuthContext.Provider>;

@@ -15,19 +15,19 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
 } from '@/components/ui/dialog';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -63,7 +63,7 @@ const ApplicationList = () => {
       // In a production environment, this would be a real API call
       // const response = await axios.get('/api/admin/applications');
       // setApplications(response.data);
-      
+
       // For demo purposes, we'll use mock data
       setTimeout(() => {
         const mockApplications = [
@@ -131,7 +131,7 @@ const ApplicationList = () => {
             ]
           }
         ];
-        
+
         setApplications(mockApplications);
         setLoading(false);
       }, 1000);
@@ -143,7 +143,7 @@ const ApplicationList = () => {
   };
 
   const getStatusBadge = (status) => {
-    switch(status) {
+    switch (status) {
       case ApplicationStatus.PENDING:
         return <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pending</Badge>;
       case ApplicationStatus.APPROVED:
@@ -175,29 +175,29 @@ const ApplicationList = () => {
 
   const handleApproveApplication = async () => {
     if (!selectedApplication) return;
-    
+
     setProcessingAction(true);
     try {
       // In production, this would be a real API call
       // await axios.post(`/api/admin/applications/${selectedApplication.id}/approve`, {
       //   feedback: feedbackNote
       // });
-      
+
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       // Update local state
-      setApplications(applications.map(app => 
+      setApplications(applications.map(app =>
         app.id === selectedApplication.id
-          ? { 
-              ...app, 
-              status: ApplicationStatus.APPROVED, 
-              approvedAt: new Date().toISOString(),
-              feedback: feedbackNote 
-            }
+          ? {
+            ...app,
+            status: ApplicationStatus.APPROVED,
+            approvedAt: new Date().toISOString(),
+            feedback: feedbackNote
+          }
           : app
       ));
-      
+
       toast.success('Application approved successfully');
       setShowApproveDialog(false);
       setFeedbackNote('');
@@ -211,29 +211,29 @@ const ApplicationList = () => {
 
   const handleRejectApplication = async () => {
     if (!selectedApplication) return;
-    
+
     setProcessingAction(true);
     try {
       // In production, this would be a real API call
       // await axios.post(`/api/admin/applications/${selectedApplication.id}/reject`, {
       //   reason: feedbackNote
       // });
-      
+
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       // Update local state
-      setApplications(applications.map(app => 
+      setApplications(applications.map(app =>
         app.id === selectedApplication.id
-          ? { 
-              ...app, 
-              status: ApplicationStatus.REJECTED, 
-              rejectedAt: new Date().toISOString(),
-              rejectionReason: feedbackNote 
-            }
+          ? {
+            ...app,
+            status: ApplicationStatus.REJECTED,
+            rejectedAt: new Date().toISOString(),
+            rejectionReason: feedbackNote
+          }
           : app
       ));
-      
+
       toast.success('Application rejected');
       setShowRejectDialog(false);
       setFeedbackNote('');
@@ -282,9 +282,9 @@ const ApplicationList = () => {
     return (
       <div className="p-4 bg-red-50 text-red-800 rounded-md">
         {error}
-        <Button 
-          variant="outline" 
-          className="mt-2" 
+        <Button
+          variant="outline"
+          className="mt-2"
           onClick={fetchApplications}
         >
           Try Again
@@ -351,7 +351,7 @@ const ApplicationList = () => {
                           <Eye className="mr-2 h-4 w-4" />
                           View Details
                         </DropdownMenuItem>
-                        
+
                         {application.status === ApplicationStatus.PENDING && (
                           <>
                             <DropdownMenuItem onClick={() => handleApproveClick(application)}>
@@ -384,7 +384,7 @@ const ApplicationList = () => {
                 Submitted on {format(parseISO(selectedApplication.appliedAt), 'MMMM d, yyyy h:mm a')}
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -404,7 +404,7 @@ const ApplicationList = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div>
                   <h3 className="text-sm font-semibold mb-2">Status Information</h3>
                   <div className="space-y-2">
@@ -433,7 +433,7 @@ const ApplicationList = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div>
                 <h3 className="text-sm font-semibold mb-2">Volunteer Information</h3>
                 <div className="space-y-4">
@@ -445,7 +445,7 @@ const ApplicationList = () => {
                       ))}
                     </div>
                   </div>
-                  
+
                   <div>
                     <span className="text-gray-500">Availability:</span>
                     <div className="mt-1 flex flex-wrap gap-2">
@@ -454,21 +454,21 @@ const ApplicationList = () => {
                       ))}
                     </div>
                   </div>
-                  
+
                   <div>
                     <span className="text-gray-500">Experience:</span>
                     <p className="mt-1 text-sm border rounded-md p-3 bg-gray-50">
                       {selectedApplication.experience}
                     </p>
                   </div>
-                  
+
                   <div>
                     <span className="text-gray-500">Why do you want to volunteer?</span>
                     <p className="mt-1 text-sm border rounded-md p-3 bg-gray-50">
                       {selectedApplication.reason}
                     </p>
                   </div>
-                  
+
                   <div>
                     <span className="text-gray-500">References:</span>
                     <div className="mt-1 space-y-2">
@@ -483,12 +483,12 @@ const ApplicationList = () => {
                 </div>
               </div>
             </div>
-            
+
             <DialogFooter className="mt-6">
               {selectedApplication.status === ApplicationStatus.PENDING && (
                 <div className="flex space-x-2">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={() => {
                       setShowDetailsDialog(false);
                       handleRejectClick(selectedApplication);
@@ -496,7 +496,7 @@ const ApplicationList = () => {
                   >
                     Reject
                   </Button>
-                  <Button 
+                  <Button
                     onClick={() => {
                       setShowDetailsDialog(false);
                       handleApproveClick(selectedApplication);
@@ -525,7 +525,7 @@ const ApplicationList = () => {
               Are you sure you want to approve this volunteer application for {selectedApplication?.name}?
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="my-4">
             <Label htmlFor="feedback">Feedback or notes (optional)</Label>
             <Textarea
@@ -536,16 +536,16 @@ const ApplicationList = () => {
               onChange={(e) => setFeedbackNote(e.target.value)}
             />
           </div>
-          
+
           <DialogFooter>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setShowApproveDialog(false)}
               disabled={processingAction}
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleApproveApplication}
               disabled={processingAction}
             >
@@ -564,7 +564,7 @@ const ApplicationList = () => {
               Are you sure you want to reject this volunteer application for {selectedApplication?.name}?
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="my-4">
             <Label htmlFor="reason">Reason for rejection</Label>
             <Textarea
@@ -576,16 +576,16 @@ const ApplicationList = () => {
               required
             />
           </div>
-          
+
           <DialogFooter>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setShowRejectDialog(false)}
               disabled={processingAction}
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               variant="destructive"
               onClick={handleRejectApplication}
               disabled={processingAction || !feedbackNote.trim()}
