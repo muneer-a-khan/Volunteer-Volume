@@ -13,54 +13,56 @@ function classNames(...classes: string[]) {
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const userRole = session?.user?.role;
   const isAuthenticated = !!session?.user;
 
-  // Define navigation items - public ones available to all
+  // Navigation items for unauthenticated users
   const publicNavigation = [
-    { name: 'Home', href: '/' },
-    { name: 'About', href: '/about' },
+    { name: 'About Us', href: '/about' },
+    { name: 'Contact Us', href: '/contact' },
+    { name: 'FAQs', href: '/faq' },
   ];
 
-  // Volunteer navigation items 
+  // Navigation items for pending users
+  const pendingNavigation = [
+    { name: 'About Us', href: '/about' },
+    { name: 'My Application', href: '/application-success' },
+  ];
+
+  // Navigation items for approved volunteers
   const volunteerNavigation = [
-    { name: 'Dashboard', href: '/dashboard' },
+    { name: 'Volunteer Dashboard', href: '/dashboard' },
     { name: 'Shifts Calendar', href: '/shifts' },
-    { name: 'Check In/Out', href: '/check-in' },
-  ];
-
-  // Admin navigation items
-  const adminNavigation = [
-    { name: 'Admin Dashboard', href: '/admin/dashboard' },
-    { name: 'Pending Volunteers', href: '/admin/pending-volunteers' },
-    { name: 'Manage Users', href: '/admin/users' },
     { name: 'Log Hours', href: '/log-hours' },
   ];
 
-  // Group admin navigation items
-  const groupAdminNavigation = [
-    { name: 'Group Dashboard', href: '/dashboard' },
-    { name: 'Manage Group', href: '/groups' },
+  // Navigation items for admins
+  const adminNavigation = [
+    { name: 'Admin Dashboard', href: '/admin/dashboard' },
+    { name: 'Shifts Calendar', href: '/shifts' },
+    { name: 'Check In/Out', href: '/check-in' },
+    { name: 'Pending Volunteers', href: '/admin/pending-volunteers' },
   ];
 
   // Determine which nav items to show based on role
-  let navigationItems = [...publicNavigation];
-  let dropdownItems: { name: string; href: string }[] = [];
-
-  if (isAuthenticated) {
-    if (userRole === 'VOLUNTEER' || userRole === 'GROUP_ADMIN') {
-      navigationItems = [...navigationItems, ...volunteerNavigation];
-    }
-    
-    if (userRole === 'GROUP_ADMIN') {
-      dropdownItems = [...groupAdminNavigation];
-    }
-    
-    if (userRole === 'ADMIN') {
-      navigationItems = [...navigationItems, ...volunteerNavigation];
-      dropdownItems = [...adminNavigation];
-    }
+  let navigationItems: { name: string; href: string }[] = [];
+  
+  if (!isAuthenticated) {
+    // Not logged in - show public navigation
+    navigationItems = [...publicNavigation];
+  } else if (userRole === 'PENDING') {
+    // Pending volunteer - show limited navigation
+    navigationItems = [...pendingNavigation];
+  } else if (userRole === 'VOLUNTEER' || userRole === 'GROUP_ADMIN') {
+    // Volunteer - show volunteer navigation
+    navigationItems = [...volunteerNavigation];
+  } else if (userRole === 'ADMIN') {
+    // Admin - show admin navigation
+    navigationItems = [...adminNavigation];
+  } else {
+    // Guest or any other role - show public navigation
+    navigationItems = [...publicNavigation];
   }
 
   return (
@@ -92,41 +94,6 @@ export default function Navbar() {
                       {item.name}
                     </Link>
                   ))}
-
-                  {dropdownItems.length > 0 && (
-                    <Menu as="div" className="relative ml-3">
-                      <Menu.Button className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
-                        {userRole === 'ADMIN' ? 'Admin' : 'Manage'}
-                      </Menu.Button>
-                      <Transition
-                        as={Fragment}
-                        enter="transition ease-out duration-200"
-                        enterFrom="transform opacity-0 scale-95"
-                        enterTo="transform opacity-100 scale-100"
-                        leave="transition ease-in duration-75"
-                        leaveFrom="transform opacity-100 scale-100"
-                        leaveTo="transform opacity-0 scale-95"
-                      >
-                        <Menu.Items className="absolute left-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                          {dropdownItems.map((item) => (
-                            <Menu.Item key={item.name}>
-                              {({ active }) => (
-                                <Link
-                                  href={item.href}
-                                  className={classNames(
-                                    active ? 'bg-gray-100' : '',
-                                    'block px-4 py-2 text-sm text-gray-700'
-                                  )}
-                                >
-                                  {item.name}
-                                </Link>
-                              )}
-                            </Menu.Item>
-                          ))}
-                        </Menu.Items>
-                      </Transition>
-                    </Menu>
-                  )}
                 </div>
               </div>
 
@@ -166,6 +133,15 @@ export default function Navbar() {
                       leaveTo="transform opacity-0 scale-95"
                     >
                       <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                        <Menu.Item>
+                          {({ active }) => (
+                            <div className="px-4 py-2 text-sm text-gray-700 border-b">
+                              <p className="font-medium">{session.user.name}</p>
+                              <p className="text-gray-500">{session.user.email}</p>
+                              <p className="text-xs mt-1 text-gray-500">Role: {userRole}</p>
+                            </div>
+                          )}
+                        </Menu.Item>
                         <Menu.Item>
                           {({ active }) => (
                             <Link
@@ -229,78 +205,57 @@ export default function Navbar() {
                   {item.name}
                 </Disclosure.Button>
               ))}
-
-              {isAuthenticated && dropdownItems.length > 0 && (
-                <div className="border-t border-gray-200 pt-4 pb-3">
-                  <div className="mt-3 space-y-1">
-                    <p className="px-4 text-base font-medium text-gray-500">
-                      {userRole === 'ADMIN' ? 'Admin' : 'Manage'}
-                    </p>
-                    {dropdownItems.map((item) => (
-                      <Disclosure.Button
-                        key={item.name}
-                        as="a"
-                        href={item.href}
-                        className="block px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800"
-                      >
-                        {item.name}
-                      </Disclosure.Button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {isAuthenticated && (
-                <div className="border-t border-gray-200 pt-4 pb-3">
-                  <div className="flex items-center px-4">
-                    <div className="flex-shrink-0">
-                      <div className="h-10 w-10 rounded-full bg-indigo-200 flex items-center justify-center text-indigo-600">
-                        {session.user.name?.[0] || session.user.email?.[0] || "U"}
-                      </div>
-                    </div>
-                    <div className="ml-3">
-                      <div className="text-base font-medium text-gray-800">{session.user.name}</div>
-                      <div className="text-sm font-medium text-gray-500">{session.user.email}</div>
-                    </div>
-                  </div>
-                  <div className="mt-3 space-y-1">
-                    <Disclosure.Button
-                      as="a"
-                      href="/profile"
-                      className="block px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800"
-                    >
-                      Your Profile
-                    </Disclosure.Button>
-                    <Disclosure.Button
-                      as="button"
-                      onClick={() => signOut({ callbackUrl: '/' })}
-                      className="block w-full text-left px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800"
-                    >
-                      Sign out
-                    </Disclosure.Button>
-                  </div>
-                </div>
-              )}
-
-              {!isAuthenticated && (
-                <div className="border-t border-gray-200 pt-4 pb-3">
-                  <div className="flex flex-col space-y-3 px-4">
-                    <Link
-                      href="/sign-in"
-                      className="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-100 px-4 py-2 text-base font-medium text-indigo-700 hover:bg-indigo-200"
-                    >
-                      Sign in
-                    </Link>
-                    <Link
-                      href="/sign-up"
-                      className="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-base font-medium text-white hover:bg-indigo-700"
-                    >
-                      Sign up
-                    </Link>
-                  </div>
-                </div>
-              )}
             </div>
+
+            {isAuthenticated ? (
+              <div className="border-t border-gray-200 pt-4 pb-3">
+                <div className="flex items-center px-4">
+                  <div className="flex-shrink-0">
+                    <div className="h-10 w-10 rounded-full bg-indigo-200 flex items-center justify-center text-indigo-600">
+                      {session.user.name?.[0] || session.user.email?.[0] || "U"}
+                    </div>
+                  </div>
+                  <div className="ml-3">
+                    <div className="text-base font-medium text-gray-800">{session.user.name}</div>
+                    <div className="text-sm font-medium text-gray-500">{session.user.email}</div>
+                    <div className="text-xs text-gray-500">Role: {userRole}</div>
+                  </div>
+                </div>
+                <div className="mt-3 space-y-1">
+                  <Disclosure.Button
+                    as="a"
+                    href="/profile"
+                    className="block px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                  >
+                    Your Profile
+                  </Disclosure.Button>
+                  <Disclosure.Button
+                    as="button"
+                    onClick={() => signOut({ callbackUrl: '/' })}
+                    className="block w-full text-left px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                  >
+                    Sign out
+                  </Disclosure.Button>
+                </div>
+              </div>
+            ) : (
+              <div className="border-t border-gray-200 pt-4 pb-3">
+                <div className="flex flex-col space-y-3 px-4">
+                  <Link
+                    href="/sign-in"
+                    className="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-100 px-4 py-2 text-base font-medium text-indigo-700 hover:bg-indigo-200"
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    href="/sign-up"
+                    className="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-base font-medium text-white hover:bg-indigo-700"
+                  >
+                    Sign up
+                  </Link>
+                </div>
+              </div>
+            )}
           </Disclosure.Panel>
         </>
       )}
