@@ -7,7 +7,7 @@ import { Group } from '@/types/group';
 import { Shift } from '@/types/shift';
 import { User } from '@/types/user';
 
-export interface Group {
+export interface GroupData {
   id: string;
   name: string;
   description?: string;
@@ -56,14 +56,14 @@ export interface HoursReport {
 }
 
 interface GroupContextType {
-  groups: Group[];
-  myGroups: Group[];
+  groups: GroupData[];
+  myGroups: GroupData[];
   loading: boolean;
   fetchGroups: () => Promise<void>;
   fetchMyGroups: () => Promise<void>;
-  getGroup: (id: string) => Promise<Group | null>;
-  createGroup: (groupData: Partial<Group>) => Promise<Group | null>;
-  updateGroup: (id: string, groupData: Partial<Group>) => Promise<Group | null>;
+  getGroup: (id: string) => Promise<GroupData | null>;
+  createGroup: (groupData: Partial<GroupData>) => Promise<GroupData | null>;
+  updateGroup: (id: string, groupData: Partial<GroupData>) => Promise<GroupData | null>;
   deleteGroup: (id: string) => Promise<boolean>;
   joinGroup: (id: string) => Promise<void>;
   leaveGroup: (id: string) => Promise<void>;
@@ -81,8 +81,8 @@ export const GroupProvider = ({ children }: GroupProviderProps) => {
   const isAuthenticated = true;
   const userId: string | null = null;
 
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [myGroups, setMyGroups] = useState<Group[]>([]);
+  const [groups, setGroups] = useState<GroupData[]>([]);
+  const [myGroups, setMyGroups] = useState<GroupData[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchGroups = useCallback(async () => {
@@ -116,7 +116,7 @@ export const GroupProvider = ({ children }: GroupProviderProps) => {
     }
   }, [isAuthenticated, userId]);
 
-  const getGroup = async (id: string): Promise<Group | null> => {
+  const getGroup = async (id: string): Promise<GroupData | null> => {
     try {
       const response = await axios.get(`/api/groups/${id}`);
       return response.data;
@@ -127,11 +127,11 @@ export const GroupProvider = ({ children }: GroupProviderProps) => {
     }
   };
 
-  const createGroup = async (groupData: Partial<Group>): Promise<Group | null> => {
+  const createGroup = async (groupData: Partial<GroupData>): Promise<GroupData | null> => {
     try {
       toast.success('Group created! (API Call commented out)');
       fetchGroups();
-      return { id: 'temp-' + Date.now(), ...groupData } as Group;
+      return { id: 'temp-' + Date.now(), ...groupData } as GroupData;
     } catch (error: any) {
       console.error('Create group error:', error);
       toast.error('Failed to create group');
@@ -139,11 +139,11 @@ export const GroupProvider = ({ children }: GroupProviderProps) => {
     }
   };
 
-  const updateGroup = async (id: string, groupData: Partial<Group>): Promise<Group | null> => {
+  const updateGroup = async (id: string, groupData: Partial<GroupData>): Promise<GroupData | null> => {
     try {
       toast.success('Group updated! (API Call commented out)');
       fetchGroups();
-      return { id: id, ...groupData } as Group;
+      return { id: id, ...groupData } as GroupData;
     } catch (error: any) {
       console.error('Update group error:', error);
       toast.error('Failed to update group');
@@ -184,14 +184,16 @@ export const GroupProvider = ({ children }: GroupProviderProps) => {
       return;
     }
     try {
+      // Simulate successful API call
+      const updatedGroupData = { id, status: 'Left group' };
+      
       // Update in groups array
-      setGroups(prev => prev.map(group => group.id === id ? response.data : group));
+      setGroups(prev => prev.map(group => group.id === id ? updatedGroupData as GroupData : group));
 
       // Update in myGroups if it exists there
-      setMyGroups(prev => prev.map(group => group.id === id ? response.data : group));
+      setMyGroups(prev => prev.map(group => group.id === id ? updatedGroupData as GroupData : group));
 
       toast.success('Group updated successfully');
-      return response.data;
     } catch (error: any) {
       console.error('Error updating group:', error);
       toast.error(error.response?.data?.message || 'Failed to update group. Please try again.');
