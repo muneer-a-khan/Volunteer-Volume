@@ -102,12 +102,14 @@ export default function ShiftForm({ shift, isEditMode = false }: ShiftFormProps)
       const shiftData = {
         title: data.title,
         description: data.description,
-        startTime: startDateTime.toISOString(),
-        endTime: endDateTime.toISOString(),
+        start_time: startDateTime.toISOString(),
+        end_time: endDateTime.toISOString(),
         location: data.location,
-        capacity: parseInt(data.capacity, 10),
-        groupId: data.groupId || null,
-        status: data.status
+        max_volunteers: parseInt(data.capacity, 10),
+        current_volunteers: 0,
+        status: data.status,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
       
       if (isEditMode && shift) {
@@ -115,7 +117,11 @@ export default function ShiftForm({ shift, isEditMode = false }: ShiftFormProps)
         router.push(`/shifts/${shift.id}`);
       } else {
         const newShift = await createShift(shiftData);
-        router.push(`/shifts/${newShift.id}`);
+        if (newShift) {
+          router.push(`/shifts/${newShift.id}`);
+        } else {
+          setSubmitError('Failed to create shift. Please try again.');
+        }
       }
     } catch (error: any) {
       console.error('Error saving shift:', error);
