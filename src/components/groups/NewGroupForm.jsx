@@ -12,7 +12,7 @@ import { Textarea } from '../ui/textarea';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../ui/select';
 import { LoadingSpinner } from '../ui/loading-spinner';
 import { Label } from '../ui/label';
-import { Switch } from '../ui/switch';
+import { Checkbox } from '../ui/checkbox';
 
 export default function NewGroupForm() {
   const router = useRouter();
@@ -140,18 +140,22 @@ export default function NewGroupForm() {
                 </div>
 
                 {/* Public/Private */}
-                <div className="flex items-center space-x-2">
-                  <Switch 
-                    id="is-public" 
+                <div className="flex items-start space-x-2">
+                  <Checkbox
+                    id="is-public"
                     checked={isPublic}
                     onCheckedChange={setIsPublic}
                   />
-                  <Label htmlFor="is-public">Public Group</Label>
-                  <p className="text-sm text-gray-500 ml-2">
-                    {isPublic 
-                      ? 'Anyone can see and join this group' 
-                      : 'Only invited members can join this group'}
-                  </p>
+                  <div className="grid gap-1.5 leading-none">
+                    <Label htmlFor="is-public" className="text-sm font-medium">
+                      Public Group
+                    </Label>
+                    <p className="text-sm text-gray-500">
+                      {isPublic 
+                        ? 'Anyone can see and join this group' 
+                        : 'Only invited members can join this group'}
+                    </p>
+                  </div>
                 </div>
 
                 {/* Status */}
