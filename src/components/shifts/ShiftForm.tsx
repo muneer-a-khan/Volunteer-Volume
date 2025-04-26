@@ -276,7 +276,7 @@ export default function ShiftForm({ shift, isEditMode = false }: ShiftFormProps)
               <SelectValue placeholder="Select a group" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">No group</SelectItem>
+              <SelectItem value="none">No group</SelectItem>
               {groups?.map((group: any) => (
                 <SelectItem key={group.id} value={group.id}>
                   {group.name}
