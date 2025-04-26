@@ -174,7 +174,7 @@ export default function HoursLogList({ refreshTrigger = 0 }: HoursLogListProps) 
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-gray-500">
-            <p>You haven't logged any volunteer hours yet.</p>
+            <p>You haven&apos;t logged any volunteer hours yet.</p>
             <p className="mt-2">Use the form to log your first volunteer hours!</p>
           </div>
         </CardContent>

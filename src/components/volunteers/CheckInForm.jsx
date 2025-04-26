@@ -236,7 +236,7 @@ export default function CheckInForm() {
                       </svg>
                       <h3 className="mt-2 text-sm font-medium text-gray-900">No upcoming shifts</h3>
                       <p className="mt-1 text-sm text-gray-500">
-                        You don't have any upcoming shifts in the next 24 hours.
+                        You don&apos;t have any upcoming shifts in the next 24 hours.
                       </p>
                     </div>
                   )}
@@ -328,7 +328,7 @@ export default function CheckInForm() {
                       </svg>
                       <h3 className="mt-2 text-sm font-medium text-gray-900">No active shifts</h3>
                       <p className="mt-1 text-sm text-gray-500">
-                        You don't have any active shifts at this time.
+                        You don&apos;t have any active shifts at this time.
                       </p>
                     </div>
                   )}

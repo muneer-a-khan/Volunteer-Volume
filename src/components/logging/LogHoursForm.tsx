@@ -119,7 +119,7 @@ export default function LogHoursForm({ onLogSuccess }: LogHoursFormProps) {
     <Card>
       <CardHeader>
         <CardTitle>Log Volunteer Hours</CardTitle>
-        <CardDescription>Record the time you've volunteered</CardDescription>
+        <CardDescription>Record the time you&apos;ve volunteered</CardDescription>
       </CardHeader>
       
       <CardContent>

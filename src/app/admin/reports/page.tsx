@@ -183,7 +183,7 @@ export default function AdminReportsPage() {
             </Card>
         )}
         {reportData.length === 0 && !loadingReport && (
-           <p className="text-center text-muted-foreground mt-8">No report data generated. Select criteria and click "Generate Report".</p>
+           <p className="text-center text-muted-foreground mt-8">No report data generated. Select criteria and click &quot;Generate Report&quot;.</p>
         )}
 
       </div>

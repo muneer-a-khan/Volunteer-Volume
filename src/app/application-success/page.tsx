@@ -39,7 +39,7 @@ export default function ApplicationSuccessPage() {
               <ol className="text-left text-blue-700 list-decimal pl-5 space-y-1">
                 <li>Our volunteer coordinator will review your application (typically within 3-5 business days)</li>
                 <li>You may receive an email with additional questions or requesting an interview</li>
-                <li>Once approved, you'll receive access to volunteer shifts and opportunities</li>
+                <li>Once approved, you&apos;ll receive access to volunteer shifts and opportunities</li>
               </ol>
             </div>
 
