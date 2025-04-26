@@ -3,7 +3,7 @@
 import React from 'react';
 import { usePathname } from 'next/navigation';
 import { Montserrat } from 'next/font/google';
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from "@/components/ui/toaster"
 import ShadcnNavbar from './ShadcnNavbar';
 import ShadcnFooter from './ShadcnFooter';
 
@@ -26,7 +26,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
 
   return (
     <div className={`${montserrat.variable} font-sans bg-background min-h-screen flex flex-col`}>
-      <Toaster position="top-right" />
+      <Toaster />
       {!shouldHideNavbar && (
         <ShadcnNavbar />
       )}

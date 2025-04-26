@@ -1,6 +1,8 @@
 import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
-import { toast } from 'react-hot-toast';
+// Import shadcn toast function
+// import { toast } from 'react-hot-toast';
+import { useToast } from "@/components/ui/use-toast"; 
 import { useSession } from 'next-auth/react';
 
 const GroupContext = createContext();
@@ -9,9 +11,8 @@ export const GroupProvider = ({ children }) => {
   const { data: session } = useSession();
   const isAuthenticated = !!session?.user;
   const userId = session?.user?.id || null;
-  
-  // Use refs to track if we've already fetched data
   const initialFetchDone = useRef(false);
+  const { toast } = useToast(); // Get toast function from the hook
 
   const [groups, setGroups] = useState([]);
   const [myGroups, setMyGroups] = useState([]);
@@ -74,47 +75,71 @@ export const GroupProvider = ({ children }) => {
     // Role check needed
     try {
       // const response = await axios.post('/api/groups', groupData);
-      toast.success('Group created! (API Call commented out)');
+      toast({ title: "Success", description: "Group created! (API Call commented out)" });
       fetchGroups();
       return { id: 'temp-' + Date.now(), ...groupData }; // Placeholder
-    } catch (error) { console.error('Create group error:', error); toast.error('Failed to create group'); return null; }
+    } catch (error) { 
+      console.error('Create group error:', error); 
+      toast({ title: "Error", description: "Failed to create group", variant: "destructive" }); 
+      return null; 
+    }
   };
   const updateGroup = async (id, groupData) => {
     // Role check needed
     try {
       // const response = await axios.put(`/api/groups/${id}`, groupData);
-      toast.success('Group updated! (API Call commented out)');
+      toast({ title: "Success", description: "Group updated! (API Call commented out)" });
       fetchGroups();
       return { id: id, ...groupData }; // Placeholder
-    } catch (error) { console.error('Update group error:', error); toast.error('Failed to update group'); return null; }
+    } catch (error) { 
+      console.error('Update group error:', error); 
+      toast({ title: "Error", description: "Failed to update group", variant: "destructive" }); 
+      return null; 
+    }
   };
   const deleteGroup = async (id) => {
     // Role check needed
     try {
       // await axios.delete(`/api/groups/${id}`);
-      toast.success('Group deleted! (API Call commented out)');
+      toast({ title: "Success", description: "Group deleted! (API Call commented out)" });
       fetchGroups();
       fetchMyGroups();
       return true;
-    } catch (error) { console.error('Delete group error:', error); toast.error('Failed to delete group'); return false; }
+    } catch (error) { 
+      console.error('Delete group error:', error); 
+      toast({ title: "Error", description: "Failed to delete group", variant: "destructive" }); 
+      return false; 
+    }
   };
 
   // User actions (needs user ID)
   const joinGroup = async (id) => {
-    if (!isAuthenticated || !userId) { toast.error('Join requires user ID.'); return; }
+    if (!isAuthenticated || !userId) { 
+      toast({ title: "Error", description: "Please log in to join.", variant: "destructive" }); 
+      return; 
+    }
     try {
       // await axios.post(`/api/groups/${id}/join`, { userId });
-      toast.success('Joined group! (API Call commented out)');
+      toast({ title: "Success", description: "Joined group! (API Call commented out)" });
       fetchMyGroups(); // Refresh user's groups
-    } catch (error) { console.error('Join group error:', error); toast.error('Failed to join group'); }
+    } catch (error) { 
+      console.error('Join group error:', error); 
+      toast({ title: "Error", description: "Failed to join group", variant: "destructive" }); 
+    }
   };
   const leaveGroup = async (id) => {
-    if (!isAuthenticated || !userId) { toast.error('Leave requires user ID.'); return; }
+    if (!isAuthenticated || !userId) { 
+      toast({ title: "Error", description: "Please log in to leave.", variant: "destructive" }); 
+      return; 
+    }
     try {
       // await axios.post(`/api/groups/${id}/leave`, { userId });
-      toast.success('Left group! (API Call commented out)');
+      toast({ title: "Success", description: "Left group! (API Call commented out)" });
       fetchMyGroups(); // Refresh user's groups
-    } catch (error) { console.error('Leave group error:', error); toast.error('Failed to leave group'); }
+    } catch (error) { 
+      console.error('Leave group error:', error); 
+      toast({ title: "Error", description: "Failed to leave group", variant: "destructive" }); 
+    }
   };
 
   // Fetch group related data
@@ -151,7 +176,7 @@ export const GroupProvider = ({ children }) => {
       }
       initialFetchDone.current = true;
     }
-  }, [isAuthenticated, userId]); // Remove fetchGroups, fetchMyGroups from dependencies
+  }, [isAuthenticated, userId, fetchGroups, fetchMyGroups]); // Keep fetch callbacks
 
   // Reset initialFetchDone when auth changes
   useEffect(() => {
@@ -177,6 +202,12 @@ export const GroupProvider = ({ children }) => {
   return <GroupContext.Provider value={value}>{children}</GroupContext.Provider>;
 };
 
-export const useGroups = () => useContext(GroupContext);
+export const useGroups = () => {
+  const context = useContext(GroupContext);
+  if (context === undefined) {
+    throw new Error('useGroups must be used within a GroupProvider');
+  }
+  return context;
+};
 
 export default GroupContext;
