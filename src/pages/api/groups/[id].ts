@@ -2,6 +2,10 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
 import { getSession } from 'next-auth/react'; // Use getSession for Pages Router API routes
 import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { Prisma } from '@prisma/client'; // Ensure Prisma is imported
+import { GroupUpdateInput } from '@/types/group';
 // import { getServerSession } from 'next-auth'; // Removed
 // import { authOptions } from '@/lib/auth'; // Removed
 
@@ -123,11 +127,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   } catch (error) {
     console.error(`Error handling request for group ${id}:`, error);
-    // Provide more specific error messages if possible
-    if (error.code === 'P2025') { // Prisma error for record not found during update
-         return res.status(404).json({ message: 'Group not found for update.' });
+
+    // Type check before accessing error properties
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') { // Record not found for update/delete
+         return res.status(404).json({ message: 'Group not found.' });
+      }
+      // Add more specific Prisma error codes if needed
+      // Example: P2002 for unique constraint violation
+      // if (error.code === 'P2002') {
+      //   return res.status(409).json({ message: 'Conflict: A group with similar details might already exist.' });
+      // }
     }
-    res.status(500).json({ message: 'Internal Server Error' });
+    
+    // Generic error for other cases
+    return res.status(500).json({ message: 'An unexpected error occurred.' });
   } finally {
     await prisma.$disconnect();
   }
