@@ -174,7 +174,7 @@ export default function VolunteerList({ initialFilter = 'all', groupId = null }:
     }
 
     setFilteredVolunteers(result);
-  }, [volunteers, filter, searchTerm, sortConfig]);
+  }, [volunteers, filter, searchTerm, sortConfig, currentPage, volunteersPerPage]);
 
   // Get current page volunteers
   const getCurrentPageVolunteers = () => {

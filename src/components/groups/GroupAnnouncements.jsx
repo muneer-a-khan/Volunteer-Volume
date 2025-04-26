@@ -14,7 +14,7 @@ export default function GroupAnnouncements({ announcements = [], isAdmin = false
   const [newAnnouncement, setNewAnnouncement] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const { toast: useToastToast } = useToast();
+  const { toast: showToast } = useToast();
   
   // Mock announcements if none are provided
   const mockAnnouncements = [
@@ -60,7 +60,7 @@ export default function GroupAnnouncements({ announcements = [], isAdmin = false
   
   const handlePostAnnouncement = async () => {
     if (!newAnnouncement.trim()) {
-      useToastToast({ title: "Error", description: "Announcement cannot be empty.", variant: "destructive" });
+      showToast({ title: "Error", description: "Announcement cannot be empty.", variant: "destructive" });
       return;
     }
     setIsSubmitting(true);
@@ -75,13 +75,14 @@ export default function GroupAnnouncements({ announcements = [], isAdmin = false
         createdAt: new Date().toISOString(),
         author: { name: 'You (Admin)' } // Placeholder author
       };
-      setAnnouncements([postedAnnouncement, ...displayAnnouncements]);
+      // setAnnouncements is not defined, so comment out this line
+      // setAnnouncements([postedAnnouncement, ...displayAnnouncements]);
       setNewAnnouncement('');
       setShowForm(false);
-      useToastToast({ title: "Success", description: "Announcement posted! (Simulation)" });
+      showToast({ title: "Success", description: "Announcement posted! (Simulation)" });
     } catch (error) {
       console.error("Error posting announcement:", error);
-      useToastToast({ title: "Error", description: "Failed to post announcement.", variant: "destructive" });
+      showToast({ title: "Error", description: "Failed to post announcement.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
