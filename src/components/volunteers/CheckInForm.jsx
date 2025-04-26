@@ -32,7 +32,7 @@ export default function CheckInForm() {
     const loadShifts = async () => {
       await fetchShifts();
     };
-    
+
     loadShifts();
   }, [fetchShifts]);
 
@@ -41,24 +41,24 @@ export default function CheckInForm() {
     if (!shifts) return;
 
     const now = new Date();
-    
+
     // Shifts that haven't started yet but are coming up (next 24 hours)
     const upcoming = shifts.filter(shift => {
       const startTime = new Date(shift.startTime);
       const endTime = new Date(shift.endTime);
       const in24Hours = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-      
+
       return startTime > now && startTime < in24Hours;
     });
-    
+
     // Shifts that are currently active
     const active = shifts.filter(shift => {
       const startTime = new Date(shift.startTime);
       const endTime = new Date(shift.endTime);
-      
+
       return startTime <= now && endTime >= now;
     });
-    
+
     setUpcomingShifts(upcoming);
     setActiveShifts(active);
   }, [shifts]);
@@ -68,14 +68,14 @@ export default function CheckInForm() {
       toast.error('Please select a shift to check in');
       return;
     }
-    
+
     setLoading(true);
     try {
       const response = await axios.post('/api/check-ins', {
         shiftId: selectedShift,
         type: 'IN'
       });
-      
+
       toast.success('Successfully checked in!');
       setSelectedShift('');
       router.push('/dashboard');
@@ -92,14 +92,14 @@ export default function CheckInForm() {
       toast.error('Please select a shift to check out');
       return;
     }
-    
+
     setLoading(true);
     try {
       const response = await axios.post('/api/check-ins', {
         shiftId: selectedShift,
         type: 'OUT'
       });
-      
+
       toast.success('Successfully checked out!');
       setSelectedShift('');
       router.push('/dashboard');
@@ -116,7 +116,7 @@ export default function CheckInForm() {
       toast.error('Please enter a shift ID');
       return;
     }
-    
+
     setLoading(true);
     try {
       // Get the shift first to validate
@@ -125,13 +125,13 @@ export default function CheckInForm() {
         toast.error('Invalid shift ID');
         return;
       }
-      
+
       // Use the validated shift ID
       const checkInResponse = await axios.post('/api/check-ins', {
         shiftId: shiftId,
         type: activeTab === 'check-in' ? 'IN' : 'OUT'
       });
-      
+
       toast.success(`Successfully checked ${activeTab === 'check-in' ? 'in' : 'out'}!`);
       setShiftId('');
       router.push('/dashboard');
@@ -161,8 +161,8 @@ export default function CheckInForm() {
       <div className="min-h-screen bg-gray-50 py-12">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-8">
-            <Link 
-              href="/dashboard" 
+            <Link
+              href="/dashboard"
               className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
@@ -172,9 +172,9 @@ export default function CheckInForm() {
             </Link>
           </div>
 
-          <Tabs 
-            defaultValue="check-in" 
-            value={activeTab} 
+          <Tabs
+            defaultValue="check-in"
+            value={activeTab}
             onValueChange={setActiveTab}
             className="w-full"
           >
@@ -198,8 +198,8 @@ export default function CheckInForm() {
                         <label htmlFor="shift" className="block text-sm font-medium text-gray-700 mb-1">
                           Select Shift
                         </label>
-                        <Select 
-                          onValueChange={setSelectedShift} 
+                        <Select
+                          onValueChange={setSelectedShift}
                           value={selectedShift}
                         >
                           <SelectTrigger>
@@ -263,7 +263,7 @@ export default function CheckInForm() {
                         placeholder="Enter shift ID"
                         className="flex-1"
                       />
-                      <Button 
+                      <Button
                         onClick={handleManualEntry}
                         disabled={loading || !shiftId}
                       >
@@ -290,8 +290,8 @@ export default function CheckInForm() {
                         <label htmlFor="shift" className="block text-sm font-medium text-gray-700 mb-1">
                           Select Shift
                         </label>
-                        <Select 
-                          onValueChange={setSelectedShift} 
+                        <Select
+                          onValueChange={setSelectedShift}
                           value={selectedShift}
                         >
                           <SelectTrigger>
@@ -355,7 +355,7 @@ export default function CheckInForm() {
                         placeholder="Enter shift ID"
                         className="flex-1"
                       />
-                      <Button 
+                      <Button
                         onClick={handleManualEntry}
                         disabled={loading || !shiftId}
                       >
