@@ -89,7 +89,19 @@ export default function EditGroupPage() {
       router.push(`/groups/${groupId}`); // Redirect back to group page
     } catch (error) {
       console.error('Error updating group:', error);
-      toast.error(error.response?.data?.message || 'Failed to update group.');
+      let errorMessage = 'Failed to update group.'; // Default error message
+
+      // Check if it's an Axios error with a response
+      if (axios.isAxiosError(error) && error.response) {
+        // Safely access the message from the response data
+        errorMessage = error.response.data?.message || errorMessage;
+      } else if (error instanceof Error) {
+        // Handle generic errors
+        errorMessage = error.message;
+      }
+      // Handle other unknown error types if necessary
+
+      toast.error(errorMessage); // Use the determined error message
     } finally {
       setIsSubmitting(false);
     }
