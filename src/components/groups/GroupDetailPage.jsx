@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'react-hot-toast';
 import GroupAnnouncements from './GroupAnnouncements';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../ui/card';
+import { useSession } from 'next-auth/react';
 
 // Hardcoded mock user for demo purposes
 const mockUser = {
@@ -28,87 +29,105 @@ export default function GroupDetailPage({ id: propId }) {
   const pathId = pathname ? pathname.split('/').pop() : null;
   const groupId = propId || pathId;
 
+  const { data: session, status } = useSession();
   // Prevent data fetching on every render
   const hasLoaded = useRef(false);
 
-  // Hardcoded auth values for demo
-  const isAuthenticated = true;
-  const isAdmin = true;
-  const dbUser = mockUser;
+  // Use actual session data
+  const isAuthenticated = status === 'authenticated';
+  const dbUser = session?.user;
+  const siteAdmin = dbUser?.role === 'ADMIN'; // Check for site admin role
 
   const {
-    loading,
+    loading: contextLoading,
     getGroup,
-    joinGroup,
-    leaveGroup,
     getGroupShifts,
     getGroupVolunteers,
-    getGroupHoursReport
+    promoteMember,
+    demoteMember,
+    removeMember
   } = useGroups();
 
   const [group, setGroup] = useState(null);
   const [shifts, setShifts] = useState([]);
   const [volunteers, setVolunteers] = useState([]);
   const [activeTab, setActiveTab] = useState('details');
-  const [reportDateRange, setReportDateRange] = useState({
-    startDate: '',
-    endDate: ''
-  });
-  const [report, setReport] = useState(null);
   const [isGroupAdmin, setIsGroupAdmin] = useState(false);
   const [isMember, setIsMember] = useState(false);
-  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState(null);
   const [buttonLoading, setButtonLoading] = useState(false);
 
   // Load group data when ID is available
-  useEffect(() => {
-    const loadGroupData = async () => {
-      if (groupId && !hasLoaded.current) {
-        hasLoaded.current = true;
-        try {
-          const groupData = await getGroup(groupId);
-          if (groupData) {
-            setGroup(groupData);
+  const loadGroupData = useCallback(async () => {
+    if (!groupId) return;
+    setPageLoading(true);
+    setError(null);
+    console.log('Loading group data for:', groupId);
 
-            // Check if user is admin of this group
-            setIsGroupAdmin(groupData.admins && groupData.admins.some(admin => admin.id === dbUser.id) || isAdmin);
-            setIsMember(groupData.members && groupData.members.some(membership => membership.user.id === dbUser.id));
+    try {
+      const groupData = await getGroup(groupId);
+      console.log('Fetched Group Data:', groupData);
 
-            // Load shifts
-            const shiftsData = await getGroupShifts(groupId);
-            setShifts(shiftsData || []);
+      if (groupData) {
+        setGroup(groupData);
 
-            // Load volunteers
-            const volunteersData = await getGroupVolunteers(groupId);
-            setVolunteers(volunteersData || []);
-          }
-        } catch (error) {
-          console.error("Error loading group data:", error);
-          setError('Failed to load group');
-        }
+        // Check if user is a group admin (specific role in user_groups) or site admin
+        const groupAdminCheck = groupData.user_groups?.some(member => member.users.id === dbUser?.id && member.role === 'ADMIN') || false;
+        setIsGroupAdmin(groupAdminCheck || siteAdmin); 
+        console.log(`Is Group Admin: ${groupAdminCheck}, Is Site Admin: ${siteAdmin}, Final isGroupAdmin: ${groupAdminCheck || siteAdmin}`);
+
+        // Check if user is a member (via user_groups)
+        const memberCheck = groupData.user_groups?.some(member => member.users.id === dbUser?.id) || false;
+        setIsMember(memberCheck);
+        console.log(`Is Member: ${memberCheck}`);
+
+        // Load shifts (associated with the group)
+        const shiftsData = await getGroupShifts(groupId);
+        setShifts(shiftsData || []);
+        console.log('Fetched Group Shifts:', shiftsData);
+
+        // Load volunteers (members)
+        const volunteersData = await getGroupVolunteers(groupId);
+        setVolunteers(volunteersData || []);
+        console.log('Fetched Group Volunteers:', volunteersData);
+
+      } else {
+        setError('Group not found.');
       }
-    };
+    } catch (err) {
+      console.error("Error loading group data:", err);
+      setError('Failed to load group information.');
+    } finally {
+      setPageLoading(false);
+    }
+  }, [groupId, getGroup, getGroupShifts, getGroupVolunteers, dbUser?.id, siteAdmin]);
 
-    loadGroupData();
-
-    // Added missing dependencies
-  }, [groupId, getGroup, getGroupShifts, getGroupVolunteers, dbUser.id, isAdmin]);
+  useEffect(() => {
+    if (status === 'authenticated' && groupId && !hasLoaded.current) {
+       hasLoaded.current = true;
+       loadGroupData();
+    } else if (status === 'unauthenticated') {
+       // Handle redirect or show login prompt if needed
+       console.log('User not authenticated');
+       setPageLoading(false); // Stop loading if not authenticated
+    }
+  }, [groupId, status, loadGroupData]);
 
   const handleJoinGroup = async () => {
-    if (!isAuthenticated) {
-      toast.error('You must be logged in to join a group');
-      return;
-    }
-
+    if (!isAuthenticated || !groupId) return;
     setButtonLoading(true);
     try {
-      await axios.post(`/api/groups/${groupId}/join`);
+      // Use user ID from session
+      await axios.post(`/api/groups/${groupId}/join`, { userId: dbUser.id }); 
       toast.success('Successfully joined the group!');
-      setIsMember(true);
-      // Refresh group data
-      const response = await axios.get(`/api/groups/${groupId}`);
-      setGroup(response.data);
+      setIsMember(true); // Optimistic update
+      // Refresh volunteers list immediately
+      const volunteersData = await getGroupVolunteers(groupId);
+      setVolunteers(volunteersData || []);
+      // Optionally refresh group data for counts if needed, but avoid full reload
+      // const groupData = await getGroup(groupId);
+      // setGroup(groupData);
     } catch (err) {
       console.error('Error joining group:', err);
       toast.error(err.response?.data?.message || 'Failed to join group');
@@ -118,14 +137,20 @@ export default function GroupDetailPage({ id: propId }) {
   };
 
   const handleLeaveGroup = async () => {
+    if (!isAuthenticated || !groupId) return;
     setButtonLoading(true);
     try {
-      await axios.post(`/api/groups/${groupId}/leave`);
+       // Use user ID from session
+      await axios.post(`/api/groups/${groupId}/leave`, { userId: dbUser.id });
       toast.success('Successfully left the group');
-      setIsMember(false);
-      // Refresh group data
-      const response = await axios.get(`/api/groups/${groupId}`);
-      setGroup(response.data);
+      setIsMember(false); // Optimistic update
+      setIsGroupAdmin(false); // Cannot be admin if not a member (unless site admin)
+      // Refresh volunteers list immediately
+      const volunteersData = await getGroupVolunteers(groupId);
+      setVolunteers(volunteersData || []);
+      // Optionally refresh group data for counts
+      // const groupData = await getGroup(groupId);
+      // setGroup(groupData);
     } catch (err) {
       console.error('Error leaving group:', err);
       toast.error(err.response?.data?.message || 'Failed to leave group');
@@ -134,241 +159,218 @@ export default function GroupDetailPage({ id: propId }) {
     }
   };
 
+  const handlePromote = async (memberUserId) => {
+      if (!isGroupAdmin || !groupId) return;
+      try {
+          // Call context function (assuming it exists and calls API)
+          const success = await promoteMember(groupId, memberUserId);
+          if (success) {
+              toast.success('Member promoted to admin');
+              // Refresh volunteer list to show updated role
+              const volunteersData = await getGroupVolunteers(groupId);
+              setVolunteers(volunteersData || []);
+          } else {
+             toast.error('Failed to promote member');
+          }
+      } catch (err) {
+          console.error('Error promoting member:', err);
+          toast.error(err.response?.data?.message || 'Failed to promote member');
+      }
+  };
+
+  const handleDemote = async (memberUserId) => {
+      if (!isGroupAdmin || !groupId) return;
+      try {
+          // Call context function (assuming it exists and calls API)
+          const success = await demoteMember(groupId, memberUserId);
+          if (success) {
+              toast.success('Admin demoted to member');
+              // Refresh volunteer list
+              const volunteersData = await getGroupVolunteers(groupId);
+              setVolunteers(volunteersData || []);
+          } else {
+              toast.error('Failed to demote member');
+          }
+      } catch (err) {
+          console.error('Error demoting member:', err);
+          toast.error(err.response?.data?.message || 'Failed to demote member');
+      }
+  };
+
+  const handleRemove = async (memberUserId) => {
+      if (!isGroupAdmin || !groupId) return;
+      try {
+          // Call context function (assuming it exists and calls API)
+          const success = await removeMember(groupId, memberUserId);
+          if (success) {
+              toast.success('Member removed from group');
+              // Refresh volunteer list
+              const volunteersData = await getGroupVolunteers(groupId);
+              setVolunteers(volunteersData || []);
+              // If the removed user is the current user (e.g., kicked themselves)
+              if (memberUserId === dbUser?.id) {
+                  setIsMember(false);
+                  setIsGroupAdmin(false);
+              }
+          } else {
+               toast.error('Failed to remove member');
+          }
+      } catch (err) {
+          console.error('Error removing member:', err);
+          toast.error(err.response?.data?.message || 'Failed to remove member');
+      }
+  };
+
   // Render loading state
-  if (loading || !group) {
+  if (status === 'loading' || pageLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-            <div className="bg-white shadow rounded-lg p-6 mb-8">
-              <div className="h-10 bg-gray-200 rounded mb-4"></div>
-              <div className="h-24 bg-gray-200 rounded mb-6"></div>
-              <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-            </div>
-          </div>
-        </div>
+      <div className="container mx-auto px-4 py-8 flex justify-center items-center min-h-screen">
+        <LoadingSpinner size="lg" />
       </div>
     );
   }
 
+  if (!isAuthenticated && status !== 'loading') {
+     return <div className="text-center py-10">Please log in to view group details.</div>; 
+  }
+
   if (error) return <div className="text-center py-10 text-red-600">Error: {error}</div>;
+  if (!group) return <div className="text-center py-10">Group not found or loading...</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background py-8">
+      <div className="container mx-auto px-4">
         {/* Back button */}
         <div className="mb-6">
-          <Link
-            href="/groups"
-            className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-            </svg>
-            Back to Groups
-          </Link>
+          <Button variant="link" asChild className="px-0">
+            <Link href="/groups">
+               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                 <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+               </svg>
+               Back to Groups
+            </Link>
+          </Button>
         </div>
 
         {/* Group header */}
-        <Card className="overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200 mb-8">
-          <CardContent className="p-6 sm:p-8">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-              <div className="flex items-center">
+        <Card className="mb-8 shadow-sm">
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+              <div className="flex items-center gap-4">
                 {group.logoUrl ? (
                   <Image
-                    className="h-20 w-20 rounded-full object-cover"
+                    className="h-16 w-16 rounded-lg object-cover"
                     src={group.logoUrl}
-                    alt={group.name}
-                    width={80}
-                    height={80}
+                    alt={`${group.name} logo`}
+                    width={64}
+                    height={64}
                   />
                 ) : (
-                  <div className="h-20 w-20 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-3xl">
-                    {group.name.charAt(0)}
+                  <div className="h-16 w-16 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-semibold text-2xl">
+                    {group.name?.charAt(0).toUpperCase() || 'G'}
                   </div>
                 )}
-                <div className="ml-6">
-                  <h1 className="text-3xl font-bold text-gray-900">{group.name}</h1>
-                  <div className="mt-1 flex flex-wrap items-center text-sm text-gray-500">
-                    {group._count?.members || 0} members • {group._count?.shifts || 0} shifts
+                <div>
+                  <h1 className="text-2xl font-semibold">{group.name}</h1>
+                  <div className="text-sm text-muted-foreground mt-1">
+                     {group._count?.user_groups ?? volunteers.length} members • {group._count?.shifts ?? shifts.length} upcoming shifts
                   </div>
                 </div>
               </div>
 
-              <div className="mt-4 md:mt-0">
+              <div className="flex items-center gap-2 flex-shrink-0 mt-4 md:mt-0">
                 {isMember ? (
                   <Button
                     onClick={handleLeaveGroup}
                     disabled={buttonLoading}
                     variant="outline"
-                    className="border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 py-2 px-4 rounded-md transition-colors duration-200"
+                    size="sm"
                   >
-                    {buttonLoading ? <><LoadingSpinner className="h-4 w-4 mr-2" /> Leaving...</> : 'Leave Group'}
+                    {buttonLoading ? <LoadingSpinner className="mr-2 h-4 w-4" /> : null} 
+                    Leave Group
                   </Button>
                 ) : (
                   <Button
                     onClick={handleJoinGroup}
                     disabled={buttonLoading}
-                    className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition-colors duration-200"
+                    variant="default"
+                    size="sm"
                   >
-                    {buttonLoading ? <><LoadingSpinner className="h-4 w-4 mr-2" /> Joining...</> : 'Join Group'}
+                     {buttonLoading ? <LoadingSpinner className="mr-2 h-4 w-4" /> : null} 
+                     Join Group
                   </Button>
                 )}
 
                 {isGroupAdmin && (
-                  <Link href={`/groups/${groupId}/edit`}>
-                    <Button
-                      className="ml-3 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md transition-colors duration-200"
-                      variant="outline"
-                    >
-                      Edit Group
-                    </Button>
-                  </Link>
+                   <Button variant="outline" size="sm" asChild>
+                      <Link href={`/groups/${groupId}/edit`}>Edit Group</Link>
+                   </Button>
                 )}
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Group details */}
+        {/* Main content grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main content */}
           <div className="lg:col-span-2">
-            {/* About section */}
-            <Card className="overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200 mb-8">
-              <CardHeader className="bg-gray-50 border-b border-gray-200 pb-4">
-                <CardTitle className="text-xl">About</CardTitle>
-                <CardDescription className="text-gray-600">
-                  Group information and details
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-6">
-                <p className="text-gray-700 whitespace-pre-line">
-                  {group.description || 'No description available.'}
-                </p>
+            <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-3 mb-4">
+                <TabsTrigger value="details">About</TabsTrigger>
+                <TabsTrigger value="shifts">Upcoming Shifts</TabsTrigger>
+                <TabsTrigger value="announcements">Announcements</TabsTrigger>
+              </TabsList>
 
-                {group.category && (
-                  <div className="mt-4">
-                    <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 px-2.5 py-0.5 rounded-full text-xs font-medium">
-                      {group.category}
-                    </Badge>
-                  </div>
-                )}
-
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                  <h3 className="text-md font-medium text-gray-900 mb-2">Group details</h3>
-                  <dl className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
-                    <div className="sm:col-span-1">
-                      <dt className="text-sm font-medium text-gray-500">Status</dt>
-                      <dd className="mt-1 text-sm text-gray-900 capitalize">{group.status?.toLowerCase() || 'Active'}</dd>
-                    </div>
-                    <div className="sm:col-span-1">
-                      <dt className="text-sm font-medium text-gray-500">Visibility</dt>
-                      <dd className="mt-1 text-sm text-gray-900">{group.isPublic ? 'Public' : 'Private'}</dd>
-                    </div>
-                    <div className="sm:col-span-1">
-                      <dt className="text-sm font-medium text-gray-500">Created</dt>
-                      <dd className="mt-1 text-sm text-gray-900">
-                        {group.createdAt ? format(parseISO(group.createdAt), 'PPP') : 'Unknown'}
-                      </dd>
-                    </div>
-                  </dl>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Shifts section */}
-            {shifts.length > 0 && (
-              <Card className="overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200 mb-8">
-                <CardHeader className="bg-gray-50 border-b border-gray-200 pb-4">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <CardTitle className="text-xl">Upcoming Shifts</CardTitle>
-                      <CardDescription className="text-gray-600">
-                        Volunteer opportunities
-                      </CardDescription>
-                    </div>
-                    {isMember && (
-                      <Link href={`/shifts/new?groupId=${groupId}`}>
-                        <Button className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition-colors duration-200">
-                          Create Shift
-                        </Button>
-                      </Link>
+              <TabsContent value="details">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>About {group.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="prose prose-sm max-w-none dark:prose-invert">
+                    {group.description ? (
+                       <p>{group.description}</p> 
+                    ) : (
+                       <p className="text-muted-foreground italic">No description provided.</p>
                     )}
-                  </div>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <ShiftList shifts={shifts.slice(0, 3)} group={group} showGroup={false} />
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-                  {shifts.length > 3 && (
-                    <div className="mt-4 text-center">
-                      <Link
-                        href={`/shifts?groupId=${groupId}`}
-                        className="text-sm font-medium text-blue-600 hover:text-blue-800"
-                      >
-                        View all {shifts.length} shifts
-                      </Link>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+              <TabsContent value="shifts">
+                 <Card>
+                   <CardHeader>
+                     <CardTitle>Upcoming Group Shifts</CardTitle>
+                     <CardDescription>Shifts specifically organized by or for {group.name}.</CardDescription>
+                   </CardHeader>
+                   <CardContent>
+                      <ShiftList shifts={shifts} isLoading={pageLoading} context="group" /> 
+                   </CardContent>
+                 </Card>
+              </TabsContent>
+
+              <TabsContent value="announcements">
+                 <GroupAnnouncements groupId={groupId} isGroupAdmin={isGroupAdmin} />
+              </TabsContent>
+            </Tabs>
           </div>
 
-          {/* Sidebar */}
           <div className="lg:col-span-1">
-            {/* Members Card */}
-            <Card className="overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200 mb-8">
-              <CardHeader className="bg-gray-50 border-b border-gray-200 pb-4">
-                <CardTitle className="text-xl">Members</CardTitle>
-                <CardDescription className="text-gray-600">
-                  {group._count?.members || 0} people
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-6">
-                <MemberList members={volunteers.slice(0, 5)} isAdmin={isGroupAdmin} />
-
-                {volunteers.length > 5 && (
-                  <div className="mt-4 text-center">
-                    <Link
-                      href={`/groups/${groupId}/members`}
-                      className="text-sm font-medium text-blue-600 hover:text-blue-800"
-                    >
-                      View all {volunteers.length} members
-                    </Link>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Admin Actions */}
-            {isGroupAdmin && (
-              <Card className="overflow-hidden shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200">
-                <CardHeader className="bg-gray-50 border-b border-gray-200 pb-4">
-                  <CardTitle className="text-xl">Admin Actions</CardTitle>
-                </CardHeader>
-                <CardContent className="p-6 space-y-4">
-                  <Link href={`/groups/${groupId}/invite`}>
-                    <Button
-                      className="w-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 py-2 px-4 rounded-md transition-colors duration-200"
-                      variant="outline"
-                    >
-                      Manage Invites
-                    </Button>
-                  </Link>
-
-                  <Link href={`/groups/${groupId}/reports`}>
-                    <Button
-                      className="w-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 py-2 px-4 rounded-md transition-colors duration-200"
-                      variant="outline"
-                    >
-                      Generate Reports
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            )}
+             <Card>
+               <CardHeader>
+                 <CardTitle>Members ({volunteers.length})</CardTitle>
+                 <CardDescription>Volunteers in this group.</CardDescription>
+               </CardHeader>
+               <CardContent className="p-0">
+                 <MemberList 
+                    members={volunteers}
+                    isAdmin={isGroupAdmin}
+                    groupId={groupId}
+                    onPromoteMember={handlePromote}
+                    onDemoteMember={handleDemote}
+                    onRemoveMember={handleRemove}
+                  />
+               </CardContent>
+             </Card>
           </div>
         </div>
       </div>

@@ -165,6 +165,62 @@ export const GroupProvider = ({ children }) => {
     }
   };
 
+  // --- Member Management Functions --- 
+  const promoteMember = async (groupId, memberUserId) => {
+    if (!isAuthenticated || !userId) { 
+        toast({ title: "Error", description: "Authentication required.", variant: "destructive" }); 
+        return false;
+    }
+    try {
+      // API call to promote (e.g., update role in user_groups)
+      await axios.patch(`/api/groups/${groupId}/members/${memberUserId}`, { role: 'ADMIN' }); 
+      toast({ title: "Success", description: "Member promoted to Admin." });
+      return true;
+    } catch (error) { 
+      console.error('Promote member error:', error); 
+      toast({ title: "Error", description: error.response?.data?.message || "Failed to promote member", variant: "destructive" }); 
+      return false;
+    }
+  };
+
+  const demoteMember = async (groupId, memberUserId) => {
+    if (!isAuthenticated || !userId) { 
+        toast({ title: "Error", description: "Authentication required.", variant: "destructive" }); 
+        return false;
+    }
+    try {
+      // API call to demote (e.g., update role in user_groups)
+      await axios.patch(`/api/groups/${groupId}/members/${memberUserId}`, { role: 'MEMBER' }); 
+      toast({ title: "Success", description: "Admin demoted to Member." });
+      return true;
+    } catch (error) { 
+      console.error('Demote member error:', error); 
+      toast({ title: "Error", description: error.response?.data?.message || "Failed to demote member", variant: "destructive" }); 
+      return false;
+    }
+  };
+
+  const removeMember = async (groupId, memberUserId) => {
+    if (!isAuthenticated || !userId) { 
+        toast({ title: "Error", description: "Authentication required.", variant: "destructive" }); 
+        return false;
+    }
+    try {
+      // API call to remove member (e.g., delete from user_groups)
+      await axios.delete(`/api/groups/${groupId}/members/${memberUserId}`); 
+      toast({ title: "Success", description: "Member removed from group." });
+      // Refresh myGroups if the removed user is the current user
+      if (memberUserId === userId) {
+        fetchMyGroups();
+      }
+      return true;
+    } catch (error) { 
+      console.error('Remove member error:', error); 
+      toast({ title: "Error", description: error.response?.data?.message || "Failed to remove member", variant: "destructive" }); 
+      return false;
+    }
+  };
+
   // Initial fetch - modified to prevent infinite loops
   useEffect(() => {
     // Only fetch once when component mounts or auth changes
@@ -197,6 +253,9 @@ export const GroupProvider = ({ children }) => {
     leaveGroup,
     getGroupShifts,
     getGroupVolunteers,
+    promoteMember,
+    demoteMember,
+    removeMember,
   };
 
   return <GroupContext.Provider value={value}>{children}</GroupContext.Provider>;

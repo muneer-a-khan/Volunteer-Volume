@@ -5,112 +5,102 @@ import {
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
-  DropdownMenuTrigger 
+  DropdownMenuTrigger, 
+  DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, UserCheck, UserX, Crown, Mail } from 'lucide-react';
-import { toast } from 'react-hot-toast';
 
-// Hardcoded mock user for demo purposes
-const mockUser = {
-  id: '1',
-  name: 'Demo User',
-  email: 'demo@example.com'
-};
-
-export default function MemberList({ members = [], isAdmin = false, groupId }) {
-  // Use hardcoded user data instead of auth context
-  const user = mockUser;
-  
-  const handlePromoteMember = (memberId) => {
-    // This would call an API in a real implementation
-    toast.success('Member promoted to admin');
-  };
-  
-  const handleRemoveMember = (memberId) => {
-    // This would call an API in a real implementation
-    toast.success('Member removed from group');
-  };
-  
-  const handleDemoteMember = (memberId) => {
-    // This would call an API in a real implementation
-    toast.success('Admin demoted to member');
-  };
-  
+export default function MemberList({ 
+  members = [], 
+  isAdmin = false, 
+  groupId, 
+  onPromoteMember, 
+  onDemoteMember, 
+  onRemoveMember 
+}) {
   if (!members || members.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
+      <div className="text-center py-8 text-muted-foreground italic">
         No members in this group yet.
       </div>
     );
   }
 
   return (
-    <div className="bg-card border rounded-md overflow-hidden">
-      <div className="p-4 border-b bg-muted/50">
-        <h3 className="text-lg font-medium">Members ({members.length})</h3>
-      </div>
+    <div className="border-t">
       <ul className="divide-y divide-border">
-        {members.map((member) => (
-          <li key={member.id} className="p-4 flex items-center justify-between">
-            <div className="flex items-center">
-              <Avatar className="mr-3">
-                <AvatarImage src={member.user.image || ''} alt={member.user.name} />
-                <AvatarFallback>
-                  {member.user.name?.charAt(0) || 'U'}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <div className="font-medium flex items-center">
-                  {member.user.name || 'Unknown User'}
-                  {member.role === 'ADMIN' && (
-                    <Badge variant="outline" className="ml-2 bg-amber-100 text-amber-800 border-amber-200">
-                      Admin
-                    </Badge>
-                  )}
+        {members.map((member) => {
+          if (!member || !member.users) {
+            console.warn('Skipping rendering member due to missing data:', member);
+            return null;
+          }
+          
+          return (
+            <li key={member.id} className="px-4 py-3 flex items-center justify-between hover:bg-muted/50">
+              <div className="flex items-center">
+                <Avatar className="mr-3 h-8 w-8">
+                  <AvatarImage src={member.users.image || ''} alt={member.users.name || 'User'} />
+                  <AvatarFallback className="text-xs">
+                    {member.users.name?.charAt(0).toUpperCase() || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="text-sm">
+                  <div className="font-medium flex items-center">
+                    {member.users.name || 'Unknown User'}
+                    {member.role === 'ADMIN' && (
+                      <Badge variant="secondary" className="ml-2 text-xs px-1.5 py-0.5">
+                        Admin
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground">{member.users.email || 'No email'}</div>
                 </div>
-                <div className="text-sm text-muted-foreground">{member.user.email}</div>
               </div>
-            </div>
-            
-            {isAdmin && user?.id !== member.user.id && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <MoreHorizontal className="h-4 w-4" />
-                    <span className="sr-only">Open menu</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => window.location.href = `mailto:${member.user.email}`}>
-                    <Mail className="mr-2 h-4 w-4" />
-                    Email
-                  </DropdownMenuItem>
-                  
-                  {member.role !== 'ADMIN' ? (
-                    <DropdownMenuItem onClick={() => handlePromoteMember(member.id)}>
-                      <Crown className="mr-2 h-4 w-4" />
-                      Promote to Admin
+              
+              {isAdmin && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <MoreHorizontal className="h-4 w-4" />
+                      <span className="sr-only">Member Actions</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => window.location.href = `mailto:${member.users.email}`}>
+                      <Mail className="mr-2 h-4 w-4" />
+                      <span>Email {member.users.name}</span>
                     </DropdownMenuItem>
-                  ) : (
-                    <DropdownMenuItem onClick={() => handleDemoteMember(member.id)}>
-                      <UserCheck className="mr-2 h-4 w-4" />
-                      Demote to Member
+                    
+                    <DropdownMenuSeparator />
+                    
+                    {member.role !== 'ADMIN' ? (
+                      <DropdownMenuItem onClick={() => onPromoteMember(member.users.id)}>
+                        <Crown className="mr-2 h-4 w-4" />
+                        <span>Promote to Admin</span>
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem onClick={() => onDemoteMember(member.users.id)}>
+                        <UserCheck className="mr-2 h-4 w-4" />
+                        <span>Demote to Member</span>
+                      </DropdownMenuItem>
+                    )}
+                    
+                    <DropdownMenuSeparator />
+                    
+                    <DropdownMenuItem 
+                      className="text-destructive focus:text-destructive" 
+                      onClick={() => onRemoveMember(member.users.id)}
+                    >
+                      <UserX className="mr-2 h-4 w-4" />
+                      <span>Remove from Group</span>
                     </DropdownMenuItem>
-                  )}
-                  
-                  <DropdownMenuItem 
-                    className="text-destructive focus:text-destructive" 
-                    onClick={() => handleRemoveMember(member.id)}
-                  >
-                    <UserX className="mr-2 h-4 w-4" />
-                    Remove from Group
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </li>
-        ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

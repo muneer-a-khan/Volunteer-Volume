@@ -46,14 +46,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const group = await prisma.groups.findUnique({
       where: { id: id },
       include: {
-        user_groups: { // Changed from 'users' to 'user_groups' (common join table name)
-          include: {
-            users: true // Include user details via the join table
+        _count: {
+          select: {
+            user_groups: true,
+            shifts: true
           }
         },
-        shifts: { // Include shifts for this group
+        user_groups: {
+          include: {
+            users: true
+          }
+        },
+        shifts: {
           orderBy: { start_time: 'asc' },
-          // Optionally add filters, e.g., only upcoming shifts
           where: { start_time: { gte: new Date() } }
         },
       },
