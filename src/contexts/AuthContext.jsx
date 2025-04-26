@@ -1,31 +1,31 @@
 'use client';
 
 import React, { createContext, useContext } from 'react';
+import { useSession, signIn, signOut } from 'next-auth/react';
 
 // Create the authentication context
 const AuthContext = createContext(undefined);
 
-// Mock user data
-const mockUser = {
-  id: '1',
-  name: 'Demo User',
-  email: 'demo@example.com',
-  role: 'ADMIN',
-  createdAt: new Date().toISOString(),
-};
-
 // Provider component that wraps your app and makes auth object available to any child component
 export function AuthProvider({ children }) {
+  const { data: session, status } = useSession();
+  const isLoading = status === 'loading';
+  const isAuthenticated = !!session?.user;
+
   // Authentication state
   const authValues = {
-    user: mockUser,
-    dbUser: mockUser,
-    isAuthenticated: true,
-    isAdmin: true,
-    isLoading: false,
-    signIn: () => Promise.resolve(mockUser),
-    signUp: () => Promise.resolve(mockUser),
-    signOut: () => Promise.resolve(),
+    user: session?.user || null,
+    dbUser: session?.user || null,
+    isAuthenticated,
+    isAdmin: session?.user?.role === 'ADMIN',
+    isLoading,
+    signIn,
+    signUp: (data) => {
+      // You would normally call an API endpoint here
+      console.log('Sign up data:', data);
+      return Promise.resolve(null);
+    },
+    signOut: () => signOut({ callbackUrl: '/' }),
     error: null,
     clearError: () => { },
   };

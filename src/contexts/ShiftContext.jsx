@@ -1,15 +1,14 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-// import { useAuth } from './AuthContext'; // Removed
+import { useSession } from 'next-auth/react';
 
 const ShiftContext = createContext();
 
 export const ShiftProvider = ({ children }) => {
-  // const { isAuthenticated, dbUser } = useAuth(); // Removed
-  const isAuthenticated = true; // Placeholder
-  // Need a way to identify user for actions if dbUser was used
-  const userId = null; // Placeholder for dbUser?.id
+  const { data: session } = useSession();
+  const isAuthenticated = !!session?.user;
+  const userId = session?.user?.id || null;
 
   const [shifts, setShifts] = useState([]);
   const [myShifts, setMyShifts] = useState([]);
@@ -35,17 +34,15 @@ export const ShiftProvider = ({ children }) => {
     if (!isAuthenticated || !userId) return; // Cannot fetch without user ID
     setLoading(true);
     try {
-      // const response = await axios.get(`/api/shifts/my?userId=${userId}`); // Needs userId
-      // setMyShifts(response.data);
-      setMyShifts([]); // Placeholder response
-      toast.info('Fetching my shifts requires user identification (API call commented out).');
+      const response = await axios.get(`/api/shifts/my?userId=${userId}`);
+      setMyShifts(response.data);
     } catch (error) {
       console.error('Error fetching my shifts:', error);
       toast.error('Failed to load your shifts');
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, userId]);
 
   // Create a new shift
   const createShift = async (shiftData) => {
@@ -110,8 +107,8 @@ export const ShiftProvider = ({ children }) => {
       return;
     }
     try {
-      // await axios.post(`/api/shifts/${shiftId}/signup`, { userId }); // Needs userId
-      toast.success('Successfully signed up! (API Call commented out)');
+      await axios.post(`/api/shifts/${shiftId}/signup`, { userId });
+      toast.success('Successfully signed up!');
       // Optimistic update or refetch
       fetchShifts();
       fetchMyShifts();
@@ -128,8 +125,8 @@ export const ShiftProvider = ({ children }) => {
       return;
     }
     try {
-      // await axios.post(`/api/shifts/${shiftId}/cancel`, { userId }); // Needs userId
-      toast.success('Signup canceled. (API call commented out)');
+      await axios.post(`/api/shifts/${shiftId}/cancel`, { userId });
+      toast.success('Signup canceled.');
       // Optimistic update or refetch
       fetchShifts();
       fetchMyShifts();
@@ -174,8 +171,8 @@ export const ShiftProvider = ({ children }) => {
   // Initial fetch (maybe fetch all by default?)
   useEffect(() => {
     fetchShifts(); // Fetch all upcoming shifts initially
-    // fetchMyShifts(); // Fetching user shifts requires ID
-  }, [isAuthenticated, fetchShifts]); // Added fetchShifts dependency
+    fetchMyShifts(); // Fetching user shifts requires ID
+  }, [isAuthenticated, fetchShifts, fetchMyShifts]); // Added fetchShifts and fetchMyShifts dependency
 
   // Provider value
   const value = {
@@ -183,9 +180,9 @@ export const ShiftProvider = ({ children }) => {
     myShifts,
     loading,
     fetchShifts,
-    fetchMyShifts, // Kept, but needs user ID
-    signUpForShift, // Kept, but needs user ID
-    cancelShiftSignup, // Kept, but needs user ID
+    fetchMyShifts,
+    signUpForShift,
+    cancelShiftSignup,
     createShift,
     updateShift,
     deleteShift,
