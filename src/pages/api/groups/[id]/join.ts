@@ -30,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     await prisma.$connect();
     // Need userId to join group.
     // Cannot proceed without authentication.
-    return res.status(501).json({ message: 'Joining group requires authentication (currently disabled)' });
+    return res.status(501).json({ success: false, message: 'Joining group requires authentication (currently disabled)' });
 
     /* Original logic:
     // Check if user is already a member
