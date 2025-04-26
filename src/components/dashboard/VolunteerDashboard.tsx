@@ -54,11 +54,22 @@ export default function VolunteerDashboard() {
     setLoading(true);
     setError(null);
     try {
+      const statsUrl = `/api/volunteer/stats`;
+      const upcomingShiftsUrl = `/api/shifts/my?filter=upcoming`;
+      const pastShiftsUrl = `/api/shifts/my?filter=past`;
+      const groupsUrl = `/api/groups/my?userId=${userId}`;
+
+      console.log("[VolunteerDashboard] Fetching URLs:");
+      console.log(" - Stats:", statsUrl);
+      console.log(" - Upcoming:", upcomingShiftsUrl);
+      console.log(" - Past:", pastShiftsUrl);
+      console.log(" - Groups:", groupsUrl);
+
       const [statsRes, upcomingShiftsRes, pastShiftsRes, groupsRes] = await Promise.all([
-        axios.get(`/api/volunteer/stats`),
-        axios.get(`/api/shifts/my?filter=upcoming`),
-        axios.get(`/api/shifts/my?filter=past`),
-        axios.get(`/api/groups/my?userId=${userId}`)
+        axios.get(statsUrl),
+        axios.get(upcomingShiftsUrl),
+        axios.get(pastShiftsUrl),
+        axios.get(groupsUrl)
       ]);
 
       setStats(statsRes.data);
