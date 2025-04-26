@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from "@/components/ui/button"
 import VolunteerList from '@/components/volunteers/VolunteerList'; // Path confirmed correct
-import Layout from '@/components/layout/Layout'; // Corrected path
 import { Skeleton } from '@/components/ui/skeleton'; // Use Skeleton
 // import { useAuth } from '@/contexts/AuthContext'; // Removed
 
@@ -20,18 +19,18 @@ export default function AdminVolunteersPage() {
 
   if (authLoading) {
     return (
-      <Layout>
+      
         <div className="flex justify-center items-center h-screen">
           <Skeleton className="h-12 w-12 rounded-full" />
         </div>
-      </Layout>
+
     );
   }
   
   // Removed auth checks
 
   return (
-    <Layout>
+    
        <div className="container mx-auto px-4 py-8">
          <div className="flex justify-between items-center mb-8">
            <h1 className="text-3xl font-bold">Manage Volunteers</h1>
@@ -47,6 +46,6 @@ export default function AdminVolunteersPage() {
          {/* VolunteerList handles fetching and display */}
          <VolunteerList /> 
        </div>
-     </Layout>
+
   );
 } 

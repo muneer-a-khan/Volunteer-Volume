@@ -12,6 +12,10 @@ import LoadingSpinner from '../ui/LoadingSpinner';
 import { Button } from '../ui/button';
 import ShiftList from '../shifts/ShiftList';
 import MemberList from './MemberList';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'react-hot-toast';
+import GroupAnnouncements from './GroupAnnouncements';
 
 export default function GroupDetailPage() {
   const router = useRouter();
@@ -40,6 +44,7 @@ export default function GroupDetailPage() {
   const [isMember, setIsMember] = useState(false);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [error, setError] = useState(null);
+  const [buttonLoading, setButtonLoading] = useState(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -80,6 +85,45 @@ export default function GroupDetailPage() {
 
     loadGroupData();
   }, [id, isAuthenticated, dbUser, isAdmin, getGroup, getGroupShifts, getGroupVolunteers]);
+
+  const handleJoinGroup = async () => {
+    if (!isAuthenticated) {
+      toast.error('You must be logged in to join a group');
+      return;
+    }
+
+    setButtonLoading(true);
+    try {
+      await axios.post(`/api/groups/${id}/join`);
+      toast.success('Successfully joined the group!');
+      setIsMember(true);
+      // Refresh group data
+      const response = await axios.get(`/api/groups/${id}`);
+      setGroup(response.data);
+    } catch (err) {
+      console.error('Error joining group:', err);
+      toast.error(err.response?.data?.message || 'Failed to join group');
+    } finally {
+      setButtonLoading(false);
+    }
+  };
+
+  const handleLeaveGroup = async () => {
+    setButtonLoading(true);
+    try {
+      await axios.post(`/api/groups/${id}/leave`);
+      toast.success('Successfully left the group');
+      setIsMember(false);
+      // Refresh group data
+      const response = await axios.get(`/api/groups/${id}`);
+      setGroup(response.data);
+    } catch (err) {
+      console.error('Error leaving group:', err);
+      toast.error(err.response?.data?.message || 'Failed to leave group');
+    } finally {
+      setButtonLoading(false);
+    }
+  };
 
   // Render loading state
   if (loading || !group) {

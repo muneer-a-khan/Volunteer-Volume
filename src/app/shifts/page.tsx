@@ -5,32 +5,49 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import ShiftList from '@/components/shifts/ShiftList';
-import Layout from '@/components/layout/Layout';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ShiftsPage() {
   const router = useRouter();
-  const authLoading = false;
-  const isAuthenticated = true;
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (authLoading) {
+  // Simulating data loading
+  useEffect(() => {
+    // Fetch data and update loading state
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
     return (
-      <Layout>
-        <div className="flex justify-center items-center h-screen">
-          <Skeleton className="h-12 w-12 rounded-full" />
-        </div>
-      </Layout>
+      <div className="container mx-auto px-4 py-8">
+        <Skeleton className="h-10 w-40 mb-4" />
+        <Skeleton className="h-[600px] w-full rounded-lg" />
+      </div>
     );
   }
-  
-  return (
-    <Layout>
+
+  if (error) {
+    return (
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Available Shifts</h1>
+        <h1 className="text-3xl font-bold">Available Shifts</h1>
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          {error}
         </div>
-        <ShiftList />
       </div>
-    </Layout>
+    );
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Available Shifts</h1>
+      </div>
+      <ShiftList />
+    </div>
   );
 } 

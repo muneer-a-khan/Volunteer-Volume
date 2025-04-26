@@ -3,16 +3,19 @@ import axios from 'axios';
 import Link from 'next/link';
 import { format, parseISO, isAfter, isBefore } from 'date-fns';
 import { useShifts } from '../../contexts/ShiftContext';
-import { useAuth } from '../../contexts/AuthContext';
 import ShiftCard from './ShiftCard';
-import LoadingSpinner from '../ui/LoadingSpinner';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ShiftList({ groupId = null }) {
   const { shifts, loading, fetchShifts, signUpForShift, cancelShiftSignup } = useShifts();
-  const { isAdmin, dbUser } = useAuth();
+  // Hardcoded auth values since we've removed authentication
+  const isAdmin = true; // Default to admin for simplicity
+  const dbUser = { id: 'placeholder-user-id' }; // Placeholder user
+  
   const [filter, setFilter] = useState('upcoming');
   const [dateFilter, setDateFilter] = useState('');
   const [filteredShifts, setFilteredShifts] = useState([]);
@@ -121,10 +124,8 @@ export default function ShiftList({ groupId = null }) {
 
   // Check if user is signed up for a shift
   const isSignedUp = (shift) => {
-    if (!dbUser || !shift.volunteers) return false;
-  
+    if (!shift.volunteers) return false;
     return shift.volunteers.some(volunteer => volunteer.id === dbUser.id);
-
   };
 
   // Check if shift has available spots
@@ -135,11 +136,13 @@ export default function ShiftList({ groupId = null }) {
   // Show loading state
   if (loading) {
     return (
-      <div className="animate-pulse">
-        <div className="h-10 bg-gray-200 rounded mb-4"></div>
-        <div className="space-y-3">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-20 bg-gray-200 rounded"></div>
+      <div className="space-y-6">
+        <div className="flex justify-center">
+          <LoadingSpinner size="lg" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-64 w-full" />
           ))}
         </div>
       </div>

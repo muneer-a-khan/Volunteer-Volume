@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from "@/components/ui/button"
-import Layout from '@/components/layout/Layout'; // Corrected path
 import { Skeleton } from '@/components/ui/skeleton'; // Use Skeleton
 // import { useAuth } from '@/contexts/AuthContext'; // Removed
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -67,11 +66,11 @@ export default function AdminReportsPage() {
 
   if (authLoading) {
     return (
-      <Layout>
+      
         <div className="flex justify-center items-center h-screen">
           <Skeleton className="h-12 w-12 rounded-full" />
         </div>
-      </Layout>
+
     );
   }
   
@@ -105,7 +104,7 @@ export default function AdminReportsPage() {
   const columns = getTableColumns();
 
   return (
-    <Layout>
+    
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
            <h1 className="text-3xl font-bold">Reports</h1>
@@ -188,6 +187,6 @@ export default function AdminReportsPage() {
         )}
 
       </div>
-    </Layout>
+
   );
 } 

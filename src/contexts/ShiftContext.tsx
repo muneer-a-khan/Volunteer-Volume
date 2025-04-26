@@ -29,6 +29,7 @@ interface ShiftContextType {
   deleteShift: (id: string) => Promise<boolean>;
   checkInForShift: (shiftId: string) => Promise<CheckInData | null>;
   checkOutFromShift: (checkInId: string, notes?: string) => Promise<CheckInData | null>;
+  getShifts: () => Promise<void>;
 }
 
 const ShiftContext = createContext<ShiftContextType | undefined>(undefined);
@@ -58,6 +59,10 @@ export const ShiftProvider = ({ children }: ShiftProviderProps) => {
       setLoading(false);
     }
   }, []);
+
+  const getShifts = useCallback(async () => {
+    return fetchShifts('upcoming', null);
+  }, [fetchShifts]);
 
   const fetchMyShifts = useCallback(async () => {
     if (!isAuthenticated || !userId) {
@@ -215,6 +220,7 @@ export const ShiftProvider = ({ children }: ShiftProviderProps) => {
     deleteShift,
     checkInForShift,
     checkOutFromShift,
+    getShifts,
   };
 
   return <ShiftContext.Provider value={value}>{children}</ShiftContext.Provider>;

@@ -1,20 +1,12 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { prisma } from '@/lib/prisma';
 import { startOfMonth, subMonths, startOfQuarter, subQuarters, startOfYear, subYears, endOfMonth, endOfQuarter, endOfYear } from 'date-fns';
 import { Workbook } from 'exceljs';
 import { Readable } from 'stream';
 
-// Helper function to check if user is admin
-async function isAdmin(session: any) {
-  if (!session?.user?.email) return false;
-
-  const user = await prisma.users.findUnique({
-    where: { email: session.user.email },
-  });
-
-  return user?.role === 'ADMIN';
+// Helper function to check if user is admin - always returns true since we removed auth
+async function isAdmin() {
+  return true;
 }
 
 export default async function handler(
@@ -27,16 +19,8 @@ export default async function handler(
   }
 
   try {
-    // Get session and verify admin
-    const session = await getServerSession(req, res, authOptions);
-
-    if (!session) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-
-    if (!await isAdmin(session)) {
-      return res.status(403).json({ message: 'Forbidden: Admin access required' });
-    }
+    // Auth verification removed since we're removing auth
+    // Assume admin access by default
 
     // Get report type and timeframe from query params
     const reportType = req.query.type as string || 'volunteer-hours';

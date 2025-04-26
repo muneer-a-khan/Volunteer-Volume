@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import LogHoursForm from '@/components/logging/LogHoursForm';
 import HoursLogList from '@/components/logging/HoursLogList';
-import Layout from '@/components/layout/Layout';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function LogHoursPage() {
@@ -15,16 +14,16 @@ export default function LogHoursPage() {
 
   if (authLoading) {
     return (
-      <Layout>
+      
         <div className="flex justify-center items-center h-screen">
           <Skeleton className="h-12 w-12 rounded-full" />
         </div>
-      </Layout>
+
     );
   }
   
   return (
-    <Layout>
+    
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-6">Log Volunteer Hours</h1>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -37,6 +36,6 @@ export default function LogHoursPage() {
           </div>
         </div>
       </div>
-    </Layout>
+
   );
 } 

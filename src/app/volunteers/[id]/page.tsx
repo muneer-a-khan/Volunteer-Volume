@@ -5,7 +5,6 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
 import VolunteerProfile from '@/components/volunteers/VolunteerProfile';
-import Layout from '@/components/layout/Layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -15,7 +14,7 @@ export default function VolunteerDetailPage() {
   const router = useRouter();
   
   if (!params) {
-      return <Layout><div className="container mx-auto px-4 py-8 text-center">Loading...</div></Layout>;
+      return <div className="container mx-auto px-4 py-8 text-center">Loading...</div>;
   }
   
   const volunteerId = params.id as string;
@@ -50,17 +49,17 @@ export default function VolunteerDetailPage() {
   
   if (authLoading || loading) {
     return (
-      <Layout>
+      
         <div className="flex justify-center items-center h-screen">
           <Skeleton className="h-12 w-12 rounded-full" />
         </div>
-      </Layout>
+
     );
   }
 
   if (error) {
      return (
-       <Layout>
+       
          <div className="container mx-auto px-4 py-8 text-center text-red-600">
            Error: {error}
            <div className="mt-4">
@@ -69,13 +68,13 @@ export default function VolunteerDetailPage() {
               </Link>
            </div>
          </div>
-       </Layout>
+
      );
    }
 
   if (!volunteer) {
     return (
-      <Layout>
+      
         <div className="container mx-auto px-4 py-8 text-center">
            Volunteer not found.
            <div className="mt-4">
@@ -84,14 +83,14 @@ export default function VolunteerDetailPage() {
               </Link>
            </div>
         </div>
-      </Layout>
+
     );
   }
 
   const isOwnProfile = volunteerId === currentUserId;
 
   return (
-    <Layout>
+    
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
            <Link href="/admin/volunteers" className="text-blue-600 hover:underline">
@@ -116,6 +115,6 @@ export default function VolunteerDetailPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </Layout>
+
   );
 } 

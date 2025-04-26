@@ -7,7 +7,6 @@ import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import { EyeIcon, EyeOffIcon } from 'lucide-react';
-import { signIn } from 'next-auth/react';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -54,24 +53,10 @@ export default function RegisterPage() {
       });
 
       if (response.status === 201) {
-        toast.success("Registration successful! Logging you in...");
+        toast.success("Registration successful!");
         
-        // Auto sign-in after registration
-        const signInResult = await signIn('credentials', {
-          redirect: false,
-          email: data.email,
-          password: data.password
-        });
-        
-        if (signInResult?.error) {
-          console.error('Auto sign-in error:', signInResult.error);
-          toast.error("Registration successful but couldn't automatically log you in. Please log in manually.");
-          router.push('/login');
-          return;
-        }
-        
-        // Redirect to application form
-        router.push(`/apply?email=${encodeURIComponent(data.email)}&name=${encodeURIComponent(data.name)}&phone=${encodeURIComponent(data.phone || '')}`);
+        // Redirect to Clerk sign-in page instead of using NextAuth
+        router.push('/sign-in');
       }
     } catch (error: any) {
       console.error('Registration error:', error);
@@ -233,7 +218,7 @@ export default function RegisterPage() {
 
           <div className="text-sm text-center text-gray-500">
             Already have an account?{" "}
-            <Link href="/login" className="underline hover:text-primary">
+            <Link href="/sign-in" className="underline hover:text-primary">
               Sign in
             </Link>
           </div>

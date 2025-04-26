@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import ShiftCalendar from '@/components/shifts/ShiftCalendar'; // Ensure this path is correct
-import Layout from '@/components/layout/Layout';
 import { Skeleton } from '@/components/ui/skeleton';
 // import { useAuth } from '@/contexts/AuthContext'; // Removed
 import { useShifts } from '@/contexts/ShiftContext';
@@ -22,23 +21,23 @@ export default function CalendarPage() {
   // Auth-related loading removed
   if (shiftsLoading) {
     return (
-      <Layout>
+      
         <div className="flex justify-center items-center h-screen">
           <Skeleton className="h-12 w-12 rounded-full" />
         </div>
-      </Layout>
+
     );
   }
 
   // Removed redirection based on isAuthenticated
 
   return (
-    <Layout>
+    
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-6">Shift Calendar</h1>
         {/* Removed shifts prop - component likely uses context internally */}
         <ShiftCalendar /> 
       </div>
-    </Layout>
+
   );
 } 

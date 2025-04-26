@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ShiftForm from '@/components/shifts/ShiftForm';
-import Layout from '@/components/layout/Layout';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function NewShiftPage() {
@@ -15,16 +14,16 @@ export default function NewShiftPage() {
 
   if (authLoading) {
     return (
-      <Layout>
+      
         <div className="flex justify-center items-center h-screen">
           <Skeleton className="h-12 w-12 rounded-full" />
         </div>
-      </Layout>
+
     );
   }
   
   return (
-    <Layout>
+    
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
            <Link href="/admin/shifts" className="text-blue-600 hover:underline">
@@ -34,6 +33,6 @@ export default function NewShiftPage() {
         <h1 className="text-3xl font-bold mb-6">Create New Shift</h1>
         <ShiftForm shift={null} />
       </div>
-    </Layout>
+
   );
 } 

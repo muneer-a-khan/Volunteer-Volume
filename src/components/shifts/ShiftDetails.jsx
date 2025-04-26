@@ -3,41 +3,108 @@ import axios from 'axios';
 import Link from 'next/link';
 import { format, parseISO, isAfter, isPast } from 'date-fns';
 import { useShifts } from '../../contexts/ShiftContext';
-import { useAuth } from '../../contexts/AuthContext';
-import LoadingSpinner from '../ui/LoadingSpinner';
-import { Button } from '../ui/button';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { MapPin, Clock, Users, Calendar, Info, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 
-export default function ShiftDetails({ shift: initialShift = null, shiftId = null }) {
+export default function ShiftDetails({ shiftId, onClose }) {
   const { signUpForShift, cancelShiftSignup } = useShifts();
-  const { isAdmin, dbUser } = useAuth();
-  const [shift, setShift] = useState(initialShift);
-  const [loading, setLoading] = useState(!initialShift && !!shiftId);
-  const [error, setError] = useState(null);
-  const [isSigningUp, setIsSigningUp] = useState(false);
-  const [isCanceling, setIsCanceling] = useState(false);
+  const isAdmin = true;
+  const dbUser = { id: 'placeholder-user-id', role: 'ADMIN' };
+  
+  const [shift, setShift] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     const fetchShiftDetails = async () => {
-      if (!shiftId || initialShift) return;
-      setLoading(true);
       try {
+        setLoading(true);
         const response = await axios.get(`/api/shifts/${shiftId}`);
         setShift(response.data);
-      } catch (err) {
-        setError(err.response?.data?.message || 'Failed to load shift details');
+      } catch (error) {
+        console.error('Error fetching shift details:', error);
+        toast.error('Failed to load shift details');
       } finally {
         setLoading(false);
       }
     };
-    fetchShiftDetails();
-  }, [shiftId, initialShift]);
 
-  if (loading) return <div className="flex justify-center py-10"><LoadingSpinner /></div>;
-  if (error) return <div className="text-center py-10 text-red-600">Error loading shift details: {error}</div>;
-  if (!shift) return <div className="text-center py-10">Shift data not available.</div>;
+    if (shiftId) {
+      fetchShiftDetails();
+    }
+  }, [shiftId]);
+
+  const handleSignUp = async () => {
+    setActionLoading(true);
+    try {
+      await signUpForShift(shiftId);
+      const response = await axios.get(`/api/shifts/${shiftId}`);
+      setShift(response.data);
+      toast.success('Successfully signed up for shift');
+    } catch (error) {
+      console.error('Error signing up for shift:', error);
+      toast.error('Failed to sign up for shift');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleCancel = async () => {
+    setActionLoading(true);
+    try {
+      await cancelShiftSignup(shiftId);
+      const response = await axios.get(`/api/shifts/${shiftId}`);
+      setShift(response.data);
+      toast.success('Successfully canceled shift registration');
+    } catch (error) {
+      console.error('Error canceling shift registration:', error);
+      toast.error('Failed to cancel shift registration');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const isSignedUp = () => {
+    if (!shift || !shift.volunteers) return false;
+    return shift.volunteers.some(volunteer => volunteer.id === dbUser.id);
+  };
+
+  const hasAvailableSpots = () => {
+    if (!shift) return false;
+    return shift.currentVolunteers < shift.maxVolunteers;
+  };
+
+  const formatShiftTime = (start, end) => {
+    const startDate = parseISO(start);
+    const endDate = parseISO(end);
+    return `${format(startDate, 'EEEE, MMMM d, yyyy h:mm a')} - ${format(endDate, 'h:mm a')}`;
+  };
+
+  if (loading) {
+    return (
+      <div className="p-4">
+        <Skeleton className="h-8 w-3/4 mb-4" />
+        <Skeleton className="h-6 w-1/2 mb-2" />
+        <Skeleton className="h-6 w-2/3 mb-2" />
+        <Skeleton className="h-6 w-1/3 mb-4" />
+        <Skeleton className="h-20 w-full mb-4" />
+        <Skeleton className="h-8 w-1/4" />
+      </div>
+    );
+  }
+
+  if (!shift) {
+    return (
+      <div className="p-4">
+        <p className="text-red-500">Error loading shift details.</p>
+        <Button onClick={onClose} className="mt-4">Close</Button>
+      </div>
+    );
+  }
 
   const statusMap = {
      OPEN: { text: 'Open', icon: CheckCircle, color: 'text-green-600' },
@@ -49,61 +116,69 @@ export default function ShiftDetails({ shift: initialShift = null, shiftId = nul
    const StatusIcon = statusInfo.icon;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-2xl font-bold">{shift.title}</CardTitle>
-        <div className={`flex items-center text-sm mt-1 ${statusInfo.color}`}>
-           <StatusIcon className="w-4 h-4 mr-1" />
-           <span>{statusInfo.text}</span>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {shift.description && (
-          <div className="flex items-start">
-            <Info className="w-5 h-5 mr-3 mt-1 text-gray-500 flex-shrink-0" />
-            <p className="text-gray-700">{shift.description}</p>
-          </div>
-        )}
-        <div className="flex items-center">
-          <MapPin className="w-5 h-5 mr-3 text-gray-500" />
-          <span className="text-gray-700">{shift.location || 'Location not specified'}</span>
-        </div>
-        <div className="flex items-center">
-          <Calendar className="w-5 h-5 mr-3 text-gray-500" />
-          <span className="text-gray-700">{format(new Date(shift.startTime), 'PPP')}</span> 
-        </div>
-        <div className="flex items-center">
-          <Clock className="w-5 h-5 mr-3 text-gray-500" />
-          <span className="text-gray-700">
-             {format(new Date(shift.startTime), 'p')} - {format(new Date(shift.endTime), 'p')} 
-          </span>
-        </div>
-        <div className="flex items-center">
-          <Users className="w-5 h-5 mr-3 text-gray-500" />
-          <span className="text-gray-700">
-            {shift.currentVolunteers} / {shift.capacity} volunteers signed up
-          </span>
-        </div>
-        
-        {shift.status === 'OPEN' && (
-          <div className="mt-6 pt-4 border-t">
-             {!isAdmin && !isPast(parseISO(shift.endTime)) && (
-               <Button onClick={() => signUpForShift(shift.id)} disabled={isSigningUp}>
-                 {isSigningUp ? 'Signing Up...' : 'Sign Up for this Shift'}
-               </Button>
-             )}
-             {!isAdmin && isPast(parseISO(shift.endTime)) && (
-                 <p className="text-sm text-red-600">This shift is full.</p>
-             )}
-             {isAdmin && !isPast(parseISO(shift.endTime)) && (
-               <Button variant="outline" onClick={() => cancelShiftSignup(shift.id)} disabled={isCanceling}>
-                 {isCanceling ? 'Canceling...' : 'Cancel Signup'}
-               </Button>
-             )}
-          </div>
-        )}
+    <div className="p-4">
+      <h2 className="text-xl font-bold mb-2">{shift.title}</h2>
+      <p className="text-gray-700 mb-1">{formatShiftTime(shift.startTime, shift.endTime)}</p>
+      <p className="text-gray-700 mb-1">Location: {shift.location || 'Not specified'}</p>
+      <p className="text-gray-700 mb-4">
+        Volunteers: {shift.currentVolunteers}/{shift.maxVolunteers}
+      </p>
+      
+      <div className="bg-gray-50 p-3 rounded-md mb-4">
+        <h3 className="font-medium mb-1">Description</h3>
+        <p className="text-gray-600">{shift.description || 'No description provided.'}</p>
+      </div>
 
-      </CardContent>
-    </Card>
+      {isAdmin && (
+        <div className="mb-4">
+          <h3 className="font-medium mb-2">Admin Actions</h3>
+          <div className="flex space-x-2">
+            <Button variant="outline" size="sm">
+              Edit Shift
+            </Button>
+            <Button variant="destructive" size="sm">
+              Cancel Shift
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {isAdmin && shift.volunteers && shift.volunteers.length > 0 && (
+        <div className="mb-4">
+          <h3 className="font-medium mb-2">Signed Up Volunteers</h3>
+          <ul className="divide-y divide-gray-200 border rounded-md">
+            {shift.volunteers.map(volunteer => (
+              <li key={volunteer.id} className="p-2 flex justify-between items-center">
+                <span>{volunteer.name || volunteer.email}</span>
+                <Badge variant="outline">{volunteer.role}</Badge>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="flex justify-between mt-4">
+        <Button variant="outline" onClick={onClose}>
+          Close
+        </Button>
+        
+        {isSignedUp() ? (
+          <Button 
+            variant="destructive" 
+            onClick={handleCancel}
+            disabled={actionLoading}
+          >
+            {actionLoading ? 'Canceling...' : 'Cancel Registration'}
+          </Button>
+        ) : (
+          <Button 
+            disabled={!hasAvailableSpots() || actionLoading}
+            onClick={handleSignUp}
+          >
+            {actionLoading ? 'Signing Up...' : hasAvailableSpots() ? 'Sign Up' : 'Filled'}
+          </Button>
+        )}
+      </div>
+    </div>
   );
 }

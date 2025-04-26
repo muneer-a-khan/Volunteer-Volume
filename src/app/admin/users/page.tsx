@@ -4,11 +4,10 @@ import React from 'react';
 import Link from 'next/link';
 import { Button } from "@/components/ui/button"
 import VolunteerList from '@/components/volunteers/VolunteerList';
-import Layout from '@/components/layout/Layout';
 
 export default function AdminUsersPage() {
   return (
-    <Layout>
+    
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Manage Users</h1>
@@ -23,6 +22,6 @@ export default function AdminUsersPage() {
         </div>
         <VolunteerList />
       </div>
-    </Layout>
+
   );
 } 
