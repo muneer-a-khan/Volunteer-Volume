@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
 import { mapSnakeToCamel } from '@/lib/map-utils';
+import { Prisma } from '@prisma/client'; // Import Prisma types
 
 interface ShiftResponse {
     id: string;
@@ -22,41 +23,53 @@ export default async function handler(
         return res.status(405).json({ message: 'Method Not Allowed' });
     }
 
-    const { userId } = req.query;
+    const { userId, filter } = req.query; // Get filter query param
 
-    if (!userId) {
+    if (!userId || typeof userId !== 'string') { // Ensure userId is a string
         return res.status(400).json({ message: 'userId parameter is required' });
     }
 
     try {
         await prisma.$connect();
         
+        // Define base where clause for the user
+        let whereClause: Prisma.shiftsWhereInput = {
+          shift_volunteers: {
+              some: {
+                  user_id: userId,
+              },
+          },
+        };
+
+        // Apply time filter based on query param
+        const now = new Date();
+        if (filter === 'upcoming') {
+          whereClause.start_time = { gte: now };
+        } else if (filter === 'past') {
+          whereClause.end_time = { lt: now };
+        } 
+        // No time filter for 'all' or unspecified filter
+
+        // Determine sorting
+        let orderBy: Prisma.shiftsOrderByWithRelationInput = {
+           start_time: filter === 'past' ? 'desc' : 'asc' 
+        };
+
         const userShifts = await prisma.shifts.findMany({
-            where: {
-                shift_volunteers: {
-                    some: {
-                        user_id: userId as string,
-                    },
-                },
-                // Get shifts that haven't ended yet
-                end_time: {
-                    gte: new Date(),
-                },
-            },
+            where: whereClause,
             include: {
                 groups: true,
-                shift_volunteers: true,
+                // Only need count for currentVolunteers
+                _count: { select: { shift_volunteers: true } }
             },
-            orderBy: {
-                start_time: 'asc',
-            },
+            orderBy: orderBy,
         });
 
         // Transform the result
         const transformedShifts = userShifts.map(shift => ({
             ...mapSnakeToCamel(shift),
-            currentVolunteers: shift.shift_volunteers?.length || 0,
-            maxVolunteers: shift.capacity,
+            currentVolunteers: shift._count.shift_volunteers,
+            maxVolunteers: 1, // Capacity is always 1 now
         }));
         
         res.status(200).json(transformedShifts);
