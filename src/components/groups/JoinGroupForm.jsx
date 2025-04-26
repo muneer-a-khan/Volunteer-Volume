@@ -116,14 +116,14 @@ export default function JoinGroupForm() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Join by Invite Code */}
             <div className="lg:col-span-1">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Join with Invite Code</CardTitle>
-                  <CardDescription>
+              <Card className="overflow-hidden shadow-sm border border-gray-200">
+                <CardHeader className="bg-gray-50 border-b border-gray-200 pb-4">
+                  <CardTitle className="text-xl">Join with Invite Code</CardTitle>
+                  <CardDescription className="text-gray-600">
                     Enter an invite code to join a private group
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 pt-6">
                   <div>
                     <label htmlFor="inviteCode" className="block text-sm font-medium text-gray-700 mb-1">
                       Invite Code
@@ -134,14 +134,15 @@ export default function JoinGroupForm() {
                       value={inviteCode}
                       onChange={(e) => setInviteCode(e.target.value)}
                       placeholder="Enter invite code"
+                      className="w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                     />
                   </div>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="bg-gray-50 border-t border-gray-200 pt-4">
                   <Button
                     onClick={handleJoinByInvite}
                     disabled={joining || !inviteCode.trim()}
-                    className="w-full"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                   >
                     {joining ? (
                       <><LoadingSpinner className="h-4 w-4 mr-2" /> Joining...</>
@@ -153,17 +154,17 @@ export default function JoinGroupForm() {
               </Card>
 
               <div className="mt-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Create a Group</CardTitle>
-                    <CardDescription>
+                <Card className="overflow-hidden shadow-sm border border-gray-200">
+                  <CardHeader className="bg-gray-50 border-b border-gray-200 pb-4">
+                    <CardTitle className="text-xl">Create a Group</CardTitle>
+                    <CardDescription className="text-gray-600">
                       Don't see a group you like? Create your own!
                     </CardDescription>
                   </CardHeader>
-                  <CardFooter>
+                  <CardFooter className="pt-6 pb-6">
                     <Button
                       onClick={() => router.push('/groups/new')}
-                      className="w-full"
+                      className="w-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
                       variant="outline"
                     >
                       Create New Group
@@ -175,14 +176,14 @@ export default function JoinGroupForm() {
 
             {/* Public Groups */}
             <div className="lg:col-span-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Join a Public Group</CardTitle>
-                  <CardDescription>
+              <Card className="overflow-hidden shadow-sm border border-gray-200">
+                <CardHeader className="bg-gray-50 border-b border-gray-200 pb-4">
+                  <CardTitle className="text-xl">Join a Public Group</CardTitle>
+                  <CardDescription className="text-gray-600">
                     Browse and join public volunteer groups
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-6 pt-6">
                   {/* Search */}
                   <div>
                     <div className="relative">
@@ -191,14 +192,15 @@ export default function JoinGroupForm() {
                         placeholder="Search groups by name, description, or category"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pr-10"
+                        className="pr-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                       />
                       {searchTerm && (
                         <button
-                          className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
                           onClick={() => setSearchTerm('')}
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                          <span className="sr-only">Clear search</span>
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                           </svg>
                         </button>
@@ -210,7 +212,7 @@ export default function JoinGroupForm() {
                   {filteredGroups.length > 0 ? (
                     <div className="space-y-4">
                       {filteredGroups.map((group) => (
-                        <div key={group.id} className="border rounded-lg p-4 bg-gray-50">
+                        <div key={group.id} className="border border-gray-200 rounded-lg p-5 bg-white hover:shadow-md transition-shadow duration-200">
                           <div className="flex justify-between items-start">
                             <div>
                               <h3 className="text-lg font-medium text-gray-900">{group.name}</h3>
@@ -222,14 +224,15 @@ export default function JoinGroupForm() {
                               size="sm"
                               onClick={() => handleJoinGroup(group.id)}
                               disabled={joining}
+                              className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded"
                             >
                               {joining ? 'Joining...' : 'Join'}
                             </Button>
                           </div>
-                          <p className="mt-2 text-sm text-gray-600 line-clamp-2">
+                          <p className="mt-3 text-sm text-gray-600 line-clamp-2">
                             {group.description}
                           </p>
-                          <div className="mt-2 flex items-center text-xs text-gray-500">
+                          <div className="mt-3 flex items-center text-xs text-gray-500">
                             <span className="flex items-center">
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />

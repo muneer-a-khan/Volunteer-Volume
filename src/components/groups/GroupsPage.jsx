@@ -129,8 +129,8 @@ export default function GroupsPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Create New Group Card */}
-            <Card className="bg-gray-50 border-dashed border-2 border-gray-300">
-              <CardContent className="p-6 flex flex-col items-center justify-center h-full min-h-[200px]">
+            <Card className="bg-gray-50 border-dashed border-2 border-gray-300 shadow-sm hover:shadow transition-shadow duration-200">
+              <CardContent className="p-6 flex flex-col items-center justify-center h-full min-h-[220px]">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
@@ -138,7 +138,11 @@ export default function GroupsPage() {
                 <p className="text-sm text-gray-500 text-center mb-4">
                   Start a new volunteer group for your organization or cause
                 </p>
-                <Button variant="outline" onClick={handleCreateNewGroup}>
+                <Button 
+                  variant="outline" 
+                  onClick={handleCreateNewGroup}
+                  className="border border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
+                >
                   Create Group
                 </Button>
               </CardContent>
@@ -147,15 +151,15 @@ export default function GroupsPage() {
             {/* Group Cards */}
             {filteredGroups.length > 0 ? (
               filteredGroups.map((group) => (
-                <Card key={group.id} className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <CardTitle>{group.name}</CardTitle>
+                <Card key={group.id} className="overflow-hidden shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
+                  <CardHeader className="pb-2 bg-gray-50 border-b border-gray-200">
+                    <CardTitle className="text-lg font-medium">{group.name}</CardTitle>
                     {group.category && (
-                      <CardDescription>{group.category}</CardDescription>
+                      <CardDescription className="text-gray-600">{group.category}</CardDescription>
                     )}
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-600 line-clamp-3 mb-4">
+                  <CardContent className="pt-4">
+                    <p className="text-sm text-gray-600 line-clamp-3 mb-4 min-h-[60px]">
                       {group.description || 'No description available.'}
                     </p>
                     <div className="flex items-center text-xs text-gray-500">
@@ -165,10 +169,10 @@ export default function GroupsPage() {
                       {group._count?.members || 0} members
                     </div>
                   </CardContent>
-                  <CardFooter className="pt-0">
+                  <CardFooter className="pt-0 bg-gray-50 border-t border-gray-200">
                     <Button 
                       variant="outline" 
-                      className="w-full"
+                      className="w-full border border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
                       onClick={() => handleViewGroup(group.id)}
                     >
                       View Details
