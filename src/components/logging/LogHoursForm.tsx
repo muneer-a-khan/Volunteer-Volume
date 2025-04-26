@@ -32,10 +32,10 @@ export default function LogHoursForm({ onLogSuccess }: LogHoursFormProps) {
   const [loading, setLoading] = useState(false);
   const [groups, setGroups] = useState<any[]>([]);
   const [fetchingGroups, setFetchingGroups] = useState(false);
-  
+
   // Set current date as default
   const today = format(new Date(), 'yyyy-MM-dd');
-  
+
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
     defaultValues: {
       date: today,
@@ -53,7 +53,7 @@ export default function LogHoursForm({ onLogSuccess }: LogHoursFormProps) {
         // In a production environment, this would be a real API call
         // const response = await axios.get('/api/groups/my-groups');
         // setGroups(response.data);
-        
+
         // For demo purposes, use hardcoded groups
         setTimeout(() => {
           setGroups([
@@ -86,14 +86,14 @@ export default function LogHoursForm({ onLogSuccess }: LogHoursFormProps) {
       // For demonstration, we'll simulate an API call
       // In production, you would uncomment this:
       // await axios.post('/api/log-hours', data);
-      
+
       console.log('Logging hours:', data);
-      
+
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       toast.success('Hours logged successfully!');
-      
+
       // Reset form after successful submission
       reset({
         date: today,
@@ -102,7 +102,7 @@ export default function LogHoursForm({ onLogSuccess }: LogHoursFormProps) {
         description: '',
         groupId: undefined
       });
-      
+
       // Callback to refresh list of logged hours
       if (onLogSuccess) {
         onLogSuccess();
@@ -121,7 +121,7 @@ export default function LogHoursForm({ onLogSuccess }: LogHoursFormProps) {
         <CardTitle>Log Volunteer Hours</CardTitle>
         <CardDescription>Record the time you&apos;ve volunteered</CardDescription>
       </CardHeader>
-      
+
       <CardContent>
         <form id="log-hours-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
@@ -203,7 +203,7 @@ export default function LogHoursForm({ onLogSuccess }: LogHoursFormProps) {
             <Textarea
               id="description"
               placeholder="Describe what you did during this volunteer time"
-              {...register('description', { 
+              {...register('description', {
                 required: 'Description is required',
                 minLength: { value: 10, message: 'Description must be at least 10 characters' }
               })}
@@ -213,7 +213,7 @@ export default function LogHoursForm({ onLogSuccess }: LogHoursFormProps) {
           </div>
         </form>
       </CardContent>
-      
+
       <CardFooter>
         <Button type="submit" form="log-hours-form" disabled={loading} className="w-full">
           {loading ? (
