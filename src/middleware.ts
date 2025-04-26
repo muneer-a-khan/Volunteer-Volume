@@ -3,10 +3,13 @@ import { getToken } from 'next-auth/jwt';
 import { NextRequestWithAuth } from 'next-auth/middleware';
 
 export default async function middleware(req: NextRequestWithAuth) {
+  console.log(`[Middleware] Pathname: ${req.nextUrl.pathname}`);
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
   const isAuthenticated = !!token;
   const role = token?.role;
   const pathname = req.nextUrl.pathname;
+  
+  console.log(`[Middleware] Token found: ${isAuthenticated}, Role: ${role}`);
 
   // Public routes that don't require authentication
   const publicRoutes = [
@@ -49,13 +52,7 @@ export default async function middleware(req: NextRequestWithAuth) {
     return NextResponse.redirect(new URL('/', req.url));
   }
 
-  // Pending users can only access specific pages
-  if (role === 'PENDING') {
-    const allowedPendingRoutes = ['/profile', '/application-success'];
-    if (!allowedPendingRoutes.some(route => pathname.startsWith(route))) {
-      return NextResponse.redirect(new URL('/application-success', req.url));
-    }
-  }
+  // PENDING users can now access all routes - no restrictions
 
   return NextResponse.next();
 }

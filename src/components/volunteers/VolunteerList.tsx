@@ -158,6 +158,17 @@ export default function VolunteerList({ initialFilter = 'active', groupId = null
     } catch (err) { toast.error('Failed to demote'); }
   };
 
+  // Add handleRemove function
+  const handleRemove = async (userId: string) => {
+    if (!window.confirm('Are you sure you want to permanently remove this volunteer? This action cannot be undone.')) return;
+    try {
+      // await axios.delete(`/api/admin/users/${userId}`);
+      toast.success('Volunteer removed (API call commented out)');
+      // Remove from state
+      setVolunteers(prev => prev.filter(v => v.id !== userId));
+    } catch (err) { toast.error('Failed to remove volunteer'); }
+  };
+
   // Render loading state
   if (loading) {
     return (
@@ -287,6 +298,9 @@ export default function VolunteerList({ initialFilter = 'active', groupId = null
                             Demote to Volunteer
                           </DropdownMenuItem>
                         )}
+                        <DropdownMenuItem onClick={() => handleRemove(volunteer.id)} className="text-red-600 font-medium">
+                          Remove
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

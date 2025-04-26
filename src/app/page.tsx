@@ -27,51 +27,24 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Upcoming Events Section */}
+      {/* Featured Video Section */}
       <div className="container mx-auto px-6 py-10">
-        <h3 className="text-2xl font-bold text-gray-900">Upcoming Events</h3>
-        <div className="mt-6 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card>
-            <div className="h-48 bg-cover rounded-t-lg" 
-                 style={{
-                   backgroundImage: "url('https://www.vadm.org/images/uploads/logo_drop-ins_storytime-002.png')"
-                 }}>
-            </div>
-            <CardContent className="pt-4">
-              <p className="text-gray-600 text-sm">Thu, March 7, 6:30 p.m.</p>
-              <CardTitle className="text-lg mt-1">Story Time Drop In</CardTitle>
-              <CardDescription className="mt-1">An evening fantasy story for kids of all ages.</CardDescription>
-              <Button className="mt-3 bg-primary hover:bg-primary/90" size="sm">Register</Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <div className="h-48 bg-cover rounded-t-lg" 
-                 style={{
-                   backgroundImage: "url('https://www.vadm.org/images/uploads/logo_spring-break-camp-002.png')"
-                 }}>
-            </div>
-            <CardContent className="pt-4">
-              <p className="text-gray-600 text-sm">Thu, March 14, 5:00 p.m.</p>
-              <CardTitle className="text-lg mt-1">Spring Break Camp!</CardTitle>
-              <CardDescription className="mt-1">An interactive workshop combining environmental education and fun.</CardDescription>
-              <Button className="mt-3 bg-primary hover:bg-primary/90" size="sm">Register</Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <div className="h-48 bg-cover rounded-t-lg" 
-                 style={{
-                   backgroundImage: "url('https://www.vadm.org/images/homeslides/18/featured_kidvention_2025__large.png')"
-                 }}>
-            </div>
-            <CardContent className="pt-4">
-              <p className="text-gray-600 text-sm">Sat, March 23, 2:00 p.m.</p>
-              <CardTitle className="text-lg mt-1">Family Science Day</CardTitle>
-              <CardDescription className="mt-1">Engage in fun science experiments and discovery activities for all ages.</CardDescription>
-              <Button className="mt-3 bg-primary hover:bg-primary/90" size="sm">Register</Button>
-            </CardContent>
-          </Card>
+        <h3 className="text-2xl font-bold text-gray-900 mb-6">Featured Video</h3>
+        <div className="max-w-3xl mx-auto rounded-lg overflow-hidden shadow-lg">
+          <div className="relative aspect-video">
+            <video 
+              className="w-full h-full object-cover"
+              controls
+              poster="/eng_cent_rgb.png"
+            >
+              <source src="/Blue Modern Minimal Marketing 169 Video (2).mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+          <div className="bg-white p-4">
+            <h4 className="text-xl font-semibold">Learn More About Our Volunteer Program</h4>
+            <p className="text-gray-600 mt-2">Watch our video to discover the impact you can make as a volunteer and how to get started.</p>
+          </div>
         </div>
       </div>
 

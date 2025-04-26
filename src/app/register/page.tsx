@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import { EyeIcon, EyeOffIcon } from 'lucide-react';
+import { signIn } from 'next-auth/react';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,42 +32,42 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Watch the password field for confirm password validation
   const password = watch('password');
 
   const onSubmit = async (data: FormData) => {
     if (data.password !== data.confirmPassword) {
-      setError("Passwords do not match");
+      toast.error("Passwords do not match");
       return;
     }
 
     setIsLoading(true);
-    setError(null);
 
     try {
-      // Register the user
-      const response = await axios.post('/api/auth/register', {
+      // 1. Register the user via API
+      const registerResponse = await axios.post('/api/register', {
         name: data.name,
         email: data.email,
         password: data.password,
-        phone: data.phone || '',
+        role: 'PENDING'
       });
 
-      if (response.status === 201) {
-        toast.success("Registration successful!");
-
-        // Redirect to Clerk sign-in page instead of using NextAuth
-        router.push('/sign-in');
+      if (registerResponse.status === 201) {
+        // Registration successful, immediately attempt sign-in
+        // Let NextAuth handle redirect (default redirect: true)
+        await signIn('credentials', {
+          email: data.email,
+          password: data.password,
+        });
+        
+      } else {
+         // Handle non-201 registration responses - show error on register page
+         toast.error(registerResponse.data?.message || "Registration failed.");
+         setIsLoading(false); // Stop loading indicator on failure
       }
     } catch (error: any) {
-      console.error('Registration error:', error);
-      if (error.response?.data?.message) {
-        setError(error.response.data.message);
-      } else {
-        setError("An error occurred during registration");
-      }
-    } finally {
-      setIsLoading(false);
+      console.error('Registration Attempt Error:', error);
+      toast.error(error.response?.data?.message || "An error occurred during registration.");
+      setIsLoading(false); // Stop loading indicator on error
     }
   };
 
