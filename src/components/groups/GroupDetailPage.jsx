@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { format, parseISO } from 'date-fns';
 import { useAuth } from '../../contexts/AuthContext';
 import { useGroups } from '../../contexts/GroupContext';
-import Navbar from '../../components/layout/Navbar';
-import Footer from '../../components/layout/Footer';
 import axios from 'axios';
-import LoadingSpinner from '../ui/LoadingSpinner';
+import { LoadingSpinner } from '../ui/loading-spinner';
 import { Button } from '../ui/button';
 import ShiftList from '../shifts/ShiftList';
 import MemberList from './MemberList';
@@ -17,9 +15,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'react-hot-toast';
 import GroupAnnouncements from './GroupAnnouncements';
 
-export default function GroupDetailPage() {
-  const router = useRouter();
-  const { id } = router.query;
+export default function GroupDetailPage({ id: propId }) {
+  const pathname = usePathname();
+  // Extract ID from pathname if not provided as prop (for App Router)
+  const pathId = pathname ? pathname.split('/').pop() : null;
+  const groupId = propId || pathId;
+  
   const { isAuthenticated, isAdmin, dbUser } = useAuth();
   const {
     loading,
@@ -46,19 +47,12 @@ export default function GroupDetailPage() {
   const [error, setError] = useState(null);
   const [buttonLoading, setButtonLoading] = useState(false);
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
-    }
-  }, [isAuthenticated, router]);
-
   // Load group data when ID is available
   useEffect(() => {
     const loadGroupData = async () => {
-      if (id && isAuthenticated) {
+      if (groupId && isAuthenticated) {
         try {
-          const groupData = await getGroup(id);
+          const groupData = await getGroup(groupId);
           if (groupData) {
             setGroup(groupData);
 
@@ -69,11 +63,11 @@ export default function GroupDetailPage() {
             }
 
             // Load shifts
-            const shiftsData = await getGroupShifts(id);
+            const shiftsData = await getGroupShifts(groupId);
             setShifts(shiftsData || []);
 
             // Load volunteers
-            const volunteersData = await getGroupVolunteers(id);
+            const volunteersData = await getGroupVolunteers(groupId);
             setVolunteers(volunteersData || []);
           }
         } catch (error) {
@@ -84,7 +78,7 @@ export default function GroupDetailPage() {
     };
 
     loadGroupData();
-  }, [id, isAuthenticated, dbUser, isAdmin, getGroup, getGroupShifts, getGroupVolunteers]);
+  }, [groupId, isAuthenticated, dbUser, isAdmin, getGroup, getGroupShifts, getGroupVolunteers]);
 
   const handleJoinGroup = async () => {
     if (!isAuthenticated) {
@@ -94,11 +88,11 @@ export default function GroupDetailPage() {
 
     setButtonLoading(true);
     try {
-      await axios.post(`/api/groups/${id}/join`);
+      await axios.post(`/api/groups/${groupId}/join`);
       toast.success('Successfully joined the group!');
       setIsMember(true);
       // Refresh group data
-      const response = await axios.get(`/api/groups/${id}`);
+      const response = await axios.get(`/api/groups/${groupId}`);
       setGroup(response.data);
     } catch (err) {
       console.error('Error joining group:', err);
@@ -111,11 +105,11 @@ export default function GroupDetailPage() {
   const handleLeaveGroup = async () => {
     setButtonLoading(true);
     try {
-      await axios.post(`/api/groups/${id}/leave`);
+      await axios.post(`/api/groups/${groupId}/leave`);
       toast.success('Successfully left the group');
       setIsMember(false);
       // Refresh group data
-      const response = await axios.get(`/api/groups/${id}`);
+      const response = await axios.get(`/api/groups/${groupId}`);
       setGroup(response.data);
     } catch (err) {
       console.error('Error leaving group:', err);
@@ -128,85 +122,77 @@ export default function GroupDetailPage() {
   // Render loading state
   if (loading || !group) {
     return (
-      <>
-        <Navbar />
-        <div className="min-h-screen bg-gray-50 py-12">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="animate-pulse">
-              <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-              <div className="bg-white shadow rounded-lg p-6 mb-8">
-                <div className="h-10 bg-gray-200 rounded mb-4"></div>
-                <div className="h-24 bg-gray-200 rounded mb-6"></div>
-                <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-              </div>
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+            <div className="bg-white shadow rounded-lg p-6 mb-8">
+              <div className="h-10 bg-gray-200 rounded mb-4"></div>
+              <div className="h-24 bg-gray-200 rounded mb-6"></div>
+              <div className="h-8 bg-gray-200 rounded w-1/3"></div>
             </div>
           </div>
         </div>
-        <Footer />
-      </>
+      </div>
     );
   }
 
   if (error) return <div className="text-center py-10 text-red-600">Error: {error}</div>;
 
   return (
-    <>
-      <Navbar />
-      <div className="min-h-screen bg-gray-50 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Back button */}
-          <div className="mb-6">
-            <Link
-              href="/groups"
-              className="inline-flex items-center text-sm font-medium text-vadm-blue hover:text-blue-700"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-              </svg>
-              Back to Groups
-            </Link>
-          </div>
+    <div className="min-h-screen bg-gray-50 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Back button */}
+        <div className="mb-6">
+          <Link
+            href="/groups"
+            className="inline-flex items-center text-sm font-medium text-vadm-blue hover:text-blue-700"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+            </svg>
+            Back to Groups
+          </Link>
+        </div>
 
-          {/* Group header */}
-          <div className="bg-white shadow rounded-lg overflow-hidden mb-8">
-            <div className="p-6 sm:p-8">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                <div className="flex items-center">
-                  {group.logoUrl ? (
-                    <Image
-                      className="h-20 w-20 rounded-full object-cover"
-                      src={group.logoUrl}
-                      alt={group.name}
-                      width={80}
-                      height={80}
-                    />
-                  ) : (
-                    <div className="h-20 w-20 rounded-full bg-vadm-blue flex items-center justify-center text-white font-bold text-3xl">
-                      {group.name.charAt(0)}
-                    </div>
-                  )}
-                  <div className="ml-6">
-                    <h1 className="text-3xl font-bold text-gray-900">{group.name}</h1>
-                    <div className="mt-1 flex flex-wrap items-center text-sm text-gray-500">
-                      {group._count?.members || 0} members • {group._count?.shifts || 0} shifts
-                    </div>
+        {/* Group header */}
+        <div className="bg-white shadow rounded-lg overflow-hidden mb-8">
+          <div className="p-6 sm:p-8">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+              <div className="flex items-center">
+                {group.logoUrl ? (
+                  <Image
+                    className="h-20 w-20 rounded-full object-cover"
+                    src={group.logoUrl}
+                    alt={group.name}
+                    width={80}
+                    height={80}
+                  />
+                ) : (
+                  <div className="h-20 w-20 rounded-full bg-vadm-blue flex items-center justify-center text-white font-bold text-3xl">
+                    {group.name.charAt(0)}
+                  </div>
+                )}
+                <div className="ml-6">
+                  <h1 className="text-3xl font-bold text-gray-900">{group.name}</h1>
+                  <div className="mt-1 flex flex-wrap items-center text-sm text-gray-500">
+                    {group._count?.members || 0} members • {group._count?.shifts || 0} shifts
                   </div>
                 </div>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Display content based on active tab */}
-          <div>
-            {/* Basic group details */}
-            <h2 className="text-xl font-bold text-gray-900 mb-4">About</h2>
-            <p className="text-gray-700 whitespace-pre-line mb-6">
-              {group.description || 'No description available.'}
-            </p>
-          </div>
+        {/* Display content based on active tab */}
+        <div>
+          {/* Basic group details */}
+          <h2 className="text-xl font-bold text-gray-900 mb-4">About</h2>
+          <p className="text-gray-700 whitespace-pre-line mb-6">
+            {group.description || 'No description available.'}
+          </p>
         </div>
       </div>
-      <Footer />
-    </>
+    </div>
   );
 } 
