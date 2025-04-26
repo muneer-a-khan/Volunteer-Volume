@@ -86,8 +86,8 @@ export default function ShadcnNavbar() {
           
           {!isLoading && (
             <Button 
-              variant="outline" 
-              className="rounded-full"
+              variant={isAuthenticated ? "outline" : "default"}
+              className={`rounded-full px-4 py-2 ${isAuthenticated ? '' : 'bg-purple-600 hover:bg-purple-500 text-white'}`}
               onClick={() => isAuthenticated ? signOut() : signIn()}
             >
               {isAuthenticated ? 'Sign Out' : 'Sign In'}
