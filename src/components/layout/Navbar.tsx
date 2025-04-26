@@ -33,6 +33,7 @@ export default function Navbar() {
   // Admin navigation items
   const adminNavigation = [
     { name: 'Admin Dashboard', href: '/admin/dashboard' },
+    { name: 'Pending Volunteers', href: '/admin/pending-volunteers' },
     { name: 'Manage Users', href: '/admin/users' },
     { name: 'Log Hours', href: '/log-hours' },
   ];
