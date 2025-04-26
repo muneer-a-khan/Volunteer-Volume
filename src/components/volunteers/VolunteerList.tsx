@@ -251,7 +251,7 @@ export default function VolunteerList({ initialFilter = 'active', groupId = null
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={volunteer.active ? "outline-green" : "outline-red"}>
+                    <Badge variant="outline" className={volunteer.active ? "text-green-600 border-green-600" : "text-red-600 border-red-600"}>
                       {volunteer.active ? 'Active' : 'Inactive'}
                     </Badge>
                   </TableCell>
