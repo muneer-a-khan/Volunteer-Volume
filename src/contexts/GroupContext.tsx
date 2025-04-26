@@ -198,17 +198,14 @@ export const GroupProvider = ({ children }: GroupProviderProps) => {
   };
 
   // Get group volunteers
-  const getGroupVolunteers = async (groupId: string): Promise<GroupMember[]> => {
+  const getGroupVolunteers = async (groupId: string): Promise<User[]> => {
     try {
-      setLoading(true);
-      const response = await axios.get(`/api/groups/${groupId}/volunteers`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching group volunteers:', error);
-      toast.error('Failed to load group volunteers. Please try again.');
+      // Mock API call to fetch group volunteers
       return [];
-    } finally {
-      setLoading(false);
+    } catch (error: any) {
+      console.error('Fetch group volunteers error:', error);
+      toast.error('Failed to load group volunteers');
+      return [];
     }
   };
 
