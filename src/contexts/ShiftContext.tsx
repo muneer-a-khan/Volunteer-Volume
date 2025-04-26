@@ -66,10 +66,10 @@ export const ShiftProvider = ({ children }: ShiftProviderProps) => {
 
   const fetchMyShifts = useCallback(async () => {
     if (!isAuthenticated || !userId) {
-       toast('Fetching my shifts requires user identification.');
-       setMyShifts([]);
-       return;
-     }
+      toast('Fetching my shifts requires user identification.');
+      setMyShifts([]);
+      return;
+    }
     setLoading(true);
     try {
       setMyShifts([]);
@@ -88,9 +88,9 @@ export const ShiftProvider = ({ children }: ShiftProviderProps) => {
 
   const signUpForShift = async (shiftId: string) => {
     if (!isAuthenticated || !userId) {
-       toast.error('Cannot sign up without user identification.');
-       return;
-     }
+      toast.error('Cannot sign up without user identification.');
+      return;
+    }
     try {
       toast.success('Successfully signed up! (API Call commented out)');
       await fetchShifts();
@@ -102,10 +102,10 @@ export const ShiftProvider = ({ children }: ShiftProviderProps) => {
   };
 
   const cancelShiftSignup = async (shiftId: string) => {
-     if (!isAuthenticated || !userId) {
-       toast.error('Cannot cancel signup without user identification.');
-       return;
-     }
+    if (!isAuthenticated || !userId) {
+      toast.error('Cannot cancel signup without user identification.');
+      return;
+    }
     try {
       toast.success('Signup canceled. (API call commented out)');
       await fetchShifts();
@@ -117,39 +117,39 @@ export const ShiftProvider = ({ children }: ShiftProviderProps) => {
   };
 
   const createShift = async (shiftData: Omit<Shift, 'id'>): Promise<Shift | null> => {
-      try {
-        const response = await axios.post('/api/shifts', shiftData);
-        fetchShifts();
-        toast.success('Shift created successfully');
-        return response.data;
-      } catch (error: any) {
-        toast.error('Failed to create shift');
-        return null;
-      }
+    try {
+      const response = await axios.post('/api/shifts', shiftData);
+      fetchShifts();
+      toast.success('Shift created successfully');
+      return response.data;
+    } catch (error: any) {
+      toast.error('Failed to create shift');
+      return null;
+    }
   };
 
   const updateShift = async (id: string, shiftData: Partial<Shift>): Promise<Shift | null> => {
-     try {
-        const response = await axios.put(`/api/shifts/${id}`, shiftData);
-        fetchShifts();
-        toast.success('Shift updated successfully');
-        return response.data;
-      } catch (error: any) {
-        toast.error('Failed to update shift');
-        return null;
-      }
+    try {
+      const response = await axios.put(`/api/shifts/${id}`, shiftData);
+      fetchShifts();
+      toast.success('Shift updated successfully');
+      return response.data;
+    } catch (error: any) {
+      toast.error('Failed to update shift');
+      return null;
+    }
   };
 
   const deleteShift = async (id: string): Promise<boolean> => {
-     try {
-        await axios.delete(`/api/shifts/${id}`);
-        fetchShifts();
-        toast.success('Shift deleted successfully');
-        return true;
-      } catch (error: any) {
-        toast.error('Failed to delete shift');
-        return false;
-      }
+    try {
+      await axios.delete(`/api/shifts/${id}`);
+      fetchShifts();
+      toast.success('Shift deleted successfully');
+      return true;
+    } catch (error: any) {
+      toast.error('Failed to delete shift');
+      return false;
+    }
   };
 
   const checkInForShift = async (shiftId: string): Promise<CheckInData | null> => {

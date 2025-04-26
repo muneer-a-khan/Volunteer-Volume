@@ -44,20 +44,20 @@ export default function VolunteerDashboard() {
         const todays: ShiftType[] = [];
 
         allShifts.forEach(shift => {
-           try {
-               const shiftStart = parseISO(shift.start_time || new Date(0).toISOString()); 
-               const shiftEnd = parseISO(shift.end_time || new Date(0).toISOString());
+          try {
+            const shiftStart = parseISO(shift.start_time || new Date(0).toISOString());
+            const shiftEnd = parseISO(shift.end_time || new Date(0).toISOString());
 
-               if (isSameDay(shiftStart, today)) {
-                   todays.push(shift);
-               } else if (isAfter(shiftStart, today)) {
-                   upcoming.push(shift);
-               } else if (isBefore(shiftEnd, today)) {
-                   past.push(shift);
-               }
-           } catch (dateError) {
-                console.error('Error parsing shift dates:', shift, dateError);
-           }
+            if (isSameDay(shiftStart, today)) {
+              todays.push(shift);
+            } else if (isAfter(shiftStart, today)) {
+              upcoming.push(shift);
+            } else if (isBefore(shiftEnd, today)) {
+              past.push(shift);
+            }
+          } catch (dateError) {
+            console.error('Error parsing shift dates:', shift, dateError);
+          }
         });
 
         setUpcomingShifts(upcoming);
@@ -65,15 +65,15 @@ export default function VolunteerDashboard() {
         setTodayShifts(todays);
 
         // Stats fetch commented out
-        setStats(null); 
+        setStats(null);
 
       } catch (err: any) {
         console.error("Error fetching volunteer dashboard data:", err);
-        setError('Failed to load some dashboard data.'); 
+        setError('Failed to load some dashboard data.');
         setUpcomingShifts([]);
-        setPastShifts([]); 
+        setPastShifts([]);
         setTodayShifts([]);
-        setStats(null);      
+        setStats(null);
       } finally {
         setLoading(false);
       }
@@ -110,9 +110,9 @@ export default function VolunteerDashboard() {
       <div className="space-y-8">
         {/* Skeleton Loader */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Skeleton className="h-32 w-full" />
-            <Skeleton className="h-32 w-full" />
-            <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
         </div>
         <Skeleton className="h-64 w-full" />
         <Skeleton className="h-48 w-full" />
@@ -135,45 +135,45 @@ export default function VolunteerDashboard() {
 
       {/* Stats Cards */}
       <div className="grid gap-6 md:grid-cols-3 mb-8">
-         <Card>
-           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-             <CardTitle className="text-sm font-medium">Total Hours Logged</CardTitle>
-             <Clock className="h-4 w-4 text-muted-foreground" />
-           </CardHeader>
-           <CardContent>
-             {stats ? (
-               <div className="text-2xl font-bold">{stats.totalHours}h {stats.totalMinutes}m</div>
-             ) : (
-               <p className="text-muted-foreground italic">Volunteer stats are unavailable.</p>
-             )}
-             <Button variant="link" size="sm" asChild className="p-0 h-auto text-xs">
-               <Link href="/log-hours">View Log</Link>
-             </Button>
-           </CardContent>
-         </Card>
-         <Card>
-           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-             <CardTitle className="text-sm font-medium">Shifts Completed</CardTitle>
-             <CheckCircle className="h-4 w-4 text-muted-foreground" />
-           </CardHeader>
-           <CardContent>
-             <div className="text-2xl font-bold">{stats?.shiftsCount || 0}</div>
-             <p className="text-xs text-muted-foreground">Lifetime total</p>
-           </CardContent>
-         </Card>
-         <Card>
-           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-             <CardTitle className="text-sm font-medium">Upcoming Shifts</CardTitle>
-             <Calendar className="h-4 w-4 text-muted-foreground" />
-           </CardHeader>
-           <CardContent>
-             <div className="text-2xl font-bold">{upcomingShifts.length}</div>
-             <Button variant="link" size="sm" asChild className="p-0 h-auto text-xs">
-               <Link href="/shifts">View Shifts</Link>
-             </Button>
-           </CardContent>
-         </Card>
-       </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Hours Logged</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {stats ? (
+              <div className="text-2xl font-bold">{stats.totalHours}h {stats.totalMinutes}m</div>
+            ) : (
+              <p className="text-muted-foreground italic">Volunteer stats are unavailable.</p>
+            )}
+            <Button variant="link" size="sm" asChild className="p-0 h-auto text-xs">
+              <Link href="/log-hours">View Log</Link>
+            </Button>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Shifts Completed</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.shiftsCount || 0}</div>
+            <p className="text-xs text-muted-foreground">Lifetime total</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Upcoming Shifts</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{upcomingShifts.length}</div>
+            <Button variant="link" size="sm" asChild className="p-0 h-auto text-xs">
+              <Link href="/shifts">View Shifts</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Upcoming Shifts List */}
       <Card className="mb-8">
@@ -218,12 +218,12 @@ export default function VolunteerDashboard() {
           <Button asChild variant="outline">
             <Link href="/profile">Update My Profile</Link>
           </Button>
-           <Button asChild variant="outline">
-             <Link href="/groups">View Groups</Link>
-           </Button>
-            <Button asChild variant="outline">
-              <Link href="/check-in">Check In/Out</Link>
-            </Button>
+          <Button asChild variant="outline">
+            <Link href="/groups">View Groups</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/check-in">Check In/Out</Link>
+          </Button>
         </div>
       </div>
     </div>

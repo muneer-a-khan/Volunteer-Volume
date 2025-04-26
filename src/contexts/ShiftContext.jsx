@@ -113,7 +113,7 @@ export const ShiftProvider = ({ children }) => {
       // await axios.post(`/api/shifts/${shiftId}/signup`, { userId }); // Needs userId
       toast.success('Successfully signed up! (API Call commented out)');
       // Optimistic update or refetch
-      fetchShifts(); 
+      fetchShifts();
       fetchMyShifts();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to sign up for shift');
