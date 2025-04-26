@@ -100,7 +100,7 @@ export default function VolunteerDetailPage() {
           <TabsTrigger value="shifts">Shift History</TabsTrigger>
         </TabsList>
         <TabsContent value="profile">
-          {volunteerId && <VolunteerProfile volunteer={volunteer} volunteerId={volunteerId} />}
+          {volunteerId && <VolunteerProfile volunteer={volunteer} volunteerId={volunteerId.toString()} />}
         </TabsContent>
         <TabsContent value="hours">
           <p className="text-center py-8 text-muted-foreground">(Hours Log component placeholder - Needs implementation)</p>
