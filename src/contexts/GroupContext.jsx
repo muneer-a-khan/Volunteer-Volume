@@ -1,14 +1,14 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-// import { useAuth } from './AuthContext'; // Removed
+import { useSession } from 'next-auth/react';
 
 const GroupContext = createContext();
 
 export const GroupProvider = ({ children }) => {
-  // const { isAuthenticated, dbUser } = useAuth(); // Removed
-  const isAuthenticated = true; // Placeholder
-  const userId = null; // Placeholder
+  const { data: session } = useSession();
+  const isAuthenticated = !!session?.user;
+  const userId = session?.user?.id || null;
 
   const [groups, setGroups] = useState([]);
   const [myGroups, setMyGroups] = useState([]);
@@ -31,16 +31,13 @@ export const GroupProvider = ({ children }) => {
   // Fetch user's groups (needs user ID)
   const fetchMyGroups = useCallback(async () => {
     if (!isAuthenticated || !userId) {
-      toast('Fetching your groups requires user identification.');
       setMyGroups([]);
       return;
     }
     setLoading(true);
     try {
-      // const response = await axios.get(`/api/groups/my?userId=${userId}`);
-      // setMyGroups(response.data);
-      setMyGroups([]); // Placeholder
-      toast('Fetching my groups needs API update (call commented out).');
+      const response = await axios.get(`/api/groups/my?userId=${userId}`);
+      setMyGroups(response.data);
     } catch (error) {
       console.error('Error fetching my groups:', error);
       toast.error('Failed to load your groups');
@@ -54,7 +51,11 @@ export const GroupProvider = ({ children }) => {
     try {
       const response = await axios.get(`/api/groups/${id}`);
       return response.data;
-    } catch (error) { console.error('Fetch group error:', error); toast.error('Failed to load group details'); return null; }
+    } catch (error) { 
+      console.error('Fetch group error:', error); 
+      toast.error('Failed to load group details'); 
+      return null; 
+    }
   };
 
   // Admin/Role-dependent actions (commented out API calls)
@@ -119,11 +120,13 @@ export const GroupProvider = ({ children }) => {
     } catch (error) { console.error('Fetch group volunteers error:', error); toast.error('Failed to load group volunteers'); return []; }
   };
 
-  // Initial fetches
+  // Initial fetch
   useEffect(() => {
     fetchGroups();
-    // fetchMyGroups(); // Needs user ID
-  }, [fetchGroups, isAuthenticated]);
+    if (isAuthenticated && userId) {
+      fetchMyGroups();
+    }
+  }, [fetchGroups, fetchMyGroups, isAuthenticated, userId]);
 
   const value = {
     groups,

@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Shift as ShiftType } from '@/types/shift';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 interface VolunteerStats {
   totalHours: number;
@@ -20,6 +22,8 @@ interface VolunteerStats {
 }
 
 export default function VolunteerDashboard() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [stats, setStats] = useState<VolunteerStats | null>(null);
   const [upcomingShifts, setUpcomingShifts] = useState<ShiftType[]>([]);
   const [pastShifts, setPastShifts] = useState<ShiftType[]>([]);
@@ -27,13 +31,23 @@ export default function VolunteerDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const localDbUserPlaceholder = { name: 'Volunteer' };
+  // Check if the user is authenticated and has appropriate role
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/sign-in');
+    } else if (session?.user?.role === 'PENDING') {
+      router.push('/application-success');
+    }
+  }, [status, session, router]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
+      if (status !== 'authenticated' || !session?.user?.id) return;
+
       setLoading(true);
       setError(null);
       try {
+        // Fetch shifts data
         const shiftsRes = await axios.get('/api/shifts?filter=upcoming');
         const allShifts: ShiftType[] = shiftsRes.data;
 
@@ -64,8 +78,14 @@ export default function VolunteerDashboard() {
         setPastShifts(past);
         setTodayShifts(todays);
 
-        // Stats fetch commented out
-        setStats(null);
+        // Fetch volunteer stats
+        try {
+          const statsRes = await axios.get(`/api/volunteer/stats?userId=${session.user.id}`);
+          setStats(statsRes.data);
+        } catch (statsErr) {
+          console.error("Error fetching volunteer stats:", statsErr);
+          setStats(null);
+        }
 
       } catch (err: any) {
         console.error("Error fetching volunteer dashboard data:", err);
@@ -78,8 +98,9 @@ export default function VolunteerDashboard() {
         setLoading(false);
       }
     };
+
     fetchDashboardData();
-  }, []);
+  }, [session, status]);
 
   // Format shift time
   const formatShiftTime = (start: string, end: string) => {
@@ -105,7 +126,8 @@ export default function VolunteerDashboard() {
     }
   };
 
-  if (loading) {
+  // If still loading session
+  if (status === 'loading' || loading) {
     return (
       <div className="space-y-8">
         {/* Skeleton Loader */}
@@ -120,6 +142,11 @@ export default function VolunteerDashboard() {
     );
   }
 
+  // If not authenticated or not appropriate role
+  if (status !== 'authenticated' || (session?.user?.role !== 'VOLUNTEER' && session?.user?.role !== 'ADMIN' && session?.user?.role !== 'GROUP_ADMIN')) {
+    return null; // Will be redirected by useEffect
+  }
+
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8 text-center text-red-600">
@@ -131,7 +158,7 @@ export default function VolunteerDashboard() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6">Volunteer Dashboard</h1>
-      <p className="text-lg text-gray-600 mb-8">Welcome back, {localDbUserPlaceholder.name}!</p>
+      <p className="text-lg text-gray-600 mb-8">Welcome back, {session.user.name || 'Volunteer'}!</p>
 
       {/* Stats Cards */}
       <div className="grid gap-6 md:grid-cols-3 mb-8">
