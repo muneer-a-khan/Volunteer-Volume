@@ -211,41 +211,46 @@ export const ShiftProvider = ({ children }) => {
     }
   };
 
-  // Check in for a shift
-  const checkInForShift = async (shiftId, notes = '') => {
+  // Updated Check-in function
+  const checkInForShift = async (shiftId, volunteerId, notes = '') => {
+    // No frontend auth check needed here, API is secured
     try {
       setLoading(true);
-      const response = await axios.post('/api/check-in', { shiftId, notes });
-      toast({ title: "Success", description: "Check-in successful" });
-      return response.data;
+      // Pass volunteerId in the request body
+      const response = await axios.post('/api/check-in', { shiftId, volunteerId, notes });
+      toast({ title: "Success", description: "Check-in successful" }); // Add duration if needed
+      return response.data; 
     } catch (error) {
       console.error('Error checking in:', error);
       toast({ 
         title: "Error", 
         description: error.response?.data?.message || 'Failed to check in. Please try again.',
         variant: "destructive"
+        // Add duration if needed
       });
-      throw error;
+      throw error; // Re-throw for potential UI handling
     } finally {
       setLoading(false);
     }
   };
 
-  // Check out from a shift
+  // Check-out function remains largely the same (API is secured)
   const checkOutFromShift = async (checkInId, notes = '') => {
     try {
       setLoading(true);
       const response = await axios.post('/api/check-out', { checkInId, notes });
-      toast({ title: "Success", description: "Check-out successful" });
+      toast({ title: "Success", description: "Check-out successful" }); // Add duration if needed
+      // Maybe refetch user hours or shift details after check-out?
       return response.data;
     } catch (error) {
-      console.error('Error checking out:', error);
+       console.error('Error checking out:', error);
       toast({ 
         title: "Error", 
         description: error.response?.data?.message || 'Failed to check out. Please try again.',
         variant: "destructive"
+        // Add duration if needed
       });
-      throw error;
+      throw error; // Re-throw for potential UI handling
     } finally {
       setLoading(false);
     }

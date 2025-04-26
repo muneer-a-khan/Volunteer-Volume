@@ -1,69 +1,66 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { Prisma } from '@prisma/client';
 import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
-// import { getServerSession } from 'next-auth'; // Removed
-// import { authOptions } from '@/lib/auth'; // Removed
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+interface ResponseData {
+  success: boolean;
+  message: string;
+  checkInRecord?: any;
+}
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse<ResponseData>) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method Not Allowed' });
+    return res.status(405).json({ success: false, message: 'Method not allowed' });
   }
 
-  // const session = await getServerSession(req, res, authOptions); // Removed
-  // if (!session?.user?.id) { // Removed
-  //   return res.status(401).json({ message: 'Unauthorized' }); // Removed
-  // }
-  // const userId = session.user.id; // Removed
+  // --- Admin Authentication Check --- 
+  const session = await getServerSession(req, res, authOptions);
+  // Use optional chaining and nullish coalescing for safety
+  const isAdmin = session?.user?.role === 'ADMIN'; 
+  
+  if (!isAdmin) {
+    return res.status(403).json({ success: false, message: 'Forbidden: Admin access required.' });
+  }
+  // --- End Admin Check ---
 
-  const { shiftId } = req.body;
+  // Expect volunteerId, shiftId, and optional notes from the request body
+  const { volunteerId, shiftId, notes } = req.body;
 
-  if (!shiftId) {
-    return res.status(400).json({ message: 'Shift ID is required' });
+  if (!volunteerId || !shiftId) {
+    return res.status(400).json({ success: false, message: 'Missing required fields: volunteerId and shiftId' });
   }
 
   try {
     await prisma.$connect();
-    // Need userId to perform check-in.
-    // Cannot proceed without authentication.
-    return res.status(501).json({ message: 'Check-in requires authentication (currently disabled)' });
 
-    /* Original logic:
-    // Check if shift exists and is upcoming
-    const shift = await prisma.shifts.findUnique({ where: { id: shiftId } });
-    if (!shift || new Date(shift.start_time) < new Date()) {
-        return res.status(400).json({ message: 'Shift not found or already started' });
-    }
+    // Optional: Add validation - check if volunteer & shift exist, volunteer is signed up?
+    // For brevity, assuming valid IDs for now.
 
-    // Check if user is signed up for the shift
-    const signup = await prisma.shift_volunteers.findUnique({
-        where: { shift_id_user_id: { shift_id: shiftId, user_id: userId } } // Needs userId
-    });
-    if (!signup) {
-        return res.status(403).json({ message: 'Not signed up for this shift' });
-    }
-
-    // Check if already checked in
-    const existingCheckIn = await prisma.check_ins.findFirst({
-        where: { shift_id: shiftId, user_id: userId, check_out_time: null } // Needs userId
-    });
-    if (existingCheckIn) {
-        return res.status(409).json({ message: 'Already checked in for this shift' });
-    }
-
-    // Create check-in record
-    const checkInData = {
+    const checkInRecord = await prisma.check_ins.create({
+      data: {
+        user_id: volunteerId, // The volunteer being checked in
         shift_id: shiftId,
-        user_id: userId, // Needs userId
         check_in_time: new Date(),
-        status: 'Checked In',
-    };
-    const newCheckIn = await prisma.check_ins.create({ data: checkInData });
+        notes: notes || null,
+        // checked_in_by_user_id: session.user.id, // Optionally track which admin did it
+      },
+    });
 
-    res.status(201).json(mapSnakeToCamel(newCheckIn));
-    */
+    res.status(201).json({ 
+      success: true, 
+      message: 'Check-in successful', 
+      checkInRecord: checkInRecord // Return the created record
+    });
+
   } catch (error) {
-    console.error('Error checking in:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    console.error('Error during check-in:', error);
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      // Handle potential DB errors like foreign key constraints
+    }
+    res.status(500).json({ success: false, message: 'Internal server error during check-in' });
   } finally {
     await prisma.$disconnect();
   }

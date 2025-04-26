@@ -1,12 +1,12 @@
 'use client';
 
-import * as React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-
-import { cn } from "@/lib/utils";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useToast } from "../ui/use-toast";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
@@ -14,42 +14,48 @@ import {
   NavigationMenuList,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
+import { Menu } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+
+// Standardized Navigation Item Type
+interface NavItem {
+  href: string;
+  label: string;
+}
+
+// Define navigation items using the standard type
+const mainNavItems: NavItem[] = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/shifts", label: "Shifts" },
+  { href: "/groups", label: "Groups" },
+  // { href: "/log-hours", label: "Log Hours" }, // Log Hours link is removed/commented out
+  { href: "/profile", label: "Profile" },
+];
+
+const adminNavItems: NavItem[] = [
+  // Standardize admin items
+  { href: "/admin/dashboard", label: "Admin Dashboard" }, 
+  { href: "/admin/volunteers", label: "Manage Volunteers" },
+  { href: "/admin/shifts", label: "Manage Shifts" },
+  { href: "/admin/groups", label: "Manage Groups" },
+  { href: "/admin/reports", label: "Reports" },
+];
 
 export default function ShadcnNavbar() {
   const pathname = usePathname();
   const { isAuthenticated, isAdmin, signIn, signOut, user, isLoading } = useAuth();
+  const { toast } = useToast();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Define navigation links based on authentication status
-  const getNavLinks = () => {
-    // Everyone can see these links
-    const publicLinks: { name: string; href: string }[] = [];
+  // Combine nav items correctly
+  const navItems: NavItem[] = isAdmin ? [...mainNavItems, ...adminNavItems] : mainNavItems;
 
-    // Only authenticated users can see these links
-    const authLinks = [
-      { name: "Shifts Calendar", href: "/shifts" },
-      { name: "Log Hours", href: "/log-hours" },
-      { name: "Check-in/Check-out", href: "/check-in" },
-    ];
-
-    // Only admins can see these links
-    const adminLinks = [
-      { name: "Admin Dashboard", href: "/admin/dashboard" }
-    ];
-
-    if (isLoading) {
-      return publicLinks;
-    }
-
-    if (isAuthenticated) {
-      return isAdmin 
-        ? [...publicLinks, ...authLinks, ...adminLinks] 
-        : [...publicLinks, ...authLinks];
-    }
-
-    return publicLinks;
+  const handleSignOut = async () => {
+    await signOut({ redirect: false });
+    toast({ title: "Signed Out", description: "You have been successfully signed out." });
+    // Redirect handled by Providers or session status change
   };
-
-  const navLinks = getNavLinks();
 
   return (
     <div className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -69,14 +75,14 @@ export default function ShadcnNavbar() {
         <div className="flex items-center gap-4">
           <NavigationMenu>
             <NavigationMenuList>
-              {navLinks.map((link) => (
-                <NavigationMenuItem key={link.name} className="mx-1">
+              {navItems.map((link) => (
+                <NavigationMenuItem key={link.href} className="mx-1">
                   <Link href={link.href} legacyBehavior passHref>
                     <Button
                       variant={link.href === pathname ? "default" : "ghost"}
                       className="rounded-full"
                     >
-                      {link.name}
+                      {link.label}
                     </Button>
                   </Link>
                 </NavigationMenuItem>
@@ -93,6 +99,53 @@ export default function ShadcnNavbar() {
               {isAuthenticated ? 'Sign Out' : 'Sign In'}
             </Button>
           )}
+        </div>
+
+        {/* Mobile Menu Button */}
+        <div className="md:hidden">
+          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="h-6 w-6" />
+                <span className="sr-only">Toggle Menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-full sm:w-[300px]">
+              <div className="flex flex-col h-full">
+                <div className="p-4 border-b">
+                  <span className="font-bold text-lg">Menu</span>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                  {navItems.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className={cn(
+                        "block rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
+                        pathname === link.href ? "bg-accent text-accent-foreground" : "text-muted-foreground"
+                      )}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+                <div className="p-4 border-t mt-auto">
+                  {isLoading ? (
+                    <Skeleton className="h-10 w-full" />
+                  ) : isAuthenticated ? (
+                    <Button variant="outline" className="w-full" onClick={() => { handleSignOut(); setIsMobileMenuOpen(false); }}>
+                      Sign Out
+                    </Button>
+                  ) : (
+                    <Link href="/login" passHref>
+                      <Button className="w-full" onClick={() => setIsMobileMenuOpen(false)}>Sign In</Button>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </div>
