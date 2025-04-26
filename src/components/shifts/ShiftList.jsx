@@ -15,9 +15,10 @@ import AddShiftForm from './AddShiftForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { PlusCircle, Search, Filter } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import AvailableShiftsDialog from './AvailableShiftsDialog';
 
 export default function ShiftList({ groupId = null }) {
-  const { shifts, loading, fetchShifts, signUpForShift, cancelShiftSignup, deleteShift } = useShifts();
+  const { shifts, loading, fetchShifts, signUpForShift, cancelShiftSignup, deleteShift, suggestedShifts, setSuggestedShifts } = useShifts();
   const { isAdmin } = useAuth();
   const [isAddShiftDialogOpen, setIsAddShiftDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -112,6 +113,10 @@ export default function ShiftList({ groupId = null }) {
     setIsEditDialogOpen(false);
     setShiftToEdit(null); // Clear edit state
     fetchShifts(filter); // Refresh list after add/edit
+  };
+
+  const handleCloseSuggestionDialog = () => {
+    setSuggestedShifts([]); // Clear suggestions to close dialog
   };
 
   const handleDeleteShift = async (id) => {
@@ -215,7 +220,7 @@ export default function ShiftList({ groupId = null }) {
       {/* Avoid rendering the empty state while loading */}
 
       {/* Dialog for Adding/Editing Shifts - reusing AddShiftForm */}
-      <Dialog open={isAddShiftDialogOpen || isEditDialogOpen} onOpenChange={() => { setIsAddShiftDialogOpen(false); setIsEditDialogOpen(false); }}>
+      <Dialog open={isAddShiftDialogOpen || isEditDialogOpen} onOpenChange={handleCloseDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{shiftToEdit ? 'Edit Shift' : 'Add New Shift'}</DialogTitle>
@@ -226,6 +231,14 @@ export default function ShiftList({ groupId = null }) {
           />
         </DialogContent>
       </Dialog>
+
+      {/* --- Render Suggestion Dialog --- */}
+      <AvailableShiftsDialog 
+        isOpen={suggestedShifts && suggestedShifts.length > 0}
+        onClose={handleCloseSuggestionDialog}
+        shifts={suggestedShifts}
+      />
+      {/* --- End Suggestion Dialog --- */}
     </div>
   );
 }

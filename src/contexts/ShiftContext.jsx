@@ -19,6 +19,9 @@ export const ShiftProvider = ({ children }) => {
   const [shifts, setShifts] = useState([]);
   const [myShifts, setMyShifts] = useState([]);
   const [loading, setLoading] = useState(true);
+  // --- State for suggested shifts dialog ---
+  const [suggestedShifts, setSuggestedShifts] = useState([]); 
+  // --- End State --- 
 
   // Fetch all shifts
   const fetchShifts = useCallback(async (filter = 'upcoming', groupId = null) => {
@@ -61,6 +64,32 @@ export const ShiftProvider = ({ children }) => {
       setLoading(false);
     }
   }, [isAuthenticated, userId]);
+
+  // --- Function to fetch and suggest shifts --- 
+  const fetchAvailableShiftsAndSuggest = useCallback(async () => {
+    setLoading(true); // Indicate loading suggestions
+    try {
+      const response = await axios.get('/api/shifts', { 
+        params: { filter: 'upcoming', onlyAvailable: true } 
+      });
+      const availableShifts = response.data || [];
+      
+      // Filter out shifts the user is *already* signed up for (using current myShifts state)
+      const availableForUser = availableShifts.filter(
+        s => !myShifts.some(myShift => myShift.id === s.id)
+      );
+      
+      // Set top 3 suggestions
+      setSuggestedShifts(availableForUser.slice(0, 3));
+    } catch (error) {
+      console.error("Error fetching available shifts for suggestions:", error);
+      // Don't show an error toast here, just fail silently
+      setSuggestedShifts([]); // Clear suggestions on error
+    } finally {
+      setLoading(false); // Suggestions loaded (or failed)
+    }
+  }, [myShifts]); // Dependency: myShifts state
+  // --- End Suggestion function --- 
 
   // Create a new shift
   const createShift = async (shiftData) => {
@@ -156,18 +185,20 @@ export const ShiftProvider = ({ children }) => {
     }
   };
 
-  // Cancel shift signup (requires user identification)
+  // Modified cancelShiftSignup
   const cancelShiftSignup = async (shiftId) => {
     if (!isAuthenticated || !userId) {
       toast({ title: "Error", description: "Please log in to cancel.", variant: "destructive", duration: 3000 });
       return;
     }
     try {
-      await axios.post(`/api/shifts/${shiftId}/cancel`); // userId is handled by backend session
+      await axios.post(`/api/shifts/${shiftId}/cancel`); 
       toast({ title: "Success", description: "Signup canceled.", duration: 3000 });
-      // Optimistic update or refetch
-      fetchShifts();
-      fetchMyShifts();
+      // Refetch main lists
+      await fetchShifts(); // await to ensure lists are updated before suggesting
+      await fetchMyShifts(); 
+      // Fetch and set suggestions AFTER successful cancellation and refetch
+      await fetchAvailableShiftsAndSuggest(); 
     } catch (error) {
       toast({ 
         title: "Error", 
@@ -176,6 +207,7 @@ export const ShiftProvider = ({ children }) => {
         duration: 3000
       });
       console.error('Cancel signup error:', error);
+      setSuggestedShifts([]); // Clear suggestions on error
     }
   };
 
@@ -242,6 +274,8 @@ export const ShiftProvider = ({ children }) => {
     shifts,
     myShifts,
     loading,
+    suggestedShifts,
+    setSuggestedShifts,
     fetchShifts,
     fetchMyShifts,
     signUpForShift,

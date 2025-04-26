@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react"
 
 export const TOAST_LIMIT = 3
-export const TOAST_REMOVE_DELAY = 1000000
+export const TOAST_REMOVE_DELAY = 5000
 
 export type ToastActionElement = React.ReactElement
 
@@ -14,6 +14,7 @@ export type ToastProps = {
   variant?: "default" | "destructive"
   open?: boolean
   onOpenChange?: (open: boolean) => void
+  duration?: number
 }
 
 const actionTypes = {
