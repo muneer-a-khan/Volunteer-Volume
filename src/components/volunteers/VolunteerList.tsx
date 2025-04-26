@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
 import { format } from 'date-fns';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,14 @@ import { MoreHorizontal } from "lucide-react"
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { toast } from 'react-hot-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
 
 interface Volunteer {
   id: string;
@@ -47,6 +55,11 @@ export default function VolunteerList({ initialFilter = 'all', groupId = null }:
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const volunteersPerPage = 10;
+  
+  // Dialog state
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogAction, setDialogAction] = useState<'promote' | 'demote' | 'remove' | 'activate' | 'deactivate' | null>(null);
+  const [selectedVolunteer, setSelectedVolunteer] = useState<Volunteer | null>(null);
   
   const isAdmin = true; // Placeholder
 
@@ -194,52 +207,149 @@ export default function VolunteerList({ initialFilter = 'all', groupId = null }:
     return format(new Date(dateString), 'MMM d, yyyy');
   };
 
+  // Show confirm dialog
+  const showConfirmDialog = (action: 'promote' | 'demote' | 'remove' | 'activate' | 'deactivate', volunteer: Volunteer) => {
+    setDialogAction(action);
+    setSelectedVolunteer(volunteer);
+    setDialogOpen(true);
+  };
+
+  // Get dialog content based on action
+  const getDialogContent = () => {
+    if (!selectedVolunteer || !dialogAction) return null;
+    
+    const contents = {
+      promote: {
+        title: 'Promote to Admin',
+        description: `Are you sure you want to promote ${selectedVolunteer.name} to Admin? This will give them full administrative privileges.`,
+        confirmText: 'Promote',
+        confirmVariant: 'default' as const,
+        icon: false
+      },
+      demote: {
+        title: 'Demote to Volunteer',
+        description: `Are you sure you want to demote ${selectedVolunteer.name} to Volunteer? This will remove their administrative privileges.`,
+        confirmText: 'Demote',
+        confirmVariant: 'default' as const,
+        icon: false
+      },
+      remove: {
+        title: 'Remove Volunteer',
+        description: `Are you sure you want to permanently remove ${selectedVolunteer.name}? This action cannot be undone.`,
+        confirmText: 'Remove',
+        confirmVariant: 'destructive' as const,
+        icon: true
+      },
+      activate: {
+        title: 'Activate Volunteer',
+        description: `Are you sure you want to activate ${selectedVolunteer.name}?`,
+        confirmText: 'Activate',
+        confirmVariant: 'default' as const,
+        icon: false
+      },
+      deactivate: {
+        title: 'Deactivate Volunteer',
+        description: `Are you sure you want to deactivate ${selectedVolunteer.name}?`,
+        confirmText: 'Deactivate',
+        confirmVariant: 'default' as const,
+        icon: false
+      }
+    };
+    
+    return contents[dialogAction];
+  };
+
+  // Handle dialog confirm
+  const handleDialogConfirm = async () => {
+    if (!selectedVolunteer || !dialogAction) return;
+    
+    try {
+      setDialogOpen(false);
+      
+      switch (dialogAction) {
+        case 'promote':
+          await handlePromoteAdmin(selectedVolunteer.id);
+          break;
+        case 'demote':
+          await handleDemoteVolunteer(selectedVolunteer.id);
+          break;
+        case 'remove':
+          await handleRemove(selectedVolunteer.id);
+          break;
+        case 'activate':
+          await handleActivate(selectedVolunteer.id);
+          break;
+        case 'deactivate':
+          await handleDeactivate(selectedVolunteer.id);
+          break;
+      }
+    } catch (err) {
+      console.error('Error during action:', err);
+      toast.error('An error occurred');
+    }
+  };
+
   // Actions (Deactivate, Promote, etc.)
   const handleDeactivate = async (userId: string) => {
-    if (!window.confirm('Are you sure you want to deactivate this volunteer?')) return;
     try {
-      await axios.put(`/api/admin/users/${userId}/deactivate`);
+      // Use the proper API endpoint for updating user status
+      await axios.post('/api/admin/users/update-status', { userId, active: false });
       toast.success('Volunteer deactivated');
       // Refresh list or update state locally
       setVolunteers(prev => prev.map(v => v.id === userId ? { ...v, active: false } : v));
-    } catch (err) { toast.error('Failed to deactivate'); }
+    } catch (err) { 
+      console.error('Deactivate error:', err);
+      toast.error('Failed to deactivate');
+    }
   };
 
   const handleActivate = async (userId: string) => {
-    if (!window.confirm('Are you sure you want to reactivate this volunteer?')) return;
     try {
-      await axios.put(`/api/admin/users/${userId}/activate`);
+      // Use the proper API endpoint for updating user status
+      await axios.post('/api/admin/users/update-status', { userId, active: true });
       toast.success('Volunteer reactivated');
       setVolunteers(prev => prev.map(v => v.id === userId ? { ...v, active: true } : v));
-    } catch (err) { toast.error('Failed to reactivate'); }
+    } catch (err) { 
+      console.error('Activate error:', err);
+      toast.error('Failed to reactivate');
+    }
   };
 
   const handlePromoteAdmin = async (userId: string) => {
-    if (!window.confirm('Promote this user to ADMIN?')) return;
     try {
-      await axios.put(`/api/admin/users/${userId}/promote`, { role: 'ADMIN' });
+      // Use the proper API endpoint for updating user role
+      await axios.post('/api/admin/users/update-role', { userId, role: 'ADMIN' });
       toast.success('Volunteer promoted to Admin');
       setVolunteers(prev => prev.map(v => v.id === userId ? { ...v, role: 'ADMIN' } : v));
-    } catch (err) { toast.error('Failed to promote'); }
+    } catch (err) { 
+      console.error('Promote error:', err);
+      toast.error('Failed to promote');
+    }
   };
 
   const handleDemoteVolunteer = async (userId: string) => {
-    if (!window.confirm('Demote this user to VOLUNTEER?')) return;
     try {
-      await axios.put(`/api/admin/users/${userId}/demote`, { role: 'VOLUNTEER' });
+      // Use the proper API endpoint for updating user role
+      await axios.post('/api/admin/users/update-role', { userId, role: 'VOLUNTEER' });
       toast.success('Admin demoted to Volunteer');
       setVolunteers(prev => prev.map(v => v.id === userId ? { ...v, role: 'VOLUNTEER' } : v));
-    } catch (err) { toast.error('Failed to demote'); }
+    } catch (err) { 
+      console.error('Demote error:', err);
+      toast.error('Failed to demote');
+    }
   };
 
   const handleRemove = async (userId: string) => {
-    if (!window.confirm('Are you sure you want to permanently remove this volunteer? This action cannot be undone.')) return;
     try {
+      // Use the proper API endpoint for removing users
       await axios.delete(`/api/admin/users/${userId}`);
       toast.success('Volunteer removed');
       // Remove from state
       setVolunteers(prev => prev.filter(v => v.id !== userId));
-    } catch (err) { toast.error('Failed to remove volunteer'); }
+    } catch (err) { 
+      console.error('Remove error:', err);
+      toast.error('Failed to remove volunteer');
+    }
   };
 
   // Render loading state
@@ -260,6 +370,7 @@ export default function VolunteerList({ initialFilter = 'all', groupId = null }:
   }
 
   const currentVolunteers = getCurrentPageVolunteers();
+  const dialogContent = getDialogContent();
 
   return (
     <div>
@@ -350,25 +461,25 @@ export default function VolunteerList({ initialFilter = 'all', groupId = null }:
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         {volunteer.active ? (
-                          <DropdownMenuItem onClick={() => handleDeactivate(volunteer.id)} className="text-yellow-600">
+                          <DropdownMenuItem onClick={() => showConfirmDialog('deactivate', volunteer)} className="text-yellow-600">
                             Deactivate
                           </DropdownMenuItem>
                         ) : (
-                          <DropdownMenuItem onClick={() => handleActivate(volunteer.id)} className="text-green-600">
+                          <DropdownMenuItem onClick={() => showConfirmDialog('activate', volunteer)} className="text-green-600">
                             Reactivate
                           </DropdownMenuItem>
                         )}
                         {volunteer.role === 'VOLUNTEER' && (
-                          <DropdownMenuItem onClick={() => handlePromoteAdmin(volunteer.id)}>
+                          <DropdownMenuItem onClick={() => showConfirmDialog('promote', volunteer)}>
                             Promote to Admin
                           </DropdownMenuItem>
                         )}
                         {volunteer.role === 'ADMIN' && (
-                          <DropdownMenuItem onClick={() => handleDemoteVolunteer(volunteer.id)} className="text-red-600">
+                          <DropdownMenuItem onClick={() => showConfirmDialog('demote', volunteer)} className="text-red-600">
                             Demote to Volunteer
                           </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem onClick={() => handleRemove(volunteer.id)} className="text-red-600 font-medium">
+                        <DropdownMenuItem onClick={() => showConfirmDialog('remove', volunteer)} className="text-red-600 font-medium">
                           Remove
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -418,6 +529,41 @@ export default function VolunteerList({ initialFilter = 'all', groupId = null }:
             </Button>
           </div>
         </div>
+      )}
+
+      {/* Confirmation Dialog */}
+      {dialogContent && (
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{dialogContent.title}</DialogTitle>
+              <DialogDescription>
+                {dialogContent.icon && (
+                  <div className="flex justify-center my-4">
+                    <div className="p-3 rounded-full bg-red-100">
+                      <AlertTriangle className="h-6 w-6 text-red-600" />
+                    </div>
+                  </div>
+                )}
+                {dialogContent.description}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="sm:justify-between mt-4">
+              <Button
+                variant="outline"
+                onClick={() => setDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant={dialogContent.confirmVariant}
+                onClick={handleDialogConfirm}
+              >
+                {dialogContent.confirmText}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
