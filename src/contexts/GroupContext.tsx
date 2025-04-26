@@ -94,17 +94,24 @@ export const GroupProvider = ({ children }: GroupProviderProps) => {
 
   const fetchMyGroups = useCallback(async () => {
     if (!isAuthenticated || !userId) {
-      toast('Fetching your groups requires user identification.');
+      // Silent fail - don't show error toast
       setMyGroups([]);
       return;
     }
     setLoading(true);
     try {
-      setMyGroups([]);
-      toast('Fetching my groups needs API update (call commented out).');
+      // Attempt to fetch groups but silently handle errors
+      try {
+        const response = await axios.get('/api/groups/my');
+        setMyGroups(response.data || []);
+      } catch (error) {
+        console.log('Info: My groups API not implemented yet');
+        setMyGroups([]);
+      }
     } catch (error) {
       console.error('Error fetching my groups:', error);
-      toast.error('Failed to load your groups');
+      // No error toast, just set empty array
+      setMyGroups([]);
     } finally {
       setLoading(false);
     }

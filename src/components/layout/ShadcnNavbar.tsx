@@ -22,9 +22,7 @@ export default function ShadcnNavbar() {
   // Define navigation links based on authentication status
   const getNavLinks = () => {
     // Everyone can see these links
-    const publicLinks = [
-      { name: "Home", href: "/" },
-    ];
+    const publicLinks: { name: string; href: string }[] = [];
 
     // Only authenticated users can see these links
     const authLinks = [
