@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'; // Use correct path
+import { authOptions } from '@/lib/auth'; // Updated import path
 import { differenceInMinutes, parseISO } from 'date-fns';
 import { Prisma } from '@prisma/client';
 // Assuming email sending is set up if uncommented later

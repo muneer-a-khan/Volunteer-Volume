@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 import { Prisma } from '@prisma/client';
 import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
 // import { getServerSession } from 'next-auth'; // Removed
