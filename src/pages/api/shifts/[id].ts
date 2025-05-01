@@ -103,6 +103,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         delete updateData.groupId;
       }
       
+      // Map maxVolunteers to capacity (fix for database schema mismatch)
+      if (updateData.maxVolunteers !== undefined) {
+        updateData.capacity = updateData.maxVolunteers;
+        delete updateData.maxVolunteers;
+      }
+      
       console.log('Updating shift with data:', updateData);
       
       const updatedShift = await prisma.shifts.update({

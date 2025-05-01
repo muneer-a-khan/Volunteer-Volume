@@ -1,8 +1,5 @@
 import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
-// Import shadcn toast function
-// import { toast } from 'react-hot-toast'; 
-import { useToast } from "@/components/ui/use-toast"; 
 import { useSession } from 'next-auth/react';
 
 const ShiftContext = createContext();
@@ -14,7 +11,6 @@ export const ShiftProvider = ({ children }) => {
   
   // Use refs to track if we've already fetched data
   const initialFetchDone = useRef(false);
-  const { toast } = useToast(); // Get toast function from the hook
 
   const [shifts, setShifts] = useState([]);
   const [myShifts, setMyShifts] = useState([]);
@@ -32,7 +28,6 @@ export const ShiftProvider = ({ children }) => {
       setShifts(response.data);
     } catch (error) {
       console.error('Error fetching shifts:', error);
-      // Silent fail - don't show error toast
       setShifts([]);
     } finally {
       setLoading(false);
@@ -53,7 +48,6 @@ export const ShiftProvider = ({ children }) => {
       setMyShifts(response.data);
     } catch (error) {
       console.error('Error fetching my shifts:', error);
-      // Silent fail - don't show error toast
       setMyShifts([]);
       
       // If getting a 500 error, it's likely the API route issue
@@ -83,7 +77,6 @@ export const ShiftProvider = ({ children }) => {
       setSuggestedShifts(availableForUser.slice(0, 3));
     } catch (error) {
       console.error("Error fetching available shifts for suggestions:", error);
-      // Don't show an error toast here, just fail silently
       setSuggestedShifts([]); // Clear suggestions on error
     } finally {
       setLoading(false); // Suggestions loaded (or failed)
@@ -97,16 +90,10 @@ export const ShiftProvider = ({ children }) => {
       setLoading(true);
       const response = await axios.post('/api/shifts', shiftData);
       setShifts(prev => [...prev, response.data]);
-      toast({ title: "Success", description: "Shift created successfully", duration: 3000 });
+      console.log("Shift created successfully");
       return response.data;
     } catch (error) {
       console.error('Error creating shift:', error);
-      toast({ 
-        title: "Error", 
-        description: error.response?.data?.message || 'Failed to create shift. Please try again.',
-        variant: "destructive",
-        duration: 3000
-      });
       throw error;
     } finally {
       setLoading(false);
@@ -123,16 +110,10 @@ export const ShiftProvider = ({ children }) => {
       // Update myShifts if it exists there
       setMyShifts(prev => prev.map(shift => shift.id === id ? response.data : shift));
 
-      toast({ title: "Success", description: "Shift updated successfully", duration: 3000 });
+      console.log("Shift updated successfully");
       return response.data;
     } catch (error) {
       console.error('Error updating shift:', error);
-      toast({ 
-        title: "Error", 
-        description: error.response?.data?.message || 'Failed to update shift. Please try again.',
-        variant: "destructive",
-        duration: 3000
-      });
       throw error;
     } finally {
       setLoading(false);
@@ -146,16 +127,10 @@ export const ShiftProvider = ({ children }) => {
       await axios.delete(`/api/shifts/${id}`);
       setShifts(prev => prev.filter(shift => shift.id !== id));
       setMyShifts(prev => prev.filter(shift => shift.id !== id));
-      toast({ title: "Success", description: "Shift deleted successfully", duration: 3000 });
+      console.log("Shift deleted successfully");
       return true;
     } catch (error) {
       console.error('Error deleting shift:', error);
-      toast({ 
-        title: "Error", 
-        description: error.response?.data?.message || 'Failed to delete shift. Please try again.',
-        variant: "destructive",
-        duration: 3000
-      });
       return false;
     } finally {
       setLoading(false);
@@ -165,22 +140,16 @@ export const ShiftProvider = ({ children }) => {
   // Sign up for a shift (requires user identification)
   const signUpForShift = async (shiftId) => {
     if (!isAuthenticated || !userId) {
-      toast({ title: "Error", description: "Please log in to sign up.", variant: "destructive", duration: 3000 });
+      console.error("Please log in to sign up.");
       return;
     }
     try {
       await axios.post(`/api/shifts/${shiftId}/signup`); // userId is handled by backend session
-      toast({ title: "Success", description: "Successfully signed up!", duration: 3000 });
+      console.log("Successfully signed up!");
       // Optimistic update or refetch
       fetchShifts();
       fetchMyShifts();
     } catch (error) {
-      toast({ 
-        title: "Error", 
-        description: error.response?.data?.message || 'Failed to sign up for shift',
-        variant: "destructive",
-        duration: 3000
-      });
       console.error('Sign up error:', error);
     }
   };
@@ -188,24 +157,18 @@ export const ShiftProvider = ({ children }) => {
   // Modified cancelShiftSignup
   const cancelShiftSignup = async (shiftId) => {
     if (!isAuthenticated || !userId) {
-      toast({ title: "Error", description: "Please log in to cancel.", variant: "destructive", duration: 3000 });
+      console.error("Please log in to cancel.");
       return;
     }
     try {
       await axios.post(`/api/shifts/${shiftId}/cancel`); 
-      toast({ title: "Success", description: "Signup canceled.", duration: 3000 });
+      console.log("Signup canceled.");
       // Refetch main lists
       await fetchShifts(); // await to ensure lists are updated before suggesting
       await fetchMyShifts(); 
       // Fetch and set suggestions AFTER successful cancellation and refetch
       await fetchAvailableShiftsAndSuggest(); 
     } catch (error) {
-      toast({ 
-        title: "Error", 
-        description: error.response?.data?.message || 'Failed to cancel signup',
-        variant: "destructive",
-        duration: 3000
-      });
       console.error('Cancel signup error:', error);
       setSuggestedShifts([]); // Clear suggestions on error
     }
@@ -218,16 +181,10 @@ export const ShiftProvider = ({ children }) => {
       setLoading(true);
       // Pass volunteerId in the request body
       const response = await axios.post('/api/check-in', { shiftId, volunteerId, notes });
-      toast({ title: "Success", description: "Check-in successful" }); // Add duration if needed
+      console.log("Check-in successful");
       return response.data; 
     } catch (error) {
       console.error('Error checking in:', error);
-      toast({ 
-        title: "Error", 
-        description: error.response?.data?.message || 'Failed to check in. Please try again.',
-        variant: "destructive"
-        // Add duration if needed
-      });
       throw error; // Re-throw for potential UI handling
     } finally {
       setLoading(false);
@@ -239,17 +196,10 @@ export const ShiftProvider = ({ children }) => {
     try {
       setLoading(true);
       const response = await axios.post('/api/check-out', { checkInId, notes });
-      toast({ title: "Success", description: "Check-out successful" }); // Add duration if needed
-      // Maybe refetch user hours or shift details after check-out?
+      console.log("Check-out successful");
       return response.data;
     } catch (error) {
-       console.error('Error checking out:', error);
-      toast({ 
-        title: "Error", 
-        description: error.response?.data?.message || 'Failed to check out. Please try again.',
-        variant: "destructive"
-        // Add duration if needed
-      });
+      console.error('Error checking out:', error);
       throw error; // Re-throw for potential UI handling
     } finally {
       setLoading(false);

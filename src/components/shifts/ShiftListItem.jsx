@@ -2,7 +2,6 @@ import React from 'react';
 import { format, differenceInMinutes, isBefore, parseISO } from 'date-fns';
 import { useShifts } from '../../contexts/ShiftContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { useToast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MapPin, Edit, Trash2 } from 'lucide-react';
@@ -10,7 +9,6 @@ import { MapPin, Edit, Trash2 } from 'lucide-react';
 export default function ShiftListItem({ shift, onEdit, onDelete }) {
   const { signUpForShift, cancelShiftSignup, myShifts, loading: shiftContextLoading } = useShifts();
   const { user, isAdmin } = useAuth();
-  const { toast } = useToast();
 
   const userIsSignedUp = myShifts.some(myShift => myShift.id === shift.id);
   const isFull = shift.currentVolunteers > 0;
@@ -29,13 +27,13 @@ export default function ShiftListItem({ shift, onEdit, onDelete }) {
     if (user && !shiftContextLoading) {
       signUpForShift(shift.id);
     } else if (!user) {
-      toast({ title: "Login Required", description: "Please log in to sign up for shifts.", variant: "destructive" });
+      console.error("Please log in to sign up for shifts.");
     }
   };
 
   const handleCancel = () => {
     if (!user) {
-      toast({ title: "Login Required", description: "Please log in to cancel signups.", variant: "destructive" });
+      console.error("Please log in to cancel signups.");
       return;
     }
     if (shiftContextLoading) return;
@@ -43,11 +41,7 @@ export default function ShiftListItem({ shift, onEdit, onDelete }) {
     if (canCancel) {
       cancelShiftSignup(shift.id);
     } else {
-      toast({ 
-        title: "Cancellation Not Allowed", 
-        description: "You can only cancel a shift signup more than 1 hour before it starts.",
-        variant: "warning"
-      });
+      console.error("You can only cancel a shift signup more than 1 hour before it starts.");
     }
   };
 

@@ -4,9 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { toast } from 'react-hot-toast';
 import { PlusCircle, MessageSquare } from 'lucide-react';
-import { useToast } from "@/components/ui/use-toast";
 import axios from 'axios';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
@@ -14,7 +12,6 @@ export default function GroupAnnouncements({ announcements = [], isAdmin = false
   const [newAnnouncement, setNewAnnouncement] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const { toast: showToast } = useToast();
   
   // Mock announcements if none are provided
   const mockAnnouncements = [
@@ -38,7 +35,7 @@ export default function GroupAnnouncements({ announcements = [], isAdmin = false
     e.preventDefault();
     
     if (!newAnnouncement.trim()) {
-      toast.error('Announcement cannot be empty');
+      console.error('Announcement cannot be empty');
       return;
     }
     
@@ -48,11 +45,10 @@ export default function GroupAnnouncements({ announcements = [], isAdmin = false
       // This would be an API call in a real implementation
       // await axios.post(`/api/groups/${groupId}/announcements`, { content: newAnnouncement });
       
-      toast.success('Announcement posted');
+      console.log('Announcement posted');
       setNewAnnouncement('');
     } catch (error) {
       console.error('Error posting announcement:', error);
-      toast.error('Failed to post announcement');
     } finally {
       setIsSubmitting(false);
     }
@@ -60,7 +56,7 @@ export default function GroupAnnouncements({ announcements = [], isAdmin = false
   
   const handlePostAnnouncement = async () => {
     if (!newAnnouncement.trim()) {
-      showToast({ title: "Error", description: "Announcement cannot be empty.", variant: "destructive" });
+      console.error("Announcement cannot be empty.");
       return;
     }
     setIsSubmitting(true);
@@ -79,10 +75,9 @@ export default function GroupAnnouncements({ announcements = [], isAdmin = false
       // setAnnouncements([postedAnnouncement, ...displayAnnouncements]);
       setNewAnnouncement('');
       setShowForm(false);
-      showToast({ title: "Success", description: "Announcement posted! (Simulation)" });
+      console.log("Announcement posted! (Simulation)");
     } catch (error) {
       console.error("Error posting announcement:", error);
-      showToast({ title: "Error", description: "Failed to post announcement.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
