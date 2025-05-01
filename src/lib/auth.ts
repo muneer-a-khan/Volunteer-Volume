@@ -4,6 +4,7 @@ import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
 import type { NextAuthOptions } from "next-auth";
+import type { RequestInternal } from "next-auth";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -18,7 +19,7 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req: Pick<RequestInternal, "query" | "headers" | "body" | "method">) {
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
@@ -46,13 +47,13 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // Return only non-sensitive user data
+        // Return the user with properties that work with NextAuth
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           image: user.image,
-          role: user.role, // Include role for callbacks
+          role: user.role ? String(user.role) : undefined, // Convert to string or undefined
         };
       },
     }),
@@ -75,7 +76,7 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (user) {
-          session.user.role = user.role || "GUEST"; // Default to GUEST if role is null/undefined
+          session.user.role = user.role ? String(user.role) : "GUEST"; // Convert to string
           session.user.id = user.id;
         } else {
           // Handle case where user is not found in DB, maybe invalidate session?
@@ -90,7 +91,7 @@ export const authOptions: NextAuthOptions = {
        // 'user' is available on initial sign-in
        if (user) {
          token.sub = user.id; // Persist the user id (subject) into the token
-         token.role = (user as any).role || "GUEST"; // Cast needed if role isn't default on User type
+         token.role = user.role || "GUEST"; // Use the role from the user
        }
        
        // Fetch role from DB if token exists but role doesn't (e.g., session refresh)
@@ -99,7 +100,7 @@ export const authOptions: NextAuthOptions = {
            where: { id: token.sub },
            select: { role: true }
          });
-         token.role = dbUser?.role || "GUEST";
+         token.role = dbUser?.role ? String(dbUser.role) : "GUEST"; // Convert to string
        }
        
        return token;

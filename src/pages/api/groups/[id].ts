@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getSession } from 'next-auth/react'; // Use getSession for Pages Router API routes
 import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth'; // Updated import path
 import { Prisma } from '@prisma/client'; // Ensure Prisma is imported
 import { GroupUpdateInput } from '@/types/group';
 // import { getServerSession } from 'next-auth'; // Removed

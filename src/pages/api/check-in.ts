@@ -4,7 +4,6 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { Prisma } from '@prisma/client';
 import { mapSnakeToCamel, mapCamelToSnake } from '@/lib/map-utils';
-import { Shift, User } from '@/types';
 
 interface ResponseData {
   success: boolean;
