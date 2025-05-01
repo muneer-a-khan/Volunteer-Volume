@@ -140,7 +140,7 @@ export default function DeleteShiftDialog({
           
           <div className="py-4">
             <p className="font-medium text-foreground">
-              The shift "{deletedDetails?.title}" has been deleted successfully.
+              The shift &quot;{deletedDetails?.title}&quot; has been deleted successfully.
             </p>
           </div>
           
