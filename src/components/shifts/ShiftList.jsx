@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Link from 'next/link';
 import { format, parseISO, isAfter, isBefore } from 'date-fns';
@@ -15,8 +15,12 @@ import { PlusCircle, Filter } from 'lucide-react';
 import AvailableShiftsDialog from './AvailableShiftsDialog';
 
 export default function ShiftList({ groupId = null }) {
-  const { shifts, loading, fetchShifts, signUpForShift, cancelShiftSignup, deleteShift, suggestedShifts, setSuggestedShifts } = useShifts();
+  const { shifts: contextShifts, loading: contextLoading, fetchShifts, signUpForShift, cancelShiftSignup, suggestedShifts, setSuggestedShifts } = useShifts();
   const { isAdmin } = useAuth();
+  
+  // Local state
+  const [shifts, setShifts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [isAddShiftDialogOpen, setIsAddShiftDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -24,9 +28,32 @@ export default function ShiftList({ groupId = null }) {
   const [shiftToDelete, setShiftToDelete] = useState(null);
   const [filter, setFilter] = useState('upcoming');
 
+  // Update local shifts when context shifts change
+  useEffect(() => {
+    setShifts(contextShifts);
+    setLoading(contextLoading);
+  }, [contextShifts, contextLoading]);
+
+  // Fetch shifts when filter changes
   useEffect(() => {
     fetchShifts(filter);
   }, [filter, fetchShifts]);
+
+  // Fetch shifts directly when needed
+  const refreshShifts = async () => {
+    setLoading(true);
+    try {
+      const params = { filter };
+      if (groupId) params.groupId = groupId;
+      
+      const response = await axios.get('/api/shifts', { params });
+      setShifts(response.data);
+    } catch (error) {
+      console.error('Error fetching shifts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleOpenAddDialog = () => {
     setShiftToEdit(null);
@@ -47,7 +74,7 @@ export default function ShiftList({ groupId = null }) {
     setIsAddShiftDialogOpen(false);
     setIsEditDialogOpen(false);
     setShiftToEdit(null);
-    fetchShifts(filter);
+    refreshShifts();
   };
 
   const handleCloseDeleteDialog = () => {
@@ -57,8 +84,13 @@ export default function ShiftList({ groupId = null }) {
 
   const handleDeleteSuccess = () => {
     // The shift was successfully deleted
-    // We'll refetch the shifts list after the dialog is closed
-    fetchShifts(filter);
+    // Remove it from local state immediately
+    if (shiftToDelete?.id) {
+      setShifts(prevShifts => prevShifts.filter(shift => shift.id !== shiftToDelete.id));
+    }
+    
+    // Also refresh the shifts list from the server
+    refreshShifts();
   };
 
   const handleCloseSuggestionDialog = () => {

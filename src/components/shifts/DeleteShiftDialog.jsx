@@ -8,8 +8,6 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { format, parseISO } from 'date-fns';
-import { useShifts } from '@/contexts/ShiftContext';
 import axios from 'axios';
 
 export default function DeleteShiftDialog({ 
@@ -18,64 +16,67 @@ export default function DeleteShiftDialog({
   shift, 
   onSuccess 
 }) {
-  const { deleteShift } = useShifts();
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [isConfirmation, setIsConfirmation] = React.useState(true);
   const [deletedDetails, setDeletedDetails] = React.useState(null);
+  const [error, setError] = React.useState(null);
 
-  // Format the shift time for display
-  const getFormattedTime = () => {
-    if (!shift) return '';
+  // Get shift ID handling both camelCase and snake_case properties
+  const getShiftId = () => {
+    if (!shift) return null;
     
-    try {
-      // Handle different possible date formats
-      const startDate = typeof shift.startTime === 'string' 
-        ? parseISO(shift.startTime) 
-        : shift.startTime instanceof Date 
-          ? shift.startTime 
-          : new Date();
-          
-      const endDate = typeof shift.endTime === 'string' 
-        ? parseISO(shift.endTime) 
-        : shift.endTime instanceof Date 
-          ? shift.endTime 
-          : new Date();
-      
-      return `${format(startDate, 'MMM d, yyyy')} from ${format(startDate, 'h:mm a')} to ${format(endDate, 'h:mm a')}`;
-    } catch (e) {
-      console.error('Error formatting date:', e);
-      return ''; // Return empty string instead of "Invalid date"
-    }
+    // Try different possible property names for the ID
+    return shift.id || shift.shiftId || shift.shift_id;
   };
 
   const handleDelete = async () => {
-    if (!shift) return;
+    const shiftId = getShiftId();
+    
+    if (!shiftId) {
+      console.error("Invalid shift object:", shift);
+      setError("Invalid shift data - Missing ID");
+      return;
+    }
     
     setIsDeleting(true);
+    setError(null);
+    
     try {
-      // Store details before deleting
-      const deletedInfo = {
-        title: shift.title,
-        time: getFormattedTime()
-      };
+      // Store shift title before deleting
+      const shiftTitle = shift.title || 'Shift';
       
-      // Direct API call for more reliable deletion
-      await axios.delete(`/api/shifts/${shift.id}`);
+      console.log(`Attempting to delete shift with ID: ${shiftId}`);
       
-      // Set details for success screen
-      setDeletedDetails(deletedInfo);
+      // Make direct API call to delete the shift
+      const response = await axios.delete(`/api/shifts/${shiftId}`);
       
-      // Switch to success screen
-      setIsConfirmation(false);
+      console.log('Delete response:', response.data);
       
-      // Call the onSuccess handler if provided
-      if (onSuccess) {
-        onSuccess();
+      if (response.status === 200) {
+        // Set details for success screen
+        setDeletedDetails({ title: shiftTitle });
+        
+        // Switch to success screen
+        setIsConfirmation(false);
+        
+        // Call the onSuccess handler if provided
+        if (onSuccess) {
+          onSuccess();
+        }
+      } else {
+        throw new Error(`Unexpected response: ${response.status}`);
       }
     } catch (error) {
       console.error('Error deleting shift:', error);
-      alert('Failed to delete shift. Please try again.');
-      onClose();
+      
+      // Set error message
+      setError(
+        error.response?.data?.message || 
+        error.message || 
+        'Failed to delete shift. Please try again.'
+      );
+      
+      // Don't close the dialog - show error
     } finally {
       setIsDeleting(false);
     }
@@ -85,6 +86,7 @@ export default function DeleteShiftDialog({
     // Reset dialog state
     setIsConfirmation(true);
     setDeletedDetails(null);
+    setError(null);
     onClose();
   };
   
@@ -103,9 +105,12 @@ export default function DeleteShiftDialog({
           </DialogHeader>
           
           <div className="py-4">
-            <p className="font-medium text-foreground">{shift?.title}</p>
-            {getFormattedTime() && (
-              <p className="text-sm text-muted-foreground">{getFormattedTime()}</p>
+            <p className="font-medium text-foreground">{shift?.title || 'This shift'}</p>
+            
+            {error && (
+              <p className="mt-2 text-sm text-red-500 font-medium">
+                Error: {error}
+              </p>
             )}
           </div>
           
@@ -137,11 +142,6 @@ export default function DeleteShiftDialog({
             <p className="font-medium text-foreground">
               The shift "{deletedDetails?.title}" has been deleted successfully.
             </p>
-            {deletedDetails?.time && (
-              <p className="text-sm text-muted-foreground mt-2">
-                {deletedDetails.time}
-              </p>
-            )}
           </div>
           
           <DialogFooter>

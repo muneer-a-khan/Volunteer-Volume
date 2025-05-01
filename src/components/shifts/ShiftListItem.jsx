@@ -76,7 +76,7 @@ export default function ShiftListItem({ shift, onEdit, onDelete }) {
                 <Button variant="outline" size="sm" onClick={() => onEdit(shift)} disabled={shiftContextLoading}>
                   <Edit className="h-4 w-4 mr-1" /> Edit
                 </Button>
-                <Button variant="destructive" size="sm" onClick={() => onDelete(shift.id)} disabled={shiftContextLoading}>
+                <Button variant="destructive" size="sm" onClick={() => onDelete(shift)} disabled={shiftContextLoading}>
                   <Trash2 className="h-4 w-4 mr-1" /> Delete
                 </Button>
               </>
