@@ -60,6 +60,19 @@ const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case actionTypes.ADD_TOAST:
+      // Check for duplicate toast based on title and description
+      const isDuplicate = state.toasts.some(
+        t => 
+          t.title === action.toast.title && 
+          t.description === action.toast.description &&
+          t.open // Only consider open toasts as potential duplicates
+      )
+      
+      // If duplicate toast exists, don't add a new one
+      if (isDuplicate) {
+        return state
+      }
+      
       return {
         ...state,
         toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
@@ -131,6 +144,7 @@ type Toast = Omit<ToastProps, "id">
 
 function toast({ ...props }: Toast) {
   const id = genId()
+  const duration = props.duration || 3000 // Default to 3 seconds if not specified
 
   const update = (props: ToastProps) =>
     dispatch({
@@ -147,11 +161,28 @@ function toast({ ...props }: Toast) {
       ...props,
       id,
       open: true,
+      duration, // Apply the duration
       onOpenChange: (open: boolean) => {
         if (!open) dismiss()
       },
     },
   })
+
+  // Auto-dismiss the toast after duration
+  if (duration !== Infinity) {
+    // Clear any existing timeout for this toast
+    if (toastTimeouts.has(id)) {
+      clearTimeout(toastTimeouts.get(id))
+    }
+    
+    // Set a new timeout to dismiss this toast
+    const timeout = setTimeout(() => {
+      dismiss()
+      toastTimeouts.delete(id)
+    }, duration)
+    
+    toastTimeouts.set(id, timeout)
+  }
 
   return {
     id,
@@ -170,6 +201,10 @@ function useToast() {
       if (index > -1) {
         listeners.splice(index, 1)
       }
+      
+      // Clean up any remaining timeouts when component unmounts
+      toastTimeouts.forEach((timeout) => clearTimeout(timeout))
+      toastTimeouts.clear()
     }
   }, [state])
 

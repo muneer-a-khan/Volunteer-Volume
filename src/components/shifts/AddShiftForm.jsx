@@ -1,16 +1,12 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { format, addHours } from 'date-fns';
+import { format, addHours, parse } from 'date-fns';
 import { useShifts } from '../../contexts/ShiftContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { toast } from '@/components/ui/use-toast';
-import { CalendarIcon, Clock } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Clock } from 'lucide-react';
 
 export default function AddShiftForm({ initialData = null, onSuccess }) {
   const { createShift, updateShift } = useShifts();
@@ -20,13 +16,14 @@ export default function AddShiftForm({ initialData = null, onSuccess }) {
   const today = initialData?.date ? new Date(initialData.date) : new Date();
   const defaultStartTime = initialData?.startTime ? format(new Date(initialData.startTime), 'HH:mm') : format(today, 'HH:mm');
   const defaultEndTime = initialData?.endTime ? format(new Date(initialData.endTime), 'HH:mm') : format(addHours(today, 1), 'HH:mm'); // Default to 1 hour shift
+  const defaultDateString = initialData?.date ? format(new Date(initialData.date), 'dd/MM/yy') : format(today, 'dd/MM/yy');
   
   const form = useForm({
     defaultValues: {
       title: initialData?.title || '',
       description: initialData?.description || '',
       location: initialData?.location || '',
-      date: today,
+      dateString: defaultDateString,
       startTime: defaultStartTime,
       endTime: defaultEndTime,
       maxVolunteers: 1, // Hardcode to 1
@@ -37,12 +34,37 @@ export default function AddShiftForm({ initialData = null, onSuccess }) {
     setIsSubmitting(true);
     
     try {
+      // Parse the date from DD/MM/YY format
+      const datePattern = /^(\d{1,2})\/(\d{1,2})\/(\d{2})$/;
+      let parsedDate;
+      
+      if (datePattern.test(data.dateString)) {
+        try {
+          parsedDate = parse(data.dateString, 'dd/MM/yy', new Date());
+        } catch (e) {
+          console.error('Error parsing date:', e);
+          form.setError('dateString', { 
+            type: 'manual', 
+            message: 'Invalid date format. Please use DD/MM/YY'
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      } else {
+        form.setError('dateString', { 
+          type: 'manual', 
+          message: 'Invalid date format. Please use DD/MM/YY'
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
       // Combine date and time values
-      const startDateTime = new Date(data.date);
+      const startDateTime = new Date(parsedDate);
       const [startHours, startMinutes] = data.startTime.split(':').map(Number);
       startDateTime.setHours(startHours, startMinutes);
       
-      const endDateTime = new Date(data.date);
+      const endDateTime = new Date(parsedDate);
       const [endHours, endMinutes] = data.endTime.split(':').map(Number);
       endDateTime.setHours(endHours, endMinutes);
       
@@ -61,17 +83,11 @@ export default function AddShiftForm({ initialData = null, onSuccess }) {
       if (initialData?.id) {
         // Update existing shift
         await updateShift(initialData.id, shiftData);
-        toast({
-          title: "Success",
-          description: "Shift updated successfully",
-        });
+        console.log("Shift updated successfully");
       } else {
         // Create new shift
         await createShift(shiftData);
-        toast({
-          title: "Success",
-          description: "Shift created successfully",
-        });
+        console.log("Shift created successfully");
       }
       
       if (onSuccess) {
@@ -81,11 +97,6 @@ export default function AddShiftForm({ initialData = null, onSuccess }) {
       form.reset(); // Reset form after successful submission
     } catch (error) {
       console.error('Error saving shift:', error);
-      toast({
-        title: "Error",
-        description: initialData?.id ? "Failed to update shift." : "Failed to create shift.",
-        variant: "destructive",
-      });
     } finally {
       setIsSubmitting(false);
     }
@@ -140,39 +151,23 @@ export default function AddShiftForm({ initialData = null, onSuccess }) {
         
         <FormField
           control={form.control}
-          name="date"
-          rules={{ required: "Date is required" }}
+          name="dateString"
+          rules={{ 
+            required: "Date is required", 
+            pattern: {
+              value: /^(\d{1,2})\/(\d{1,2})\/(\d{2})$/,
+              message: "Please use DD/MM/YY format"
+            }
+          }}
           render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Date</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full pl-3 text-left font-normal",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      {field.value ? (
-                        format(field.value, "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={field.onChange}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+            <FormItem>
+              <FormLabel>Date (DD/MM/YY)</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="DD/MM/YY" 
+                  {...field} 
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

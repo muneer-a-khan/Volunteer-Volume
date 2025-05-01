@@ -4,7 +4,6 @@ import { ShiftProvider } from '@/contexts/ShiftContext';
 import { GroupProvider } from '@/contexts/GroupContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from 'next-themes';
-import { Toaster } from 'react-hot-toast';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SessionProvider } from '@/components/auth/SessionProvider';
 
@@ -26,7 +25,6 @@ export default function Providers({ children }: ProvidersProps) {
               </GroupProvider>
             </ShiftProvider>
           </AuthProvider>
-          <Toaster position="top-center" />
         </ThemeProvider>
       </QueryClientProvider>
     </SessionProvider>

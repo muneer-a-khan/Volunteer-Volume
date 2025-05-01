@@ -1,6 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
 import { mapSnakeToCamel } from '@/lib/map-utils';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 
 // Define a simple response type, adjust if needed
 interface ResponseData {
@@ -37,24 +39,108 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       await prisma.$disconnect();
     }
   } else if (req.method === 'PUT') {
-    // Authorization logic removed - anyone can potentially update shifts now.
-    // Consider adding some form of non-auth based authorization if needed.
     try {
+      // Add auth check for admin - only admins should update shifts
+      const session = await getServerSession(req, res, authOptions);
+      if (!session?.user || session.user.role !== 'ADMIN') {
+        return res.status(403).json({ 
+          success: false, 
+          message: 'Unauthorized: Only admins can update shifts' 
+        });
+      }
+      
       await prisma.$connect();
+      
+      // Check if shift exists
+      const existingShift = await prisma.shifts.findUnique({
+        where: { id }
+      });
+      
+      if (!existingShift) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Shift not found' 
+        });
+      }
+      
+      // Parse and validate dates
+      let updateData = { ...req.body };
+      
+      // Handle date fields properly
+      if (updateData.startTime) {
+        try {
+          // For string dates, parse and format for database
+          if (typeof updateData.startTime === 'string') {
+            updateData.start_time = new Date(updateData.startTime);
+            delete updateData.startTime;
+          }
+        } catch (e) {
+          return res.status(400).json({ 
+            success: false, 
+            message: 'Invalid start time format' 
+          });
+        }
+      }
+      
+      if (updateData.endTime) {
+        try {
+          // For string dates, parse and format for database
+          if (typeof updateData.endTime === 'string') {
+            updateData.end_time = new Date(updateData.endTime);
+            delete updateData.endTime;
+          }
+        } catch (e) {
+          return res.status(400).json({ 
+            success: false, 
+            message: 'Invalid end time format' 
+          });
+        }
+      }
+      
+      // Convert camelCase to snake_case for database
+      if (updateData.groupId) {
+        updateData.group_id = updateData.groupId;
+        delete updateData.groupId;
+      }
+      
+      // Map maxVolunteers to capacity (fix for database schema mismatch)
+      if (updateData.maxVolunteers !== undefined) {
+        updateData.capacity = updateData.maxVolunteers;
+        delete updateData.maxVolunteers;
+      }
+      
+      console.log('Updating shift with data:', updateData);
+      
       const updatedShift = await prisma.shifts.update({
         where: { id: id },
-        data: req.body, // Ensure req.body is validated/sanitized
+        data: updateData,
       });
-      return res.status(200).json({ success: true, message: 'Shift updated', shift: mapSnakeToCamel(updatedShift) });
+      
+      return res.status(200).json({ 
+        success: true, 
+        message: 'Shift updated', 
+        shift: mapSnakeToCamel(updatedShift) 
+      });
     } catch (error) {
       console.error('Error updating shift:', error);
-      return res.status(500).json({ message: 'Internal Server Error' });
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Error updating shift. ' + (error instanceof Error ? error.message : 'Internal Server Error') 
+      });
     } finally {
       await prisma.$disconnect();
     }
   } else if (req.method === 'DELETE') {
-    // Authorization logic removed - anyone can potentially delete shifts now.
     try {
+      // Add auth check for admin - only admins should delete shifts
+      const session = await getServerSession(req, res, authOptions);
+      if (!session?.user || session.user.role !== 'ADMIN') {
+        return res.status(403).json({ 
+          success: false, 
+          message: 'Unauthorized: Only admins can delete shifts' 
+        });
+      }
+      
       await prisma.$connect();
       await prisma.shifts.delete({ where: { id: id } });
       return res.status(200).json({ success: true, message: 'Shift deleted' });

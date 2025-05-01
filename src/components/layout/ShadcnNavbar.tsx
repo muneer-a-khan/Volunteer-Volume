@@ -7,7 +7,6 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { signOut as nextAuthSignOut } from "next-auth/react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useToast } from "../ui/use-toast";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
@@ -46,15 +45,19 @@ const adminNavItems: NavItem[] = [
 export default function ShadcnNavbar() {
   const pathname = usePathname();
   const { isAuthenticated, isAdmin, signIn, user, isLoading } = useAuth();
-  const { toast } = useToast();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Combine nav items correctly
-  const navItems: NavItem[] = isAdmin ? [...mainNavItems, ...adminNavItems] : mainNavItems;
+  // Combine nav items, but exclude Dashboard for admins
+  const navItems: NavItem[] = isAdmin 
+    ? [
+        // Filter out the regular dashboard for admins
+        ...mainNavItems.filter(item => item.href !== "/dashboard"),
+        ...adminNavItems
+      ] 
+    : mainNavItems;
 
   const handleSignOut = async () => {
     await nextAuthSignOut({ callbackUrl: '/' });
-    toast({ title: "Signed Out", description: "You have been successfully signed out." });
   };
 
   return (
