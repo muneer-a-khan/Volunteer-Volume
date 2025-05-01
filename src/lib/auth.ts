@@ -24,37 +24,42 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const user = await prisma.users.findUnique({
-          where: {
-            email: credentials.email,
-          },
-        });
+        try {
+          const user = await prisma.users.findUnique({
+            where: {
+              email: credentials.email,
+            },
+          });
 
-        if (!user) {
+          if (!user) {
+            return null;
+          }
+
+          if (!user.password) {
+            throw new Error("Please sign in with Google.");
+          }
+
+          const passwordValid = await bcrypt.compare(
+            credentials.password,
+            user.password
+          );
+
+          if (!passwordValid) {
+            return null;
+          }
+
+          // Return the user with properties that work with NextAuth
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            image: user.image,
+            role: user.role ? String(user.role) : undefined, // Convert to string or undefined
+          };
+        } catch (error) {
+          console.error("Authentication error:", error);
           return null;
         }
-
-        if (!user.password) {
-          throw new Error("Please sign in with Google.");
-        }
-
-        const passwordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
-
-        if (!passwordValid) {
-          return null;
-        }
-
-        // Return the user with properties that work with NextAuth
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-          role: user.role ? String(user.role) : undefined, // Convert to string or undefined
-        };
       },
     }),
   ],
@@ -69,38 +74,45 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async session({ session, token }) {
       if (token && session.user) {
-        // Fetch user details from DB using token.sub (user id)
-        const user = await prisma.users.findUnique({
-          where: { id: token.sub || "" },
-          select: { role: true, id: true } // Select only needed fields
-        });
+        try {
+          // Fetch user details from DB using token.sub (user id)
+          const user = await prisma.users.findUnique({
+            where: { id: token.sub || "" },
+            select: { role: true, id: true } // Select only needed fields
+          });
 
-        if (user) {
-          session.user.role = user.role ? String(user.role) : "GUEST"; // Convert to string
-          session.user.id = user.id;
-        } else {
-          // Handle case where user is not found in DB, maybe invalidate session?
-          console.warn(`User not found for token sub: ${token.sub}`);
-          // Setting role to GUEST or similar might be safer than leaving it undefined
-          session.user.role = "GUEST"; 
+          if (user) {
+            session.user.role = user.role ? String(user.role) : "GUEST"; // Convert to string
+            session.user.id = user.id;
+          } else {
+            console.warn(`User not found for token sub: ${token.sub}`);
+            session.user.role = "GUEST"; 
+          }
+        } catch (error) {
+          console.error("Session callback error:", error);
+          session.user.role = "GUEST";
         }
       }
       return session;
     },
     async jwt({ token, user, account, profile }) {
-       // 'user' is available on initial sign-in
-       if (user) {
-         token.sub = user.id; // Persist the user id (subject) into the token
-         token.role = user.role || "GUEST"; // Use the role from the user
-       }
-       
-       // Fetch role from DB if token exists but role doesn't (e.g., session refresh)
-       if (token.sub && !token.role) {
-         const dbUser = await prisma.users.findUnique({
-           where: { id: token.sub },
-           select: { role: true }
-         });
-         token.role = dbUser?.role ? String(dbUser.role) : "GUEST"; // Convert to string
+       try {
+         // 'user' is available on initial sign-in
+         if (user) {
+           token.sub = user.id; // Persist the user id (subject) into the token
+           token.role = user.role || "GUEST"; // Use the role from the user
+         }
+         
+         // Fetch role from DB if token exists but role doesn't (e.g., session refresh)
+         if (token.sub && !token.role) {
+           const dbUser = await prisma.users.findUnique({
+             where: { id: token.sub },
+             select: { role: true }
+           });
+           token.role = dbUser?.role ? String(dbUser.role) : "GUEST"; // Convert to string
+         }
+       } catch (error) {
+         console.error("JWT callback error:", error);
        }
        
        return token;
