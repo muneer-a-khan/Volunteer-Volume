@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from '../../contexts/AuthContext';
 import ShiftListItem from './ShiftListItem';
 import AddShiftForm from './AddShiftForm';
+import DeleteShiftDialog from './DeleteShiftDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { PlusCircle, Filter } from 'lucide-react';
 import AvailableShiftsDialog from './AvailableShiftsDialog';
@@ -18,7 +19,9 @@ export default function ShiftList({ groupId = null }) {
   const { isAdmin } = useAuth();
   const [isAddShiftDialogOpen, setIsAddShiftDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [shiftToEdit, setShiftToEdit] = useState(null);
+  const [shiftToDelete, setShiftToDelete] = useState(null);
   const [filter, setFilter] = useState('upcoming');
 
   useEffect(() => {
@@ -35,6 +38,11 @@ export default function ShiftList({ groupId = null }) {
     setIsEditDialogOpen(true);
   };
 
+  const handleOpenDeleteDialog = (shift) => {
+    setShiftToDelete(shift);
+    setIsDeleteDialogOpen(true);
+  };
+
   const handleCloseDialog = () => {
     setIsAddShiftDialogOpen(false);
     setIsEditDialogOpen(false);
@@ -42,19 +50,19 @@ export default function ShiftList({ groupId = null }) {
     fetchShifts(filter);
   };
 
-  const handleCloseSuggestionDialog = () => {
-    setSuggestedShifts([]);
+  const handleCloseDeleteDialog = () => {
+    setIsDeleteDialogOpen(false);
+    setShiftToDelete(null);
   };
 
-  const handleDeleteShift = async (id) => {
-    if (window.confirm('Are you sure you want to delete this shift?')) {
-      const success = await deleteShift(id);
-      if (success) {
-        console.log('Shift deleted successfully via context');
-      } else {
-        console.error('Failed to delete shift via context');
-      }
-    }
+  const handleDeleteSuccess = () => {
+    // The shift was successfully deleted
+    // We'll refetch the shifts list after the dialog is closed
+    fetchShifts(filter);
+  };
+
+  const handleCloseSuggestionDialog = () => {
+    setSuggestedShifts([]);
   };
 
   if (loading && !shifts.length) {
@@ -103,7 +111,7 @@ export default function ShiftList({ groupId = null }) {
               key={shift.id} 
               shift={shift} 
               onEdit={isAdmin ? handleOpenEditDialog : undefined}
-              onDelete={isAdmin ? handleDeleteShift : undefined}
+              onDelete={isAdmin ? handleOpenDeleteDialog : undefined}
             />
           ))}
         </div>
@@ -124,6 +132,13 @@ export default function ShiftList({ groupId = null }) {
           />
         </DialogContent>
       </Dialog>
+
+      <DeleteShiftDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={handleCloseDeleteDialog}
+        shift={shiftToDelete}
+        onSuccess={handleDeleteSuccess}
+      />
 
       <AvailableShiftsDialog 
         isOpen={suggestedShifts && suggestedShifts.length > 0}
