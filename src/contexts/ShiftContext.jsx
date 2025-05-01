@@ -1,19 +1,27 @@
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
-import { toast } from 'react-hot-toast';
-// import { useAuth } from './AuthContext'; // Removed
+// Import shadcn toast function
+// import { toast } from 'react-hot-toast'; 
+import { useToast } from "@/components/ui/use-toast"; 
+import { useSession } from 'next-auth/react';
 
 const ShiftContext = createContext();
 
 export const ShiftProvider = ({ children }) => {
-  // const { isAuthenticated, dbUser } = useAuth(); // Removed
-  const isAuthenticated = true; // Placeholder
-  // Need a way to identify user for actions if dbUser was used
-  const userId = null; // Placeholder for dbUser?.id
+  const { data: session } = useSession();
+  const isAuthenticated = !!session?.user;
+  const userId = session?.user?.id || null;
+  
+  // Use refs to track if we've already fetched data
+  const initialFetchDone = useRef(false);
+  const { toast } = useToast(); // Get toast function from the hook
 
   const [shifts, setShifts] = useState([]);
   const [myShifts, setMyShifts] = useState([]);
   const [loading, setLoading] = useState(true);
+  // --- State for suggested shifts dialog ---
+  const [suggestedShifts, setSuggestedShifts] = useState([]); 
+  // --- End State --- 
 
   // Fetch all shifts
   const fetchShifts = useCallback(async (filter = 'upcoming', groupId = null) => {
@@ -24,7 +32,8 @@ export const ShiftProvider = ({ children }) => {
       setShifts(response.data);
     } catch (error) {
       console.error('Error fetching shifts:', error);
-      toast.error('Failed to load shifts');
+      // Silent fail - don't show error toast
+      setShifts([]);
     } finally {
       setLoading(false);
     }
@@ -32,20 +41,55 @@ export const ShiftProvider = ({ children }) => {
 
   // Fetch user's shifts (requires user identification)
   const fetchMyShifts = useCallback(async () => {
-    if (!isAuthenticated || !userId) return; // Cannot fetch without user ID
+    if (!isAuthenticated || !userId) {
+      setMyShifts([]);
+      setLoading(false);
+      return;
+    }
+    
     setLoading(true);
     try {
-      // const response = await axios.get(`/api/shifts/my?userId=${userId}`); // Needs userId
-      // setMyShifts(response.data);
-      setMyShifts([]); // Placeholder response
-      toast.info('Fetching my shifts requires user identification (API call commented out).');
+      const response = await axios.get(`/api/shifts/my?userId=${userId}`);
+      setMyShifts(response.data);
     } catch (error) {
       console.error('Error fetching my shifts:', error);
-      toast.error('Failed to load your shifts');
+      // Silent fail - don't show error toast
+      setMyShifts([]);
+      
+      // If getting a 500 error, it's likely the API route issue
+      if (error.response?.status === 500) {
+        console.log('Server error when fetching my shifts. Using empty array for now.');
+      }
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, userId]);
+
+  // --- Function to fetch and suggest shifts --- 
+  const fetchAvailableShiftsAndSuggest = useCallback(async () => {
+    setLoading(true); // Indicate loading suggestions
+    try {
+      const response = await axios.get('/api/shifts', { 
+        params: { filter: 'upcoming', onlyAvailable: true } 
+      });
+      const availableShifts = response.data || [];
+      
+      // Filter out shifts the user is *already* signed up for (using current myShifts state)
+      const availableForUser = availableShifts.filter(
+        s => !myShifts.some(myShift => myShift.id === s.id)
+      );
+      
+      // Set top 3 suggestions
+      setSuggestedShifts(availableForUser.slice(0, 3));
+    } catch (error) {
+      console.error("Error fetching available shifts for suggestions:", error);
+      // Don't show an error toast here, just fail silently
+      setSuggestedShifts([]); // Clear suggestions on error
+    } finally {
+      setLoading(false); // Suggestions loaded (or failed)
+    }
+  }, [myShifts]); // Dependency: myShifts state
+  // --- End Suggestion function --- 
 
   // Create a new shift
   const createShift = async (shiftData) => {
@@ -53,11 +97,16 @@ export const ShiftProvider = ({ children }) => {
       setLoading(true);
       const response = await axios.post('/api/shifts', shiftData);
       setShifts(prev => [...prev, response.data]);
-      toast.success('Shift created successfully');
+      toast({ title: "Success", description: "Shift created successfully", duration: 3000 });
       return response.data;
     } catch (error) {
       console.error('Error creating shift:', error);
-      toast.error(error.response?.data?.message || 'Failed to create shift. Please try again.');
+      toast({ 
+        title: "Error", 
+        description: error.response?.data?.message || 'Failed to create shift. Please try again.',
+        variant: "destructive",
+        duration: 3000
+      });
       throw error;
     } finally {
       setLoading(false);
@@ -74,11 +123,16 @@ export const ShiftProvider = ({ children }) => {
       // Update myShifts if it exists there
       setMyShifts(prev => prev.map(shift => shift.id === id ? response.data : shift));
 
-      toast.success('Shift updated successfully');
+      toast({ title: "Success", description: "Shift updated successfully", duration: 3000 });
       return response.data;
     } catch (error) {
       console.error('Error updating shift:', error);
-      toast.error(error.response?.data?.message || 'Failed to update shift. Please try again.');
+      toast({ 
+        title: "Error", 
+        description: error.response?.data?.message || 'Failed to update shift. Please try again.',
+        variant: "destructive",
+        duration: 3000
+      });
       throw error;
     } finally {
       setLoading(false);
@@ -92,11 +146,16 @@ export const ShiftProvider = ({ children }) => {
       await axios.delete(`/api/shifts/${id}`);
       setShifts(prev => prev.filter(shift => shift.id !== id));
       setMyShifts(prev => prev.filter(shift => shift.id !== id));
-      toast.success('Shift deleted successfully');
+      toast({ title: "Success", description: "Shift deleted successfully", duration: 3000 });
       return true;
     } catch (error) {
       console.error('Error deleting shift:', error);
-      toast.error(error.response?.data?.message || 'Failed to delete shift. Please try again.');
+      toast({ 
+        title: "Error", 
+        description: error.response?.data?.message || 'Failed to delete shift. Please try again.',
+        variant: "destructive",
+        duration: 3000
+      });
       return false;
     } finally {
       setLoading(false);
@@ -106,86 +165,126 @@ export const ShiftProvider = ({ children }) => {
   // Sign up for a shift (requires user identification)
   const signUpForShift = async (shiftId) => {
     if (!isAuthenticated || !userId) {
-      toast.error('Cannot sign up without user identification.');
+      toast({ title: "Error", description: "Please log in to sign up.", variant: "destructive", duration: 3000 });
       return;
     }
     try {
-      // await axios.post(`/api/shifts/${shiftId}/signup`, { userId }); // Needs userId
-      toast.success('Successfully signed up! (API Call commented out)');
+      await axios.post(`/api/shifts/${shiftId}/signup`); // userId is handled by backend session
+      toast({ title: "Success", description: "Successfully signed up!", duration: 3000 });
       // Optimistic update or refetch
       fetchShifts();
       fetchMyShifts();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to sign up for shift');
+      toast({ 
+        title: "Error", 
+        description: error.response?.data?.message || 'Failed to sign up for shift',
+        variant: "destructive",
+        duration: 3000
+      });
       console.error('Sign up error:', error);
     }
   };
 
-  // Cancel shift signup (requires user identification)
+  // Modified cancelShiftSignup
   const cancelShiftSignup = async (shiftId) => {
     if (!isAuthenticated || !userId) {
-      toast.error('Cannot cancel signup without user identification.');
+      toast({ title: "Error", description: "Please log in to cancel.", variant: "destructive", duration: 3000 });
       return;
     }
     try {
-      // await axios.post(`/api/shifts/${shiftId}/cancel`, { userId }); // Needs userId
-      toast.success('Signup canceled. (API call commented out)');
-      // Optimistic update or refetch
-      fetchShifts();
-      fetchMyShifts();
+      await axios.post(`/api/shifts/${shiftId}/cancel`); 
+      toast({ title: "Success", description: "Signup canceled.", duration: 3000 });
+      // Refetch main lists
+      await fetchShifts(); // await to ensure lists are updated before suggesting
+      await fetchMyShifts(); 
+      // Fetch and set suggestions AFTER successful cancellation and refetch
+      await fetchAvailableShiftsAndSuggest(); 
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to cancel signup');
+      toast({ 
+        title: "Error", 
+        description: error.response?.data?.message || 'Failed to cancel signup',
+        variant: "destructive",
+        duration: 3000
+      });
       console.error('Cancel signup error:', error);
+      setSuggestedShifts([]); // Clear suggestions on error
     }
   };
 
-  // Check in for a shift
-  const checkInForShift = async (shiftId, notes = '') => {
+  // Updated Check-in function
+  const checkInForShift = async (shiftId, volunteerId, notes = '') => {
+    // No frontend auth check needed here, API is secured
     try {
       setLoading(true);
-      const response = await axios.post('/api/check-in', { shiftId, notes });
-      toast.success('Check-in successful');
-      return response.data;
+      // Pass volunteerId in the request body
+      const response = await axios.post('/api/check-in', { shiftId, volunteerId, notes });
+      toast({ title: "Success", description: "Check-in successful" }); // Add duration if needed
+      return response.data; 
     } catch (error) {
       console.error('Error checking in:', error);
-      toast.error(error.response?.data?.message || 'Failed to check in. Please try again.');
-      throw error;
+      toast({ 
+        title: "Error", 
+        description: error.response?.data?.message || 'Failed to check in. Please try again.',
+        variant: "destructive"
+        // Add duration if needed
+      });
+      throw error; // Re-throw for potential UI handling
     } finally {
       setLoading(false);
     }
   };
 
-  // Check out from a shift
+  // Check-out function remains largely the same (API is secured)
   const checkOutFromShift = async (checkInId, notes = '') => {
     try {
       setLoading(true);
       const response = await axios.post('/api/check-out', { checkInId, notes });
-      toast.success('Check-out successful');
+      toast({ title: "Success", description: "Check-out successful" }); // Add duration if needed
+      // Maybe refetch user hours or shift details after check-out?
       return response.data;
     } catch (error) {
-      console.error('Error checking out:', error);
-      toast.error(error.response?.data?.message || 'Failed to check out. Please try again.');
-      throw error;
+       console.error('Error checking out:', error);
+      toast({ 
+        title: "Error", 
+        description: error.response?.data?.message || 'Failed to check out. Please try again.',
+        variant: "destructive"
+        // Add duration if needed
+      });
+      throw error; // Re-throw for potential UI handling
     } finally {
       setLoading(false);
     }
   };
 
-  // Initial fetch (maybe fetch all by default?)
+  // Initial fetch - modified to prevent infinite loops
   useEffect(() => {
-    fetchShifts(); // Fetch all upcoming shifts initially
-    // fetchMyShifts(); // Fetching user shifts requires ID
-  }, [isAuthenticated, fetchShifts]); // Added fetchShifts dependency
+    // Only fetch once when component mounts or auth changes
+    if (!initialFetchDone.current) {
+      console.log('Initial shift fetch');
+      fetchShifts(); // Fetch all upcoming shifts initially
+      if (isAuthenticated && userId) {
+        fetchMyShifts(); // Fetching user shifts requires ID
+      }
+      initialFetchDone.current = true;
+    }
+  }, [isAuthenticated, userId, fetchShifts, fetchMyShifts]); // Keep fetch callbacks here
+
+  // Reset initialFetchDone when auth changes
+  useEffect(() => {
+    initialFetchDone.current = false;
+  }, [isAuthenticated, userId]);
 
   // Provider value
   const value = {
     shifts,
     myShifts,
     loading,
+    suggestedShifts,
+    setSuggestedShifts,
     fetchShifts,
-    fetchMyShifts, // Kept, but needs user ID
-    signUpForShift, // Kept, but needs user ID
-    cancelShiftSignup, // Kept, but needs user ID
+    fetchMyShifts,
+    signUpForShift,
+    cancelShiftSignup,
     createShift,
     updateShift,
     deleteShift,

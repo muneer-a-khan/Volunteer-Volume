@@ -54,7 +54,7 @@ export const ShiftProvider = ({ children }: ShiftProviderProps) => {
       setShifts(response.data);
     } catch (error) {
       console.error('Error fetching shifts:', error);
-      toast.error('Failed to load shifts');
+      setShifts([]);
     } finally {
       setLoading(false);
     }
@@ -66,17 +66,21 @@ export const ShiftProvider = ({ children }: ShiftProviderProps) => {
 
   const fetchMyShifts = useCallback(async () => {
     if (!isAuthenticated || !userId) {
-      toast('Fetching my shifts requires user identification.');
       setMyShifts([]);
       return;
     }
     setLoading(true);
     try {
-      setMyShifts([]);
-      toast('Fetching my shifts needs API update (call commented out).');
+      try {
+        const response = await axios.get('/api/shifts/my');
+        setMyShifts(response.data || []);
+      } catch (error) {
+        console.log('Info: My shifts API not implemented yet');
+        setMyShifts([]);
+      }
     } catch (error) {
       console.error('Error fetching my shifts:', error);
-      toast.error('Failed to load your shifts');
+      setMyShifts([]);
     } finally {
       setLoading(false);
     }

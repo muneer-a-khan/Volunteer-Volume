@@ -6,6 +6,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from 'react-hot-toast';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { SessionProvider } from '@/components/auth/SessionProvider';
 
 interface ProvidersProps {
   children: React.ReactNode;
@@ -15,17 +16,19 @@ const queryClient = new QueryClient();
 
 export default function Providers({ children }: ProvidersProps) {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <AuthProvider>
-          <ShiftProvider>
-            <GroupProvider>
-              {children}
-            </GroupProvider>
-          </ShiftProvider>
-        </AuthProvider>
-        <Toaster position="top-center" />
-      </ThemeProvider>
-    </QueryClientProvider>
+    <SessionProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <AuthProvider>
+            <ShiftProvider>
+              <GroupProvider>
+                {children}
+              </GroupProvider>
+            </ShiftProvider>
+          </AuthProvider>
+          <Toaster position="top-center" />
+        </ThemeProvider>
+      </QueryClientProvider>
+    </SessionProvider>
   );
 }

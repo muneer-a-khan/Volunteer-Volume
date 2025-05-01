@@ -1,6 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Add resolver configurations for JSX/TSX extensions
+  webpack: (config) => {
+    config.resolve.extensions = ['.js', '.jsx', '.ts', '.tsx', ...config.resolve.extensions];
+    return config;
+  },
   images: {
     domains: [
       "lkhbikpgumxmdbwfcyjy.supabase.co",

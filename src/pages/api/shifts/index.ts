@@ -35,47 +35,104 @@ interface DBShift {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ message: 'Method Not Allowed' });
+  // --- Handle POST for creating shifts --- 
+  if (req.method === 'POST') {
+    // Add authentication/authorization check here (e.g., isAdmin)
+    try {
+      const { title, description, location, startTime, endTime, maxVolunteers, group_id } = req.body;
+      
+      // Basic validation
+      if (!title || !startTime || !endTime) {
+        return res.status(400).json({ message: 'Missing required shift data (title, startTime, endTime)' });
+      }
+      
+      const newShift = await prisma.shifts.create({
+        data: {
+          title,
+          description,
+          location,
+          start_time: new Date(startTime),
+          end_time: new Date(endTime),
+          capacity: 1, // Hardcode capacity to 1
+          // group_id: group_id || null, // Link to group if provided
+          status: 'OPEN', // Default status
+        },
+      });
+      return res.status(201).json(mapSnakeToCamel(newShift));
+    } catch (error) {
+      console.error('Error creating shift:', error);
+      return res.status(500).json({ message: 'Internal Server Error' });
+    }
   }
+  // --- End POST handler ---
 
-  const { filter, groupId } = req.query;
+  // --- Handle GET for fetching shifts --- 
+  if (req.method === 'GET') {
+    const { filter, groupId, onlyAvailable } = req.query;
 
-  try {
-    await prisma.$connect();
-    let whereClause: any = {};
+    try {
+      await prisma.$connect();
+      let whereClause: any = {};
+      let orderBy: any = { start_time: 'asc' };
 
-    if (filter === 'upcoming') {
-      whereClause.start_time = { gte: new Date() };
-    } else if (filter === 'past') {
-      whereClause.end_time = { lt: new Date() };
-    }
+      // --- Time Filters --- 
+      if (filter === 'upcoming') {
+        whereClause.start_time = { gte: new Date() };
+      } else if (filter === 'past') {
+        whereClause.end_time = { lt: new Date() };
+        orderBy = { start_time: 'desc' }; // Show most recent past first
+      }
+      // For 'all', no time filter is applied unless combined with other filters
 
-    if (groupId && typeof groupId === 'string') {
-      whereClause.group_id = groupId;
-    }
+      // --- Group Filter --- 
+      if (groupId && typeof groupId === 'string') {
+        whereClause.group_id = groupId;
+      }
 
-    const shifts = await prisma.shifts.findMany({
-      where: whereClause,
-      include: {
-        groups: true,
-        shift_volunteers: {
-          include: {
-            users: true
-          }
+      // --- Availability Filter --- 
+      if (onlyAvailable === 'true') {
+        // Since capacity is always 1, we check if *no one* is signed up
+        whereClause.shift_volunteers = { none: {} }; 
+        // Also ensure it's upcoming if filtering for available
+        if (filter !== 'past') { // Don't show past shifts even if technically available
+           whereClause.start_time = { gte: new Date() };
         }
-      },
-      orderBy: {
-        start_time: 'asc',
-      },
-    });
+      }
 
-    res.status(200).json(mapSnakeToCamel(shifts));
+      const shifts = await prisma.shifts.findMany({
+        where: whereClause,
+        include: {
+          groups: true, // Include group data if needed
+          // Include volunteer count for displaying purposes (even if capacity is 1)
+          _count: { 
+            select: { shift_volunteers: true }
+          },
+          // Optionally include volunteer details if needed elsewhere
+          // shift_volunteers: { include: { users: true } }
+        },
+        orderBy: orderBy,
+      });
 
-  } catch (error) {
-    console.error('Error fetching shifts:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
-  } finally {
-    await prisma.$disconnect();
+      // Transform shifts to add currentVolunteers count
+      const transformedShifts = shifts.map(shift => ({
+        ...mapSnakeToCamel(shift),
+        currentVolunteers: shift._count.shift_volunteers,
+        // maxVolunteers: shift.capacity, // Already known to be 1
+      }));
+
+      res.status(200).json(transformedShifts);
+
+    } catch (error) {
+      console.error('Error fetching shifts:', error);
+      res.status(500).json({ message: 'Internal Server Error' });
+    } finally {
+      await prisma.$disconnect();
+    }
+  } 
+  // --- End GET handler ---
+  else {
+    // Method not allowed if not GET or POST
+    res.setHeader('Allow', ['GET', 'POST']);
+    res.status(405).json({ message: `Method ${req.method} Not Allowed` });
   }
 } 

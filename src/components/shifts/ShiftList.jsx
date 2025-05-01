@@ -3,194 +3,133 @@ import axios from 'axios';
 import Link from 'next/link';
 import { format, parseISO, isAfter, isBefore } from 'date-fns';
 import { useShifts } from '../../contexts/ShiftContext';
-import ShiftCard from './ShiftCard';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from '../../contexts/AuthContext';
+import ShiftListItem from './ShiftListItem';
+import AddShiftForm from './AddShiftForm';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { PlusCircle, Filter } from 'lucide-react';
+import AvailableShiftsDialog from './AvailableShiftsDialog';
 
 export default function ShiftList({ groupId = null }) {
-  const { shifts, loading, fetchShifts, signUpForShift, cancelShiftSignup } = useShifts();
-  // Hardcoded auth values since we've removed authentication
-  const isAdmin = true; // Default to admin for simplicity
-  // Use useMemo to prevent dbUser from changing on every render
-  const dbUser = useMemo(() => ({ id: 'placeholder-user-id' }), []); // Placeholder user
-
+  const { shifts, loading, fetchShifts, signUpForShift, cancelShiftSignup, deleteShift, suggestedShifts, setSuggestedShifts } = useShifts();
+  const { isAdmin } = useAuth();
+  const [isAddShiftDialogOpen, setIsAddShiftDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [shiftToEdit, setShiftToEdit] = useState(null);
   const [filter, setFilter] = useState('upcoming');
-  const [dateFilter, setDateFilter] = useState('');
-  const [filteredShifts, setFilteredShifts] = useState([]);
-  const [isSigningUp, setIsSigningUp] = useState(false);
-  const [isCanceling, setIsCanceling] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
 
-  // Fetch shifts on component mount
   useEffect(() => {
-    fetchShifts();
-  }, [fetchShifts]);
+    fetchShifts(filter);
+  }, [filter, fetchShifts]);
 
-  // Filter shifts based on user selection
-  useEffect(() => {
-    if (!shifts) return;
+  const handleOpenAddDialog = () => {
+    setShiftToEdit(null);
+    setIsAddShiftDialogOpen(true);
+  };
 
-    const now = new Date();
-    let filtered = [...shifts];
+  const handleOpenEditDialog = (shift) => {
+    setShiftToEdit(shift);
+    setIsEditDialogOpen(true);
+  };
 
-    // Apply status filter
-    if (filter === 'upcoming') {
-      filtered = filtered.filter(shift => isAfter(parseISO(shift.startTime), now));
-    } else if (filter === 'past') {
-      filtered = filtered.filter(shift => isBefore(parseISO(shift.endTime), now));
-    } else if (filter === 'my') {
-      // This needs to be handled differently, as we need to fetch my-shifts specifically
-      // For now, this won't work correctly just by client-side filtering
-      // Should use fetchMyShifts() instead in a different component
-    } else if (filter === 'available') {
-      filtered = filtered.filter(shift =>
-        isAfter(parseISO(shift.startTime), now) &&
-        shift.currentVolunteers < shift.maxVolunteers
-      );
-    }
+  const handleCloseDialog = () => {
+    setIsAddShiftDialogOpen(false);
+    setIsEditDialogOpen(false);
+    setShiftToEdit(null);
+    fetchShifts(filter);
+  };
 
-    // Apply date filter if selected
-    if (dateFilter) {
-      const selectedDate = new Date(dateFilter);
-      const nextDay = new Date(dateFilter);
-      nextDay.setDate(nextDay.getDate() + 1);
+  const handleCloseSuggestionDialog = () => {
+    setSuggestedShifts([]);
+  };
 
-      filtered = filtered.filter(shift => {
-        const shiftDate = parseISO(shift.startTime);
-        return (
-          shiftDate >= selectedDate &&
-          shiftDate < nextDay
-        );
-      });
-    }
-
-    // Sort by start time
-    filtered.sort((a, b) => {
-      return new Date(a.startTime) - new Date(b.startTime);
-    });
-
-    setFilteredShifts(filtered);
-  }, [shifts, filter, dateFilter, dbUser]);
-
-  // Handle signing up for a shift
-  const handleSignUp = async (shiftId) => {
-    setIsSigningUp(true);
-    try {
-      await signUpForShift(shiftId);
-    } catch (error) {
-      console.error('Error signing up for shift:', error);
-    } finally {
-      setIsSigningUp(false);
+  const handleDeleteShift = async (id) => {
+    if (window.confirm('Are you sure you want to delete this shift?')) {
+      const success = await deleteShift(id);
+      if (success) {
+        console.log('Shift deleted successfully via context');
+      } else {
+        console.error('Failed to delete shift via context');
+      }
     }
   };
 
-  // Handle canceling a shift registration
-  const handleCancel = async (shiftId) => {
-    setIsCanceling(true);
-    try {
-      await cancelShiftSignup(shiftId);
-    } catch (error) {
-      console.error('Error canceling shift registration:', error);
-    } finally {
-      setIsCanceling(false);
-    }
-  };
-
-  // Format shift time for display
-  const formatShiftTime = (start, end) => {
-    const startDate = parseISO(start);
-    const endDate = parseISO(end);
-
-    return `${format(startDate, 'MMM d, yyyy h:mm a')} - ${format(endDate, 'h:mm a')}`;
-  };
-
-  // Get status class for styling
-  const getStatusClass = (status) => {
-    switch (status) {
-      case 'OPEN':
-        return 'bg-blue-100 text-blue-800';
-      case 'FILLED':
-        return 'bg-green-100 text-green-800';
-      case 'CANCELLED':
-        return 'bg-red-100 text-red-800';
-      case 'COMPLETED':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-600';
-    }
-  };
-
-  // Check if user is signed up for a shift
-  const isSignedUp = (shift) => {
-    if (!shift.volunteers) return false;
-    return shift.volunteers.some(volunteer => volunteer.id === dbUser.id);
-  };
-
-  // Check if shift has available spots
-  const hasAvailableSpots = (shift) => {
-    return shift.currentVolunteers < shift.maxVolunteers;
-  };
-
-  // Show loading state
-  if (loading) {
+  if (loading && !shifts.length) {
     return (
-      <div className="space-y-6">
-        <div className="flex justify-center">
-          <LoadingSpinner size="lg" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-64 w-full" />
-          ))}
-        </div>
+      <div className="flex justify-center py-10">
+        <LoadingSpinner size="lg" />
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-        {!groupId && (
-          <Button asChild>
-            <Link href="/admin/shifts/new">Add New Shift</Link>
-          </Button>
-        )}
-        {groupId && <div />}
-        <div className="flex w-full md:w-auto gap-4">
-          <Input
-            type="text"
-            placeholder="Search shifts..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-xs w-full"
-          />
+    <div className="container mx-auto py-8">
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+        <h1 className="text-2xl font-bold">Available Shifts</h1>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <Select value={filter} onValueChange={setFilter}>
             <SelectTrigger className="w-[180px]">
+              <Filter className="h-4 w-4 mr-1" />
               <SelectValue placeholder="Filter shifts" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="upcoming">Upcoming</SelectItem>
-              <SelectItem value="past">Past</SelectItem>
+              <SelectItem value="upcoming">Upcoming Shifts</SelectItem>
+              <SelectItem value="past">Past Shifts</SelectItem>
               <SelectItem value="all">All Shifts</SelectItem>
             </SelectContent>
           </Select>
+          {isAdmin && (
+            <Button onClick={handleOpenAddDialog} className="flex items-center gap-1">
+              <PlusCircle className="h-4 w-4" />
+              Add Shift
+            </Button>
+          )}
         </div>
       </div>
 
-      {filteredShifts.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredShifts.map(shift => (
-            <ShiftCard key={shift.id} shift={shift} userId={dbUser?.id} />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-10 text-gray-500">
-          No shifts found{searchTerm ? ' matching your search' : filter !== 'all' ? ` matching the filter '${filter}'` : ''}.
+      {loading && shifts.length > 0 && (
+        <div className="text-center py-4 text-muted-foreground">
+          <LoadingSpinner size="sm" /> Refreshing...
         </div>
       )}
+
+      {!loading && shifts.length > 0 ? (
+        <div>
+          {shifts.map(shift => (
+            <ShiftListItem 
+              key={shift.id} 
+              shift={shift} 
+              onEdit={isAdmin ? handleOpenEditDialog : undefined}
+              onDelete={isAdmin ? handleDeleteShift : undefined}
+            />
+          ))}
+        </div>
+      ) : !loading && shifts.length === 0 ? (
+        <div className="text-center py-10 text-muted-foreground">
+          <p>No shifts found matching your criteria.</p>
+        </div>
+      ) : null}
+
+      <Dialog open={isAddShiftDialogOpen || isEditDialogOpen} onOpenChange={handleCloseDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{shiftToEdit ? 'Edit Shift' : 'Add New Shift'}</DialogTitle>
+          </DialogHeader>
+          <AddShiftForm 
+            initialData={shiftToEdit}
+            onSuccess={handleCloseDialog} 
+          />
+        </DialogContent>
+      </Dialog>
+
+      <AvailableShiftsDialog 
+        isOpen={suggestedShifts && suggestedShifts.length > 0}
+        onClose={handleCloseSuggestionDialog}
+        shifts={suggestedShifts}
+      />
     </div>
   );
 }

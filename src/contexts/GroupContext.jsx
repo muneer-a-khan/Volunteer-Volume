@@ -1,14 +1,18 @@
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
-import { toast } from 'react-hot-toast';
-// import { useAuth } from './AuthContext'; // Removed
+// Import shadcn toast function
+// import { toast } from 'react-hot-toast';
+import { useToast } from "@/components/ui/use-toast"; 
+import { useSession } from 'next-auth/react';
 
 const GroupContext = createContext();
 
 export const GroupProvider = ({ children }) => {
-  // const { isAuthenticated, dbUser } = useAuth(); // Removed
-  const isAuthenticated = true; // Placeholder
-  const userId = null; // Placeholder
+  const { data: session } = useSession();
+  const isAuthenticated = !!session?.user;
+  const userId = session?.user?.id || null;
+  const initialFetchDone = useRef(false);
+  const { toast } = useToast(); // Get toast function from the hook
 
   const [groups, setGroups] = useState([]);
   const [myGroups, setMyGroups] = useState([]);
@@ -22,7 +26,8 @@ export const GroupProvider = ({ children }) => {
       setGroups(response.data);
     } catch (error) {
       console.error('Error fetching groups:', error);
-      toast.error('Failed to load groups');
+      // Silent fail - don't show error toast
+      setGroups([]);
     } finally {
       setLoading(false);
     }
@@ -31,19 +36,23 @@ export const GroupProvider = ({ children }) => {
   // Fetch user's groups (needs user ID)
   const fetchMyGroups = useCallback(async () => {
     if (!isAuthenticated || !userId) {
-      toast('Fetching your groups requires user identification.');
       setMyGroups([]);
+      setLoading(false);
       return;
     }
     setLoading(true);
     try {
-      // const response = await axios.get(`/api/groups/my?userId=${userId}`);
-      // setMyGroups(response.data);
-      setMyGroups([]); // Placeholder
-      toast('Fetching my groups needs API update (call commented out).');
+      const response = await axios.get(`/api/groups/my?userId=${userId}`);
+      setMyGroups(response.data);
     } catch (error) {
       console.error('Error fetching my groups:', error);
-      toast.error('Failed to load your groups');
+      // Silent fail - don't show error toast
+      setMyGroups([]);
+      
+      // If getting a 500 error, it's likely the API route issue
+      if (error.response?.status === 500) {
+        console.log('Server error when fetching my groups. Using empty array for now.');
+      }
     } finally {
       setLoading(false);
     }
@@ -54,7 +63,11 @@ export const GroupProvider = ({ children }) => {
     try {
       const response = await axios.get(`/api/groups/${id}`);
       return response.data;
-    } catch (error) { console.error('Fetch group error:', error); toast.error('Failed to load group details'); return null; }
+    } catch (error) { 
+      console.error('Fetch group error:', error); 
+      // Silent fail - don't show error toast
+      return null; 
+    }
   };
 
   // Admin/Role-dependent actions (commented out API calls)
@@ -62,47 +75,71 @@ export const GroupProvider = ({ children }) => {
     // Role check needed
     try {
       // const response = await axios.post('/api/groups', groupData);
-      toast.success('Group created! (API Call commented out)');
+      toast({ title: "Success", description: "Group created! (API Call commented out)" });
       fetchGroups();
       return { id: 'temp-' + Date.now(), ...groupData }; // Placeholder
-    } catch (error) { console.error('Create group error:', error); toast.error('Failed to create group'); return null; }
+    } catch (error) { 
+      console.error('Create group error:', error); 
+      toast({ title: "Error", description: "Failed to create group", variant: "destructive" }); 
+      return null; 
+    }
   };
   const updateGroup = async (id, groupData) => {
     // Role check needed
     try {
       // const response = await axios.put(`/api/groups/${id}`, groupData);
-      toast.success('Group updated! (API Call commented out)');
+      toast({ title: "Success", description: "Group updated! (API Call commented out)" });
       fetchGroups();
       return { id: id, ...groupData }; // Placeholder
-    } catch (error) { console.error('Update group error:', error); toast.error('Failed to update group'); return null; }
+    } catch (error) { 
+      console.error('Update group error:', error); 
+      toast({ title: "Error", description: "Failed to update group", variant: "destructive" }); 
+      return null; 
+    }
   };
   const deleteGroup = async (id) => {
     // Role check needed
     try {
       // await axios.delete(`/api/groups/${id}`);
-      toast.success('Group deleted! (API Call commented out)');
+      toast({ title: "Success", description: "Group deleted! (API Call commented out)" });
       fetchGroups();
       fetchMyGroups();
       return true;
-    } catch (error) { console.error('Delete group error:', error); toast.error('Failed to delete group'); return false; }
+    } catch (error) { 
+      console.error('Delete group error:', error); 
+      toast({ title: "Error", description: "Failed to delete group", variant: "destructive" }); 
+      return false; 
+    }
   };
 
   // User actions (needs user ID)
   const joinGroup = async (id) => {
-    if (!isAuthenticated || !userId) { toast.error('Join requires user ID.'); return; }
+    if (!isAuthenticated || !userId) { 
+      toast({ title: "Error", description: "Please log in to join.", variant: "destructive" }); 
+      return; 
+    }
     try {
       // await axios.post(`/api/groups/${id}/join`, { userId });
-      toast.success('Joined group! (API Call commented out)');
+      toast({ title: "Success", description: "Joined group! (API Call commented out)" });
       fetchMyGroups(); // Refresh user's groups
-    } catch (error) { console.error('Join group error:', error); toast.error('Failed to join group'); }
+    } catch (error) { 
+      console.error('Join group error:', error); 
+      toast({ title: "Error", description: "Failed to join group", variant: "destructive" }); 
+    }
   };
   const leaveGroup = async (id) => {
-    if (!isAuthenticated || !userId) { toast.error('Leave requires user ID.'); return; }
+    if (!isAuthenticated || !userId) { 
+      toast({ title: "Error", description: "Please log in to leave.", variant: "destructive" }); 
+      return; 
+    }
     try {
       // await axios.post(`/api/groups/${id}/leave`, { userId });
-      toast.success('Left group! (API Call commented out)');
+      toast({ title: "Success", description: "Left group! (API Call commented out)" });
       fetchMyGroups(); // Refresh user's groups
-    } catch (error) { console.error('Leave group error:', error); toast.error('Failed to leave group'); }
+    } catch (error) { 
+      console.error('Leave group error:', error); 
+      toast({ title: "Error", description: "Failed to leave group", variant: "destructive" }); 
+    }
   };
 
   // Fetch group related data
@@ -110,20 +147,97 @@ export const GroupProvider = ({ children }) => {
     try {
       const response = await axios.get(`/api/groups/${id}/shifts`);
       return response.data;
-    } catch (error) { console.error('Fetch group shifts error:', error); toast.error('Failed to load group shifts'); return []; }
+    } catch (error) { 
+      console.error('Fetch group shifts error:', error); 
+      // Silent fail - don't show error toast
+      return []; 
+    }
   };
+  
   const getGroupVolunteers = async (id) => {
     try {
       const response = await axios.get(`/api/groups/${id}/volunteers`);
       return response.data;
-    } catch (error) { console.error('Fetch group volunteers error:', error); toast.error('Failed to load group volunteers'); return []; }
+    } catch (error) { 
+      console.error('Fetch group volunteers error:', error); 
+      // Silent fail - don't show error toast
+      return []; 
+    }
   };
 
-  // Initial fetches
+  // --- Member Management Functions --- 
+  const promoteMember = async (groupId, memberUserId) => {
+    if (!isAuthenticated || !userId) { 
+        toast({ title: "Error", description: "Authentication required.", variant: "destructive" }); 
+        return false;
+    }
+    try {
+      // API call to promote (e.g., update role in user_groups)
+      await axios.patch(`/api/groups/${groupId}/members/${memberUserId}`, { role: 'ADMIN' }); 
+      toast({ title: "Success", description: "Member promoted to Admin." });
+      return true;
+    } catch (error) { 
+      console.error('Promote member error:', error); 
+      toast({ title: "Error", description: error.response?.data?.message || "Failed to promote member", variant: "destructive" }); 
+      return false;
+    }
+  };
+
+  const demoteMember = async (groupId, memberUserId) => {
+    if (!isAuthenticated || !userId) { 
+        toast({ title: "Error", description: "Authentication required.", variant: "destructive" }); 
+        return false;
+    }
+    try {
+      // API call to demote (e.g., update role in user_groups)
+      await axios.patch(`/api/groups/${groupId}/members/${memberUserId}`, { role: 'MEMBER' }); 
+      toast({ title: "Success", description: "Admin demoted to Member." });
+      return true;
+    } catch (error) { 
+      console.error('Demote member error:', error); 
+      toast({ title: "Error", description: error.response?.data?.message || "Failed to demote member", variant: "destructive" }); 
+      return false;
+    }
+  };
+
+  const removeMember = async (groupId, memberUserId) => {
+    if (!isAuthenticated || !userId) { 
+        toast({ title: "Error", description: "Authentication required.", variant: "destructive" }); 
+        return false;
+    }
+    try {
+      // API call to remove member (e.g., delete from user_groups)
+      await axios.delete(`/api/groups/${groupId}/members/${memberUserId}`); 
+      toast({ title: "Success", description: "Member removed from group." });
+      // Refresh myGroups if the removed user is the current user
+      if (memberUserId === userId) {
+        fetchMyGroups();
+      }
+      return true;
+    } catch (error) { 
+      console.error('Remove member error:', error); 
+      toast({ title: "Error", description: error.response?.data?.message || "Failed to remove member", variant: "destructive" }); 
+      return false;
+    }
+  };
+
+  // Initial fetch - modified to prevent infinite loops
   useEffect(() => {
-    fetchGroups();
-    // fetchMyGroups(); // Needs user ID
-  }, [fetchGroups, isAuthenticated]);
+    // Only fetch once when component mounts or auth changes
+    if (!initialFetchDone.current) {
+      console.log('Initial group fetch');
+      fetchGroups();
+      if (isAuthenticated && userId) {
+        fetchMyGroups();
+      }
+      initialFetchDone.current = true;
+    }
+  }, [isAuthenticated, userId, fetchGroups, fetchMyGroups]); // Keep fetch callbacks
+
+  // Reset initialFetchDone when auth changes
+  useEffect(() => {
+    initialFetchDone.current = false;
+  }, [isAuthenticated, userId]);
 
   const value = {
     groups,
@@ -139,11 +253,20 @@ export const GroupProvider = ({ children }) => {
     leaveGroup,
     getGroupShifts,
     getGroupVolunteers,
+    promoteMember,
+    demoteMember,
+    removeMember,
   };
 
   return <GroupContext.Provider value={value}>{children}</GroupContext.Provider>;
 };
 
-export const useGroups = () => useContext(GroupContext);
+export const useGroups = () => {
+  const context = useContext(GroupContext);
+  if (context === undefined) {
+    throw new Error('useGroups must be used within a GroupProvider');
+  }
+  return context;
+};
 
 export default GroupContext;

@@ -1,61 +1,86 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { CheckCircle2 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 
-export default function ApplicationSuccessPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const justSubmitted = searchParams?.get('submitted') === 'true';
-  // Removed authentication logic - assume user is always in pending state
-  const isPending = true;
+export default function ApplicationSuccess() {
+  const { data: session } = useSession();
 
   return (
-    <div className="container max-w-4xl mx-auto px-4 py-12">
-      <Card className="border-gray-200 shadow-md">
-        <CardContent className="pt-6">
-          <div className="flex flex-col items-center text-center p-4">
-            <div className="bg-green-100 p-3 rounded-full mb-4">
-              <CheckCircle2 className="h-12 w-12 text-green-600" />
+    <div className="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-lg text-center">
+        <div className="mb-10">
+          <svg
+            className="mx-auto h-12 w-12 text-green-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </div>
+        <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
+          Application Submitted!
+        </h2>
+        <p className="mt-4 text-xl text-gray-600">
+          Thank you for your interest in volunteering with us!
+        </p>
+        <div className="mt-8 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg
+                className="h-5 w-5 text-yellow-400"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z"
+                  clipRule="evenodd"
+                />
+              </svg>
             </div>
-            
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              {justSubmitted ? 'Application Submitted Successfully!' : 'Application Status'}
-            </h1>
-            
-            <p className="text-gray-600 mb-6 max-w-md">
-              {justSubmitted 
-                ? 'Thank you for submitting your volunteer application! We will review your information and get back to you soon.' 
-                : 'Your application is currently being reviewed by our volunteer coordinator.'}
-            </p>
-
-            <div className="bg-blue-50 w-full p-4 rounded-lg mb-6">
-              <h2 className="font-semibold text-blue-800 mb-2">What happens next?</h2>
-              <ol className="text-left text-blue-700 list-decimal pl-5 space-y-1">
-                <li>Our volunteer coordinator will review your application (typically within 3-5 business days)</li>
-                <li>You may receive an email with additional questions or requesting an interview</li>
-                <li>Once approved, you&apos;ll receive access to volunteer shifts and opportunities</li>
-              </ol>
-            </div>
-
-            <Separator className="my-4" />
-
-            <div className="flex flex-col sm:flex-row gap-3 mt-2">
-              <Button asChild variant="outline">
-                <Link href="/">Return to Home</Link>
-              </Button>
-              <Button asChild>
-                <Link href="/dashboard">Go to Dashboard</Link>
-              </Button>
+            <div className="ml-3">
+              <p className="text-sm text-yellow-700">
+                Your application is currently under review. An administrator will contact you soon.
+              </p>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div className="mt-8">
+          <p className="text-gray-600 mb-6">
+            While your application is being reviewed, you can:
+          </p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Link
+              href="/profile"
+              className="flex items-center justify-center rounded-md border border-transparent bg-indigo-100 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-200"
+            >
+              Complete Your Profile
+            </Link>
+            <Link
+              href="/about"
+              className="flex items-center justify-center rounded-md border border-transparent bg-indigo-100 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-200"
+            >
+              Learn More About Us
+            </Link>
+          </div>
+        </div>
+        <p className="mt-8 text-sm text-gray-500">
+          If you have any questions, please{' '}
+          <Link href="/contact" className="font-medium text-indigo-600 hover:text-indigo-500">
+            contact us
+          </Link>
+          .
+        </p>
+      </div>
     </div>
   );
 }
