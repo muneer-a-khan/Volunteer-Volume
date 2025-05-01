@@ -49,8 +49,14 @@ export default function ShadcnNavbar() {
   const { toast } = useToast();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Combine nav items correctly
-  const navItems: NavItem[] = isAdmin ? [...mainNavItems, ...adminNavItems] : mainNavItems;
+  // Combine nav items, but exclude Dashboard for admins
+  const navItems: NavItem[] = isAdmin 
+    ? [
+        // Filter out the regular dashboard for admins
+        ...mainNavItems.filter(item => item.href !== "/dashboard"),
+        ...adminNavItems
+      ] 
+    : mainNavItems;
 
   const handleSignOut = async () => {
     await nextAuthSignOut({ callbackUrl: '/' });
