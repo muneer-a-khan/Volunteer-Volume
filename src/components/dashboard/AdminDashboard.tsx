@@ -185,9 +185,6 @@ export default function AdminDashboard() {
           <Button asChild variant="outline">
             <Link href="/admin/users">Manage Users</Link>
           </Button>
-          <Button asChild variant="outline">
-            <Link href="/admin/settings">System Settings</Link>
-          </Button>
         </div>
       </div>
 
