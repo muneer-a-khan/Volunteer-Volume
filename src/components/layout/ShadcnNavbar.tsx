@@ -37,8 +37,6 @@ const adminNavItems: NavItem[] = [
   // Standardize admin items
   { href: "/admin/dashboard", label: "Admin Dashboard" }, 
   { href: "/admin/volunteers", label: "Manage Volunteers" },
-  { href: "/admin/shifts", label: "Manage Shifts" },
-  { href: "/admin/groups", label: "Manage Groups" },
   { href: "/admin/reports", label: "Reports" },
 ];
 

@@ -291,64 +291,112 @@ export default function VolunteerList({ initialFilter = 'all', groupId = null }:
 
   // Actions (Deactivate, Promote, etc.)
   const handleDeactivate = async (userId: string) => {
+    setLoading(true); // Show loading state
     try {
       // Use the proper API endpoint for updating user status
       await axios.post('/api/admin/users/update-status', { userId, active: false });
+      
       toast.success('Volunteer deactivated');
-      // Refresh list or update state locally
+      
+      // Update state locally to avoid full reload
       setVolunteers(prev => prev.map(v => v.id === userId ? { ...v, active: false } : v));
+      
+      // Ensure we don't set state after component unmounts
+      setTimeout(() => {
+        setLoading(false);
+      }, 100);
     } catch (err) { 
       console.error('Deactivate error:', err);
       toast.error('Failed to deactivate');
+      setLoading(false);
     }
   };
 
   const handleActivate = async (userId: string) => {
+    setLoading(true); // Show loading state
     try {
       // Use the proper API endpoint for updating user status
       await axios.post('/api/admin/users/update-status', { userId, active: true });
+      
       toast.success('Volunteer reactivated');
+      
+      // Update state locally to avoid full reload
       setVolunteers(prev => prev.map(v => v.id === userId ? { ...v, active: true } : v));
+      
+      // Ensure we don't set state after component unmounts
+      setTimeout(() => {
+        setLoading(false);
+      }, 100);
     } catch (err) { 
       console.error('Activate error:', err);
       toast.error('Failed to reactivate');
+      setLoading(false);
     }
   };
 
   const handlePromoteAdmin = async (userId: string) => {
+    setLoading(true); // Show loading state
     try {
       // Use the proper API endpoint for updating user role
       await axios.post('/api/admin/users/update-role', { userId, role: 'ADMIN' });
+      
       toast.success('Volunteer promoted to Admin');
+      
+      // Update state locally to avoid full reload
       setVolunteers(prev => prev.map(v => v.id === userId ? { ...v, role: 'ADMIN' } : v));
+      
+      // Ensure we don't set state after component unmounts
+      setTimeout(() => {
+        setLoading(false);
+      }, 100);
     } catch (err) { 
       console.error('Promote error:', err);
       toast.error('Failed to promote');
+      setLoading(false);
     }
   };
 
   const handleDemoteVolunteer = async (userId: string) => {
+    setLoading(true); // Show loading state
     try {
       // Use the proper API endpoint for updating user role
       await axios.post('/api/admin/users/update-role', { userId, role: 'VOLUNTEER' });
+      
       toast.success('Admin demoted to Volunteer');
+      
+      // Update state locally to avoid full reload
       setVolunteers(prev => prev.map(v => v.id === userId ? { ...v, role: 'VOLUNTEER' } : v));
+      
+      // Ensure we don't set state after component unmounts
+      setTimeout(() => {
+        setLoading(false);
+      }, 100);
     } catch (err) { 
       console.error('Demote error:', err);
       toast.error('Failed to demote');
+      setLoading(false);
     }
   };
 
   const handleRemove = async (userId: string) => {
+    setLoading(true); // Show loading state
     try {
       // Use the proper API endpoint for removing users
       await axios.delete(`/api/admin/users/${userId}`);
+      
       toast.success('Volunteer removed');
+      
       // Remove from state
       setVolunteers(prev => prev.filter(v => v.id !== userId));
+      
+      // Ensure we don't set state after component unmounts
+      setTimeout(() => {
+        setLoading(false);
+      }, 100);
     } catch (err) { 
       console.error('Remove error:', err);
       toast.error('Failed to remove volunteer');
+      setLoading(false);
     }
   };
 
@@ -430,7 +478,6 @@ export default function VolunteerList({ initialFilter = 'all', groupId = null }:
               <TableHead>Email</TableHead>
               <TableHead>Phone</TableHead>
               <TableHead>Role</TableHead>
-              <TableHead>Status</TableHead>
               <TableHead><span className="sr-only">Actions</span></TableHead>
             </TableRow>
           </TableHeader>
@@ -444,11 +491,6 @@ export default function VolunteerList({ initialFilter = 'all', groupId = null }:
                   <TableCell>
                     <Badge variant={volunteer.role === 'ADMIN' ? 'default' : 'secondary'}>
                       {volunteer.role}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={volunteer.active ? "text-green-600 border-green-600" : "text-red-600 border-red-600"}>
-                      {volunteer.active ? 'Active' : 'Inactive'}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -489,7 +531,7 @@ export default function VolunteerList({ initialFilter = 'all', groupId = null }:
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
+                <TableCell colSpan={5} className="h-24 text-center">
                   No volunteers found.
                 </TableCell>
               </TableRow>
