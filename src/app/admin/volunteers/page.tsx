@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from "@/components/ui/button"
-import VolunteerList from '@/components/volunteers/VolunteerList'; // Path confirmed correct
+import VolunteerList from '@/components/volunteers/VolunteerListStatus';
 import { Skeleton } from '@/components/ui/skeleton'; // Use Skeleton
 // import { useAuth } from '@/contexts/AuthContext'; // Removed
 

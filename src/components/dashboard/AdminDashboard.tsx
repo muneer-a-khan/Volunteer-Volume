@@ -151,7 +151,7 @@ export default function AdminDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{stats?.upcomingShifts ?? '-'}</div>
             <Button variant="link" size="sm" asChild className="p-0 h-auto text-xs">
-              <Link href="/admin/shifts">Manage Shifts</Link>
+              <Link href="/shifts">Manage Shifts</Link>
             </Button>
           </CardContent>
         </Card>
@@ -174,19 +174,16 @@ export default function AdminDashboard() {
         <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Button asChild variant="outline">
-            <Link href="/admin/volunteers">Manage Volunteers</Link>
+            <Link href="/volunteers">Manage Volunteers</Link>
           </Button>
           <Button asChild variant="outline">
-            <Link href="/admin/shifts/new">Create New Shift</Link>
+            <Link href="/shifts/new">Create New Shift</Link>
           </Button>
           <Button asChild variant="outline">
-            <Link href="/admin/groups">Manage Groups</Link>
+            <Link href="/groups">Manage Groups</Link>
           </Button>
           <Button asChild variant="outline">
             <Link href="/admin/users">Manage Users</Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href="/admin/settings">System Settings</Link>
           </Button>
         </div>
       </div>

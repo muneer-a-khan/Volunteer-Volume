@@ -61,6 +61,9 @@ export default function VolunteerList({ initialFilter = 'all', groupId = null }:
   const [dialogAction, setDialogAction] = useState<'promote' | 'demote' | 'remove' | 'activate' | 'deactivate' | null>(null);
   const [selectedVolunteer, setSelectedVolunteer] = useState<Volunteer | null>(null);
   
+  // Store a seperate action loading state to differentiate from initial loading
+  const [actionLoading, setActionLoading] = useState(false);
+
   const isAdmin = true; // Placeholder
 
   // Fetch volunteers data
@@ -263,29 +266,53 @@ export default function VolunteerList({ initialFilter = 'all', groupId = null }:
   const handleDialogConfirm = async () => {
     if (!selectedVolunteer || !dialogAction) return;
     
+    // Set action loading state to prevent multiple actions
+    setActionLoading(true);
+    
     try {
+      // Close dialog first before performing the action
       setDialogOpen(false);
       
+      // Wait a small delay to ensure dialog is closed before proceeding
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // Perform the action based on dialog type
       switch (dialogAction) {
         case 'promote':
-          await handlePromoteAdmin(selectedVolunteer.id);
+          await performAction(() => handlePromoteAdmin(selectedVolunteer.id));
           break;
         case 'demote':
-          await handleDemoteVolunteer(selectedVolunteer.id);
+          await performAction(() => handleDemoteVolunteer(selectedVolunteer.id));
           break;
         case 'remove':
-          await handleRemove(selectedVolunteer.id);
+          await performAction(() => handleRemove(selectedVolunteer.id));
           break;
         case 'activate':
-          await handleActivate(selectedVolunteer.id);
+          await performAction(() => handleActivate(selectedVolunteer.id));
           break;
         case 'deactivate':
-          await handleDeactivate(selectedVolunteer.id);
+          await performAction(() => handleDeactivate(selectedVolunteer.id));
           break;
       }
     } catch (err) {
       console.error('Error during action:', err);
       toast.error('An error occurred');
+    } finally {
+      // Ensure loading state is reset even if there was an error
+      setTimeout(() => {
+        setActionLoading(false);
+      }, 100);
+    }
+  };
+  
+  // Helper function to perform actions without loading state management
+  // (since we're already managing loading state in handleDialogConfirm)
+  const performAction = async (actionFn: () => Promise<void>) => {
+    try {
+      await actionFn();
+    } catch (error) {
+      // Re-throw the error to be caught by the parent function
+      throw error;
     }
   };
 
@@ -294,12 +321,15 @@ export default function VolunteerList({ initialFilter = 'all', groupId = null }:
     try {
       // Use the proper API endpoint for updating user status
       await axios.post('/api/admin/users/update-status', { userId, active: false });
+      
       toast.success('Volunteer deactivated');
-      // Refresh list or update state locally
+      
+      // Update state locally to avoid full reload
       setVolunteers(prev => prev.map(v => v.id === userId ? { ...v, active: false } : v));
     } catch (err) { 
       console.error('Deactivate error:', err);
       toast.error('Failed to deactivate');
+      throw err; // Re-throw to be caught by performAction
     }
   };
 
@@ -307,11 +337,15 @@ export default function VolunteerList({ initialFilter = 'all', groupId = null }:
     try {
       // Use the proper API endpoint for updating user status
       await axios.post('/api/admin/users/update-status', { userId, active: true });
+      
       toast.success('Volunteer reactivated');
+      
+      // Update state locally to avoid full reload
       setVolunteers(prev => prev.map(v => v.id === userId ? { ...v, active: true } : v));
     } catch (err) { 
       console.error('Activate error:', err);
       toast.error('Failed to reactivate');
+      throw err; // Re-throw to be caught by performAction
     }
   };
 
@@ -319,11 +353,15 @@ export default function VolunteerList({ initialFilter = 'all', groupId = null }:
     try {
       // Use the proper API endpoint for updating user role
       await axios.post('/api/admin/users/update-role', { userId, role: 'ADMIN' });
+      
       toast.success('Volunteer promoted to Admin');
+      
+      // Update state locally to avoid full reload
       setVolunteers(prev => prev.map(v => v.id === userId ? { ...v, role: 'ADMIN' } : v));
     } catch (err) { 
       console.error('Promote error:', err);
       toast.error('Failed to promote');
+      throw err; // Re-throw to be caught by performAction
     }
   };
 
@@ -331,11 +369,15 @@ export default function VolunteerList({ initialFilter = 'all', groupId = null }:
     try {
       // Use the proper API endpoint for updating user role
       await axios.post('/api/admin/users/update-role', { userId, role: 'VOLUNTEER' });
+      
       toast.success('Admin demoted to Volunteer');
+      
+      // Update state locally to avoid full reload
       setVolunteers(prev => prev.map(v => v.id === userId ? { ...v, role: 'VOLUNTEER' } : v));
     } catch (err) { 
       console.error('Demote error:', err);
       toast.error('Failed to demote');
+      throw err; // Re-throw to be caught by performAction
     }
   };
 
@@ -343,17 +385,20 @@ export default function VolunteerList({ initialFilter = 'all', groupId = null }:
     try {
       // Use the proper API endpoint for removing users
       await axios.delete(`/api/admin/users/${userId}`);
+      
       toast.success('Volunteer removed');
+      
       // Remove from state
       setVolunteers(prev => prev.filter(v => v.id !== userId));
     } catch (err) { 
       console.error('Remove error:', err);
       toast.error('Failed to remove volunteer');
+      throw err; // Re-throw to be caught by performAction
     }
   };
 
-  // Render loading state
-  if (loading) {
+  // Render loading state for initial data fetch
+  if (loading && !actionLoading) {
     return (
       <div className="flex justify-center py-10">
         <LoadingSpinner />
@@ -430,7 +475,6 @@ export default function VolunteerList({ initialFilter = 'all', groupId = null }:
               <TableHead>Email</TableHead>
               <TableHead>Phone</TableHead>
               <TableHead>Role</TableHead>
-              <TableHead>Status</TableHead>
               <TableHead><span className="sr-only">Actions</span></TableHead>
             </TableRow>
           </TableHeader>
@@ -447,13 +491,8 @@ export default function VolunteerList({ initialFilter = 'all', groupId = null }:
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={volunteer.active ? "text-green-600 border-green-600" : "text-red-600 border-red-600"}>
-                      {volunteer.active ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
+                      <DropdownMenuTrigger asChild disabled={actionLoading}>
                         <Button variant="ghost" className="h-8 w-8 p-0">
                           <span className="sr-only">Open menu</span>
                           <MoreHorizontal className="h-4 w-4" />
@@ -461,25 +500,54 @@ export default function VolunteerList({ initialFilter = 'all', groupId = null }:
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         {volunteer.active ? (
-                          <DropdownMenuItem onClick={() => showConfirmDialog('deactivate', volunteer)} className="text-yellow-600">
+                          <DropdownMenuItem 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              showConfirmDialog('deactivate', volunteer);
+                            }} 
+                            className="text-yellow-600"
+                          >
                             Deactivate
                           </DropdownMenuItem>
                         ) : (
-                          <DropdownMenuItem onClick={() => showConfirmDialog('activate', volunteer)} className="text-green-600">
+                          <DropdownMenuItem 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              showConfirmDialog('activate', volunteer);
+                            }} 
+                            className="text-green-600"
+                          >
                             Reactivate
                           </DropdownMenuItem>
                         )}
                         {volunteer.role === 'VOLUNTEER' && (
-                          <DropdownMenuItem onClick={() => showConfirmDialog('promote', volunteer)}>
+                          <DropdownMenuItem 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              showConfirmDialog('promote', volunteer);
+                            }}
+                          >
                             Promote to Admin
                           </DropdownMenuItem>
                         )}
                         {volunteer.role === 'ADMIN' && (
-                          <DropdownMenuItem onClick={() => showConfirmDialog('demote', volunteer)} className="text-red-600">
+                          <DropdownMenuItem 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              showConfirmDialog('demote', volunteer);
+                            }} 
+                            className="text-red-600"
+                          >
                             Demote to Volunteer
                           </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem onClick={() => showConfirmDialog('remove', volunteer)} className="text-red-600 font-medium">
+                        <DropdownMenuItem 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            showConfirmDialog('remove', volunteer);
+                          }} 
+                          className="text-red-600 font-medium"
+                        >
                           Remove
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -489,7 +557,7 @@ export default function VolunteerList({ initialFilter = 'all', groupId = null }:
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
+                <TableCell colSpan={5} className="h-24 text-center">
                   No volunteers found.
                 </TableCell>
               </TableRow>
@@ -533,7 +601,24 @@ export default function VolunteerList({ initialFilter = 'all', groupId = null }:
 
       {/* Confirmation Dialog */}
       {dialogContent && (
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog 
+          open={dialogOpen} 
+          onOpenChange={(open) => {
+            // Only allow setting to false if not in loading state
+            if (!actionLoading || !open) {
+              setDialogOpen(open);
+              
+              // If closing and not from a confirmation, reset the action and selection
+              if (!open) {
+                // Small delay to avoid UI jank
+                setTimeout(() => {
+                  setDialogAction(null);
+                  setSelectedVolunteer(null);
+                }, 150);
+              }
+            }
+          }}
+        >
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>{dialogContent.title}</DialogTitle>
@@ -552,14 +637,16 @@ export default function VolunteerList({ initialFilter = 'all', groupId = null }:
               <Button
                 variant="outline"
                 onClick={() => setDialogOpen(false)}
+                disabled={actionLoading}
               >
                 Cancel
               </Button>
               <Button
                 variant={dialogContent.confirmVariant}
                 onClick={handleDialogConfirm}
+                disabled={actionLoading}
               >
-                {dialogContent.confirmText}
+                {actionLoading ? 'Processing...' : dialogContent.confirmText}
               </Button>
             </DialogFooter>
           </DialogContent>
